@@ -39,8 +39,10 @@ class CompanyViewSet(viewsets.ModelViewSet):
 
 
 class FinishesLibraryListAPIView(viewsets.ModelViewSet):
+    permission_classes = [IsAuthenticated]
     serializer_class = FinishesLibrarySerializer
     pagination_class = StandardResultsSetPagination
+    http_method_names = [GET, POST]
 
     def get_queryset(self: "FinishesLibraryListAPIView") -> QuerySet[FinishesLibrary]:
         type = self.request.query_params.get("type")
@@ -51,6 +53,11 @@ class FinishesLibraryListAPIView(viewsets.ModelViewSet):
         if type:
             qs = qs.filter(type=type)
         return qs
+
+    def perform_create(
+        self: "FinishesLibraryListAPIView", serializer: FinishesLibrarySerializer
+    ) -> None:
+        serializer.save(organization=self.request.user.selected_organization)
 
 
 class MaterialViewSet(viewsets.ModelViewSet):

@@ -1,5 +1,9 @@
 # Python imports
-from typing import Dict
+import os
+from typing import Dict, Optional
+
+# Django imports
+from django.core.files.uploadedfile import InMemoryUploadedFile
 
 # External imports
 from rest_framework import serializers
@@ -492,6 +496,23 @@ class FinishesLibrarySerializer(serializers.ModelSerializer):
     class Meta:
         model = FinishesLibrary
         fields = ["id", "name", "organization", "type", "image", "image_thumbnail"]
+        read_only_fields = ["organization"]
+
+    def validate_image(
+        self: "FinishesLibrarySerializer", value: Optional["InMemoryUploadedFile"]
+    ) -> "InMemoryUploadedFile":
+        if not value:
+            return value
+
+        valid_extensions = [".jpg", ".jpeg", ".png", ".webp", ".gif"]
+
+        ext = os.path.splitext(value.name)[1].lower()
+        if ext not in valid_extensions:
+            raise serializers.ValidationError(
+                "Unsupported file extension. Supported: " + ", ".join(valid_extensions)
+            )
+
+        return value
 
     def to_representation(
         self: "FinishesLibrarySerializer", instance: FinishesLibrary
@@ -751,13 +772,24 @@ class MaterialSerializer(serializers.ModelSerializer):
                 )
 
         # Update textures
-        if textures_data:
-            receive_textures = self.initial_data["textures"]
+        if "textures" in self.initial_data and textures_data:
+            receive_textures = self.initial_data.get("textures", [])
+            if receive_textures:
+                ids_to_keep = [t.get("id") for t in receive_textures if t.get("id")]
+                MaterialTexture.objects.filter(material=instance).exclude(
+                    id__in=ids_to_keep
+                ).delete()
+
             for texture in receive_textures:
                 texture_id = texture.get("id")
-                updated_texture = texture.get("texture")
-                MaterialTexture.objects.filter(id=texture_id).update(
+                updated_texture = texture.get("texture") or texture_id
+
+                updated_count = MaterialTexture.objects.filter(id=texture_id).update(
                     texture=updated_texture
                 )
+                if updated_count == 0 and updated_texture:
+                    MaterialTexture.objects.create(
+                        material=instance, texture_id=updated_texture
+                    )
         instance.save()
         return instance

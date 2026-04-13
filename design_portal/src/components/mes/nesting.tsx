@@ -5,7 +5,7 @@ import Sidebar from '@/components/sidebar/sidebar';
 import { API_ENDPOINT } from '@/services/ApiEndPoints';
 import CommonService from '@/services/CommonService';
 import { useRouter } from 'next/router';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useSelector } from 'react-redux';
 import * as XLSX from 'xlsx-js-style';
 import styles from '../mes/nesting.module.css';
@@ -22,26 +22,35 @@ const Nesting = () => {
   const [isGeneratingBOM, setIsGeneratingBOM] = useState(false);
   const [isGeneratingQuote, setIsGeneratingQuote] = useState(false);
   const [isDownloadingXML, setIsDownloadingXML] = useState(false);
+  /** Synchronous guard — state updates are async, so rapid clicks could otherwise stack requests before re-render. */
+  const xmlDownloadInFlightRef = useRef(false);
 
   const { objects } = useSelector((state: RootState) => state.data);
 
   useEffect(() => {
-    if (!design_id || !objects || objects.length === 0) return;
+    const fetchBackupData = async () => {
+      if (!design_id || (objects && objects.length > 0)) return;
 
-    const key = `nesting_data_${design_id}`;
-    localStorage.setItem(key, JSON.stringify(objects));
-  }, [objects, design_id]);
-
-  useEffect(() => {
-    if (!design_id) return;
-
-    const key = `nesting_data_${design_id}`;
-    const cached = localStorage.getItem(key);
-
-    if (cached) {
-      setLocalData(JSON.parse(cached));
-    }
-  }, [design_id]);
+      try {
+        const response: any = await CommonService.get(
+          API_ENDPOINT.GET_DESIGN_CATALOG_ITEMS(design_id, version_id)
+        );
+        if (response?.data?.catalogs) {
+          const catalogsObj = response.data.catalogs;
+          const flattenedCatalogs: any[] = [];
+          Object.values(catalogsObj).forEach((catList: any) => {
+            if (Array.isArray(catList)) {
+              flattenedCatalogs.push(...catList);
+            }
+          });
+          setLocalData(flattenedCatalogs);
+        }
+      } catch (e) {
+        console.error('Failed to fetch backup design data', e);
+      }
+    };
+    fetchBackupData();
+  }, [design_id, version_id, objects]);
 
   useEffect(() => {
     const fetchTableData = async () => {
@@ -50,7 +59,7 @@ const Nesting = () => {
       try {
         const response: any = await CommonService.put(
           API_ENDPOINT.DOWNLOAD_NESTING_PDF(design_id) + `?version_id=${version_id}`,
-          { format: 'json' }
+          { format: 'json', minimal: true }
         );
         if (response?.data && !response.data.error) {
           setTableData(response.data);
@@ -1545,7 +1554,8 @@ const Nesting = () => {
                   </button>
                   <button
                     onClick={async () => {
-                      if (isDownloadingXML) return;
+                      if (xmlDownloadInFlightRef.current) return;
+                      xmlDownloadInFlightRef.current = true;
                       setIsDownloadingXML(true);
                       showFullScreenLoader('Preparing XMLs...');
                       try {
@@ -1568,6 +1578,7 @@ const Nesting = () => {
                         console.error(e);
                         alert('Failed to download XMLs');
                       } finally {
+                        xmlDownloadInFlightRef.current = false;
                         hideFullScreenLoader();
                         setIsDownloadingXML(false);
                       }

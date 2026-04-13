@@ -24,7 +24,7 @@ urlpatterns = [
     ),
     path(
         "finishes/",
-        FinishesLibraryListAPIView.as_view({"get": "list"}),
+        FinishesLibraryListAPIView.as_view({"get": "list", "post": "create"}),
         name="finishes-list",
     ),
     path(
