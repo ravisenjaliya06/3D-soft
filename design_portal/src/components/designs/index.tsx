@@ -110,7 +110,7 @@ const Designs = () => {
       const value = e.target.value;
       setter(value);
       if (fieldId === 'customer_email') {
-        if (isEmailValid(value)) {
+        if (!value.trim() || isEmailValid(value)) {
           clearFieldError(fieldId);
         } else {
           setFieldError(fieldId, 'Please enter a valid email address.');
@@ -118,7 +118,7 @@ const Designs = () => {
         return;
       }
       if (fieldId === 'customer_contact') {
-        if (isContactCharsAllowed(value) && isContactValid(value)) {
+        if (!value.trim() || (isContactCharsAllowed(value) && isContactValid(value))) {
           clearFieldError(fieldId);
         } else {
           setFieldError(
@@ -128,10 +128,14 @@ const Designs = () => {
         }
         return;
       }
-      if (value.trim()) {
-        clearFieldError(fieldId);
+      if (fieldId === 'order_number' || fieldId === 'customer_company') {
+        if (value.trim()) {
+          clearFieldError(fieldId);
+        } else {
+          setFieldError(fieldId, 'This field is required.');
+        }
       } else {
-        setFieldError(fieldId, 'This field is required.');
+        clearFieldError(fieldId);
       }
     };
 
@@ -179,7 +183,7 @@ const Designs = () => {
       value: orderNumber,
     },
     {
-      label: 'Customer Name*',
+      label: 'Customer Name',
       id: 'customer',
       type: 'text',
       placeholder: 'Enter customer name...',
@@ -197,7 +201,7 @@ const Designs = () => {
       value: customerCompany,
     },
     {
-      label: 'Customer Address*',
+      label: 'Customer Address',
       id: 'customer_address',
       type: 'text',
       placeholder: 'Enter customer address...',
@@ -206,7 +210,7 @@ const Designs = () => {
       value: customerAddress,
     },
     {
-      label: 'Customer GSTIN*',
+      label: 'Customer GSTIN',
       id: 'customer_gstin',
       type: 'text',
       placeholder: 'Enter customer GSTIN...',
@@ -215,7 +219,7 @@ const Designs = () => {
       value: customerGstin,
     },
     {
-      label: 'Customer Contact*',
+      label: 'Customer Contact',
       id: 'customer_contact',
       type: 'text',
       placeholder: 'Enter customer contact...',
@@ -224,7 +228,7 @@ const Designs = () => {
       value: customerContact,
     },
     {
-      label: 'Customer Email*',
+      label: 'Customer Email',
       id: 'customer_email',
       type: 'email',
       placeholder: 'Enter customer email...',
@@ -362,12 +366,7 @@ const Designs = () => {
     const validationErrors: Record<string, string> = {};
     const requiredCustomer: Array<[string, string]> = [
       ['order_number', orderNumber],
-      ['customer', customerName],
       ['customer_company', customerCompany],
-      ['customer_address', customerAddress],
-      ['customer_gstin', customerGstin],
-      ['customer_contact', customerContact],
-      ['customer_email', customerEmail],
     ];
     requiredCustomer.forEach(([key, val]) => {
       if (!val || !val.trim()) {
@@ -377,16 +376,10 @@ const Designs = () => {
     if (customerEmail && !isEmailValid(customerEmail)) {
       validationErrors['customer_email'] = 'Please enter a valid email address.';
     }
-    if (!isContactValid(customerContact)) {
-      validationErrors['customer_contact'] =
-        'Contact may include spaces/dashes, optional leading +, and must have 7–15 digits.';
-    }
-    if (!isContactCharsAllowed(customerContact)) {
-      validationErrors['customer_contact'] =
-        'Contact may include spaces/dashes, optional leading +, and must have 7–15 digits.';
-      ('Contact may include spaces/dashes, optional leading +, and must have 7–15 digits.');
-    }
-    if (!isContactCharsAllowed(customerContact)) {
+    if (
+      customerContact &&
+      (!isContactValid(customerContact) || !isContactCharsAllowed(customerContact))
+    ) {
       validationErrors['customer_contact'] =
         'Contact may include spaces/dashes, optional leading +, and must have 7–15 digits.';
     }
@@ -418,12 +411,7 @@ const Designs = () => {
     const validationErrors: Record<string, string> = {};
     const requiredCustomer: Array<[string, string]> = [
       ['order_number', orderNumber],
-      ['customer', customerName],
       ['customer_company', customerCompany],
-      ['customer_address', customerAddress],
-      ['customer_gstin', customerGstin],
-      ['customer_contact', customerContact],
-      ['customer_email', customerEmail],
     ];
     requiredCustomer.forEach(([key, val]) => {
       if (!val || !val.trim()) {
@@ -433,7 +421,7 @@ const Designs = () => {
     if (customerEmail && !isEmailValid(customerEmail)) {
       validationErrors['customer_email'] = 'Please enter a valid email address.';
     }
-    if (!isContactValid(customerContact)) {
+    if (customerContact && !isContactValid(customerContact)) {
       validationErrors['customer_contact'] =
         'Contact must contain 10–15 digits (spaces/dashes allowed).';
     }
