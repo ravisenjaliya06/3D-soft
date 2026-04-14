@@ -321,6 +321,17 @@ class ScenePayloadSerializer(serializers.Serializer):
             if material:
                 catalog.materials.add(material)
 
+    def _clean_data(self: "ScenePayloadSerializer", data: Any) -> Any:
+        """
+        Recursively remove non-JSON serializable objects (like files)
+        from a dictionary or list.
+        """
+        if isinstance(data, dict):
+            return {k: self._clean_data(v) for k, v in data.items() if not hasattr(v, "read")}
+        if isinstance(data, list):
+            return [self._clean_data(v) for v in data if not hasattr(v, "read")]
+        return data
+
     def create(self: "ScenePayloadSerializer", validated_data: Dict[str, Any]) -> dict:
         request = self.context["request"]
         organization = request.user.selected_organization
@@ -356,6 +367,10 @@ class ScenePayloadSerializer(serializers.Serializer):
                         base64.b64decode(imgstr), name=f"{uuid4()}.{ext}"
                     )
                     item.pop("image", None)
+                elif image_data and not isinstance(image_data, str):
+                    # Handle binary file upload (from multipart/form-data)
+                    image_file = image_data
+                    item.pop("image", None)
 
                 catalog = DesignCatalog.objects.create(
                     organization=organization,
@@ -365,7 +380,7 @@ class ScenePayloadSerializer(serializers.Serializer):
                     parent=None,
                     is_library=is_library,
                     image=image_file,
-                    data=item.copy(),
+                    data=self._clean_data(item.copy()),
                 )
 
                 catalog.data["id"] = str(catalog.id)
