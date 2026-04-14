@@ -204,6 +204,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
     file: null as File | null,
   });
   const [isModelOpen, setIsModelOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
   const previewRendererRef = useRef<THREE.WebGLRenderer | null>(null);
 
   /** Change the active toolbar option and open its tools */
@@ -828,6 +829,8 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
         }
       });
 
+    let finalResult = [];
+
     if (category === 'Kitchen') {
       const baseItems = [
         {
@@ -895,27 +898,40 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
       const otherItems = cabinetItems
         .map((item: any) => item[0])
         .filter((item: any) => allowedTypes.includes(item.type));
-      return [...baseItems, ...otherItems, ...dynamicModels];
+      finalResult = [...baseItems, ...otherItems, ...dynamicModels];
+    } else {
+      // Combine static hardcoded items with dynamic ones from backend
+      let staticItems: any[] = [];
+      if (category === 'Sofa') staticItems = SOFA;
+      else if (category === 'Fridge') staticItems = FRIDGE;
+      else if (category === 'Stove') staticItems = STOVE;
+      else if (category === 'TV') staticItems = TV;
+      else if (category === 'Dinner Table') staticItems = DINNER_TABLE;
+      else if (category === 'Flower') staticItems = FLOWER;
+      else if (category === 'Microwave') staticItems = MICROWAVE;
+      else if (category === 'Study Table') staticItems = CENTER_STUDY_TABLE;
+
+      if (staticItems.length > 0) {
+        finalResult = [...staticItems, ...dynamicModels];
+      } else {
+        const otherItems = cabinetItems
+          .map((item: any) => item[0])
+          .filter(
+            (item: any) =>
+              item &&
+              allowedTypes.includes(item.type) &&
+              item.type !== 'model' &&
+              item.type !== OBJECT_TYPES.MODEL
+          );
+        finalResult = [...otherItems, ...dynamicModels];
+      }
     }
 
-    // Combine static hardcoded items with dynamic ones from backend
-    let staticItems: any[] = [];
-    if (category === 'Sofa') staticItems = SOFA;
-    else if (category === 'Fridge') staticItems = FRIDGE;
-    else if (category === 'Stove') staticItems = STOVE;
-    else if (category === 'TV') staticItems = TV;
-    else if (category === 'Dinner Table') staticItems = DINNER_TABLE;
-    else if (category === 'Flower') staticItems = FLOWER;
-    else if (category === 'Microwave') staticItems = MICROWAVE;
-    else if (category === 'Study Table') staticItems = CENTER_STUDY_TABLE;
+    if (!searchQuery) return finalResult;
 
-    if (staticItems.length > 0) {
-      return [...staticItems, ...dynamicModels];
-    }
-
-    return cabinetItems
-      .map((item: any) => item[0])
-      .filter((item: any) => allowedTypes.includes(item.type));
+    return finalResult.filter((item: any) =>
+      item.name.toLowerCase().includes(searchQuery.toLowerCase())
+    );
   };
 
   /** Open the Second Popup for selected furniture category */
@@ -942,6 +958,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
     }
 
     setSelectedFurnitureCategory(category === selectedFurnitureCategory ? null : category);
+    setSearchQuery(''); // Reset search when switching categories
     setAddPartPopup(false);
     setSelectedCabinetItem(null);
     setQuantityValue(1);
@@ -1169,9 +1186,8 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
                   type="text"
                   className={styles.searchInput}
                   placeholder="search items..."
-                  onChange={(e) => {
-                    console.log(e.target.value);
-                  }}
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
                 />
                 {modelSubmenuItems.some((m) => m.option === selectedFurnitureCategory) && (
                   <button
