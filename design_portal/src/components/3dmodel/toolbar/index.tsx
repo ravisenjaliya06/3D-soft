@@ -1424,12 +1424,22 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
                         placeholder="e.g. Modern Sofa"
                         borderColor="var(--primary-color-grey-2)"
                         fullWidth
+                        error={null}
                         sx={{
                           '& .MuiInputBase-root': {
                             width: '100% !important',
                           },
                           '& .MuiOutlinedInput-root': {
                             width: '100% !important',
+                            '&:hover .MuiOutlinedInput-notchedOutline': {
+                              borderColor: 'var(--primary-color) !important',
+                            },
+                            '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                              borderColor: 'var(--primary-color) !important',
+                            },
+                          },
+                          '& .MuiInputLabel-root.Mui-focused': {
+                            color: 'var(--primary-color) !important',
                           },
                         }}
                       />
@@ -1446,6 +1456,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
                         placeholder="0"
                         borderColor="var(--primary-color-grey-2)"
                         fullWidth
+                        error={null}
                         sx={{
                           '& .MuiInputBase-root': {
                             width: '100% !important',
@@ -1453,6 +1464,15 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
                           },
                           '& .MuiOutlinedInput-root': {
                             width: '100% !important',
+                            '&:hover .MuiOutlinedInput-notchedOutline': {
+                              borderColor: 'var(--primary-color) !important',
+                            },
+                            '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                              borderColor: 'var(--primary-color) !important',
+                            },
+                          },
+                          '& .MuiInputLabel-root.Mui-focused': {
+                            color: 'var(--primary-color) !important',
                           },
                         }}
                       />
@@ -1469,6 +1489,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
                         placeholder="0"
                         borderColor="var(--primary-color-grey-2)"
                         fullWidth
+                        error={null}
                         sx={{
                           '& .MuiInputBase-root': {
                             width: '100% !important',
@@ -1476,6 +1497,15 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
                           },
                           '& .MuiOutlinedInput-root': {
                             width: '100% !important',
+                            '&:hover .MuiOutlinedInput-notchedOutline': {
+                              borderColor: 'var(--primary-color) !important',
+                            },
+                            '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                              borderColor: 'var(--primary-color) !important',
+                            },
+                          },
+                          '& .MuiInputLabel-root.Mui-focused': {
+                            color: 'var(--primary-color) !important',
                           },
                         }}
                       />
@@ -1492,6 +1522,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
                         placeholder="0"
                         borderColor="var(--primary-color-grey-2)"
                         fullWidth
+                        error={null}
                         sx={{
                           '& .MuiInputBase-root': {
                             width: '100% !important',
@@ -1499,6 +1530,15 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
                           },
                           '& .MuiOutlinedInput-root': {
                             width: '100% !important',
+                            '&:hover .MuiOutlinedInput-notchedOutline': {
+                              borderColor: 'var(--primary-color) !important',
+                            },
+                            '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                              borderColor: 'var(--primary-color) !important',
+                            },
+                          },
+                          '& .MuiInputLabel-root.Mui-focused': {
+                            color: 'var(--primary-color) !important',
                           },
                         }}
                       />

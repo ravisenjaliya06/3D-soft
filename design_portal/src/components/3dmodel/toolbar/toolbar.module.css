@@ -134,11 +134,9 @@
   border-radius: 0.6rem;
 
   &:hover {
-    background: linear-gradient(
-      90deg,
-      rgba(204, 188, 255, 0.2) 0%,
-      rgba(204, 188, 255, 0.4) 87.74%
-    );
+    background: linear-gradient(90deg,
+        rgba(204, 188, 255, 0.2) 0%,
+        rgba(204, 188, 255, 0.4) 87.74%);
     opacity: 0.8;
     transform: translateY(-2px);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
@@ -423,7 +421,7 @@
   height: 1.6rem;
   padding: 0rem 0rem 0rem 2.5rem;
   background: var(--designpage-background-color);
-  border-radius: 4rem;
+  border-radius: 0.5rem;
   font-size: 0.5rem;
   font-family: var(--font-family);
   color: var(--primary-color);
@@ -856,7 +854,7 @@
 }
 
 /* Ensure the wrapper div from InputField also doesn't force width */
-.formGrid > div[class*='main'] {
+.formGrid>div[class*='main'] {
   width: 100% !important;
   max-width: none !important;
   margin: 0 !important;
@@ -891,7 +889,7 @@
   min-height: 6rem;
   padding: 1rem;
   border: 2px dashed rgba(148, 163, 184, 0.3);
-  border-radius: 1rem;
+  border-radius: 0.2rem;
   background: #fcfdfe;
   color: var(--primary-color);
   transition: all 0.2s ease;
@@ -944,7 +942,7 @@
 .btnPrimary {
   min-width: 8rem;
   height: 2.5rem;
-  border-radius: 0.75rem;
+  border-radius: 0.2rem;
   border: none;
   font-family: var(--font-family);
   font-size: 0.75rem;
@@ -1359,7 +1357,7 @@
   padding: 0.5rem 0.75rem 0.5rem 2rem;
   background: var(--designpage-background-color);
   border: 0.063rem solid var(--text-gray);
-  border-radius: 4rem;
+  border-radius: 0.5rem;
   font-size: 0.6rem;
   font-family: var(--font-family);
   color: var(--primary-color);
@@ -1387,7 +1385,7 @@
   align-items: center;
   justify-content: center;
   padding: 0.25rem;
-  border-radius: 0.35rem;
+  border-radius: 0.5rem;
   transition: all 0.2s;
   flex-shrink: 0;
 }
@@ -1678,8 +1676,7 @@
 }
 
 .arrowButtons:hover img {
-  filter: brightness(0) saturate(100%) invert(16%) sepia(40%) saturate(1800%) hue-rotate(233deg)
-    brightness(95%) contrast(95%);
+  filter: brightness(0) saturate(100%) invert(16%) sepia(40%) saturate(1800%) hue-rotate(233deg) brightness(95%) contrast(95%);
 }
 
 .createpopupLShape {
