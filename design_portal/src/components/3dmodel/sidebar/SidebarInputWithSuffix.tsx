@@ -5,21 +5,21 @@ interface SidebarInputWithSuffixProps extends Omit<
   'className'
 > {
   wrapperClassName?: string;
-  inputClassName?: string;
+  inputStyleCSS?: string;
   suffix?: string;
   suffixClassName?: string;
 }
 
 const SidebarInputWithSuffix: React.FC<SidebarInputWithSuffixProps> = ({
   wrapperClassName,
-  inputClassName,
+  inputStyleCSS,
   suffix,
   suffixClassName,
   ...inputProps
 }) => {
   return (
     <div className={wrapperClassName}>
-      <input {...inputProps} className={inputClassName} />
+      <input {...inputProps} className={inputStyleCSS} />
       {suffix ? (
         <span
           className={
