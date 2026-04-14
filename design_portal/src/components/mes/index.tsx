@@ -1,3 +1,4 @@
+import { hideFullScreenLoader, showFullScreenLoader } from '@/components/3dmodel/handler/items';
 import Header from '@/components/header/header';
 import styles from '@/components/mes/mes.module.css';
 import Sidebar from '@/components/sidebar/sidebar';
@@ -68,6 +69,7 @@ const Mes = () => {
       setLoading(true);
       setError(null);
       setSelectedDesign(design);
+      showFullScreenLoader('Loading design details...');
 
       // First, trigger nesting API call
       try {
@@ -96,14 +98,15 @@ const Mes = () => {
       }
 
       if (latestVersionId) {
-        router.push(`/design/${design.id}/${latestVersionId}/nesting`);
+        await router.push(`/design/${design.id}/${latestVersionId}/nesting`);
       } else {
-        router.push(`/design/${design.id}`);
+        await router.push(`/design/${design.id}`);
       }
     } catch (err) {
       setError('No any designs for nesting.');
       console.error('Error fetching sheets:', err);
     } finally {
+      hideFullScreenLoader();
       setLoading(false);
     }
   };

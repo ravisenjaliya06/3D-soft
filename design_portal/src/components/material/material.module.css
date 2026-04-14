@@ -567,6 +567,11 @@
   animation: slideInUp 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
+.createCompanyPopup {
+  width: 23rem;
+  padding: 2rem;
+}
+
 .createicon {
   width: 3.5rem;
   height: 3.5rem;
@@ -605,6 +610,16 @@
 
 .createinputGroup {
   margin-bottom: 2rem;
+  width: 100%;
+}
+
+.createinputGroup :global(.MuiOutlinedInput-root) {
+  height: 3rem;
+}
+
+.createinputGroup :global(.MuiInputBase-input) {
+  height: 3rem;
+  box-sizing: border-box;
 }
 
 .createButtonGrop {
@@ -613,12 +628,16 @@
   gap: 1rem;
 }
 
+.createCompanyButtonGrop {
+  grid-template-columns: 1fr 1fr;
+}
+
 .createcontinueButton {
-  height: 3.25rem;
+  height: 3rem;
   border-radius: 0.75rem;
   border: none;
   font-weight: 600;
-  font-size: 1rem;
+  font-size: 0.95rem;
   cursor: pointer;
   transition: all 0.3s ease;
   background: var(--gradient-primary);
@@ -632,13 +651,13 @@
 }
 
 .cancelcreateButton {
-  height: 3.25rem;
+  height: 3rem;
   border-radius: 0.75rem;
   border: 1px solid var(--draft-border-color);
   background: var(--primary-white);
   color: var(--subtext-color);
   font-weight: 600;
-  font-size: 1rem;
+  font-size: 0.95rem;
   cursor: pointer;
   transition: all 0.3s ease;
 }
@@ -661,6 +680,54 @@
   border: 1px solid var(--draft-border-color);
   border-radius: 0.75rem;
   background: var(--primary-white);
+}
+
+.textureDropdownTrigger {
+  width: 100%;
+  min-height: 2.8rem;
+  border: 0.063rem solid var(--draft-border-color);
+  border-radius: 0.75rem;
+  background: var(--primary-white);
+  color: var(--soft-dark-grey);
+  font-size: 0.9rem;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 0.9rem;
+  cursor: pointer;
+  transition: border-color 0.2s ease;
+}
+
+.textureDropdownTrigger:hover {
+  border-color: var(--primary-color-grey-2);
+}
+
+.textureDropdownPanel {
+  width: 100%;
+  border: 1px solid var(--draft-border-color);
+  border-radius: 0.75rem;
+  background: var(--primary-white);
+  padding: 0.5rem;
+}
+
+.textureDropdownArrow {
+  color: var(--subtext-color);
+  transition: transform 0.2s ease;
+}
+
+.textureDropdownArrow.open {
+  transform: rotate(180deg);
+}
+
+.textureGridDropdown {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.75rem;
+  width: 100%;
+  max-height: 21rem;
+  overflow-y: auto;
+  padding-right: 0.2rem;
 }
 
 .textureItem {

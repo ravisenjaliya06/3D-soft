@@ -111,7 +111,15 @@ const Settings = () => {
         API_ENDPOINT.GET_ORGANIZATION_USERS
       );
       if (response.status === 200) {
-        const membersData = response.data.users;
+        const membersData = response.data.users.map((member) => {
+          const emailPrefix = member.email?.split('@')?.[0]?.trim();
+          const displayName =
+            member.name?.trim() || member.username?.trim() || emailPrefix || 'N/A';
+          return {
+            ...member,
+            displayName,
+          };
+        });
         setMembers(membersData);
       } else {
         console.error('Failed to fetch members:', response.status);
@@ -610,19 +618,6 @@ const Settings = () => {
     },
   ];
 
-  const EdgeBandingInputFields = [
-    {
-      label: 'Edge Banding',
-      type: 'number',
-      placeholder: 'Edge Banding',
-      onChange: (e: ChangeEvent<HTMLInputElement>) =>
-        setEdgeBandingDistance(parseInt(e.target.value)),
-      error: '',
-      minField: true,
-      value: edgeBandingDistance,
-    },
-  ];
-
   const firstfieldsgroup = [
     {
       label: 'User Name',
@@ -632,6 +627,7 @@ const Settings = () => {
       onChange: (e: ChangeEvent<HTMLInputElement>) => setUsername(e.target.value),
       error: '',
       mediumField: true,
+      fullWidth: true,
       readOnly: true,
       InputProps: {
         readOnly: true,
@@ -646,6 +642,7 @@ const Settings = () => {
       onChange: (e: ChangeEvent<HTMLInputElement>) => setEmail(e.target.value),
       error: emailError,
       mediumField: true,
+      fullWidth: true,
       readOnly: true,
       InputProps: {
         readOnly: true,
@@ -663,6 +660,7 @@ const Settings = () => {
       onChange: (e: ChangeEvent<HTMLInputElement>) => setName(e.target.value),
       error: nameError,
       mediumField: true,
+      fullWidth: true,
     },
     {
       label: 'Phone Number',
@@ -672,6 +670,7 @@ const Settings = () => {
       onChange: (e: ChangeEvent<HTMLInputElement>) => setNumber(e.target.value),
       error: phoneError,
       mediumField: true,
+      fullWidth: true,
     },
   ];
 
@@ -806,19 +805,6 @@ const Settings = () => {
       mediumField: true,
     },
   ];
-
-  //smit|Harsh only for design not add function
-  const [edgeBandingEnabled, setEdgeBandingEnabled] = useState(true);
-  const [edgeBandingDisabled, setEdgeBandingDisabled] = useState(false);
-
-  const handleEdgeBandingToggle = () => {
-    if (edgeBandingDisabled) return;
-    setEdgeBandingEnabled((prev) => !prev);
-  };
-
-  useEffect(() => {
-    setEdgeBandingDisabled(false);
-  }, []);
 
   useEffect(() => {
     const handleOutsideClick = (event: Event) => {
@@ -1014,7 +1000,9 @@ const Settings = () => {
       </div>
       <div className={styles.rightside}>
         <Header isBorderRadius={true} dashboardName="Settings" />
-        <div className={styles.mainContent}>
+        <div
+          className={`${styles.mainContent} ${activeMenu === 'profile' ? styles.mainContentProfile : ''}`}
+        >
           {/* ─── Sidebar Menu ─── */}
           <div className={styles.profileMenu}>
             <div className={styles.menuItemsEmail}>
@@ -1102,7 +1090,9 @@ const Settings = () => {
           </div>
 
           {/* ─── Main Content Area ─── */}
-          <div className={styles.profile}>
+          <div
+            className={`${styles.profile} ${activeMenu === 'profile' ? styles.profileNoScroll : ''}`}
+          >
             {/* 1. Profile Tab */}
             {activeMenu === 'profile' && (
               <>
@@ -1130,12 +1120,22 @@ const Settings = () => {
                 <form className={styles.form} onSubmit={(e) => e.preventDefault()}>
                   <div className={styles.inputGroup}>
                     {firstfieldsgroup.map((field, index) => (
-                      <InputField key={index} {...field} borderColor="#e2e8f0" />
+                      <InputField
+                        key={index}
+                        className={styles.profileInputField}
+                        {...field}
+                        borderColor="#e2e8f0"
+                      />
                     ))}
                   </div>
                   <div className={styles.inputGroup}>
                     {secordfieldsgroup.map((field, index) => (
-                      <InputField key={index} {...field} borderColor="#e2e8f0" />
+                      <InputField
+                        key={index}
+                        className={styles.profileInputField}
+                        {...field}
+                        borderColor="#e2e8f0"
+                      />
                     ))}
                   </div>
                   <button className={styles.saveButton} onClick={handleSave}>
@@ -1419,7 +1419,7 @@ const Settings = () => {
             {/* 3. Design Setting Tab */}
             {activeMenu === 'Design setting' && (
               <>
-                <div className={styles.heading_containar}>
+                <div className={`${styles.heading_containar} ${styles.designSettingsMainTitle}`}>
                   <h4>Set your default design preferences</h4>
                 </div>
 
@@ -1504,7 +1504,8 @@ const Settings = () => {
                       ))}
                     </div>
                   </div>
-
+                </div>
+                <div className={`${styles.mainContentminifix} ${styles.lastbox}`}>
                   <div className={styles.firstbox}>
                     <p>Camlock Screw Hole</p>
                     <div className={styles.minifixfieldsgroupdesign}>
@@ -1516,16 +1517,6 @@ const Settings = () => {
                 </div>
 
                 <div className={styles.lastbox}>
-                  <div className="flex items-center gap-[2rem]" style={{ marginBottom: '1rem' }}>
-                    <p style={{ margin: 0 }}>Edge Banding</p>
-                    <div
-                      onClick={handleEdgeBandingToggle}
-                      className={`${styles.toggleSwitch} ${edgeBandingEnabled ? styles.active : ''} ${edgeBandingDisabled ? styles.disabled : ''}`}
-                    >
-                      <div className={styles.toggleKnob} />
-                    </div>
-                  </div>
-
                   <div
                     className={styles.lastboxindiv}
                     style={{
@@ -1536,11 +1527,6 @@ const Settings = () => {
                       gap: '2rem',
                     }}
                   >
-                    <div className={styles.minifixfieldsgroupdesign}>
-                      {EdgeBandingInputFields.map((field, index) => (
-                        <InputField key={index} {...field} borderColor="#e2e8f0" />
-                      ))}
-                    </div>
                     <button
                       className={styles.design_profile_save_button}
                       onClick={handleSaveDesignSettings}
@@ -1610,7 +1596,13 @@ const Settings = () => {
                       <tbody>
                         {filteredMembers.map((member) => (
                           <tr key={member.id}>
-                            <td style={{ fontWeight: 500 }}>{member.name}</td>
+                            <td style={{ fontWeight: 500 }}>
+                              {member.displayName ||
+                                member.name ||
+                                member.username ||
+                                member.email?.split('@')?.[0] ||
+                                'N/A'}
+                            </td>
                             <td className={styles.emailbox}>{member.email}</td>
                             <td className={styles.rolebox}>
                               <div className={styles.roleContainer}>
@@ -1706,18 +1698,8 @@ const Settings = () => {
             {addMambarPopup && (
               <div className={styles.createpopupOverlay}>
                 <div className={styles.createpopup}>
-                  <div
-                    className={styles.firstpart}
-                    style={{
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'center',
-                      marginBottom: '1.5rem',
-                    }}
-                  >
-                    <h5 className={styles.addmembartitle} style={{ margin: 0 }}>
-                      Invite New Member
-                    </h5>
+                  <div className={styles.invitePopupHeader}>
+                    <h5 className={styles.addmembartitle}>Invite New Member</h5>
                     <img
                       src={assets.addmemberclose}
                       className={styles.createclose}
@@ -1743,11 +1725,12 @@ const Settings = () => {
                       <div className={styles.createinputGroup}>
                         {addmemberfields.map((field, index) => (
                           <InputField
-                            className={styles.inputField}
+                            className={styles.popupInputField}
                             key={index}
                             borderColor="#e2e8f0"
                             {...field}
                             error=""
+                            fullWidth={true}
                             mediumField={true}
                           />
                         ))}
@@ -1756,26 +1739,17 @@ const Settings = () => {
                       <p className={styles.membertitle}>Assign Roles</p>
 
                       <div className={styles.checkboxgroup}>
-                        {['Account Manager', 'Mes Editor', 'Designer', 'Catalog Manager'].map(
+                        {['Account Manager', 'Mes Editor', 'Catalog Manager', 'Designer'].map(
                           (role) => (
-                            <div
-                              key={role}
-                              style={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                marginBottom: '0.5rem',
-                              }}
-                            >
+                            <label key={role} htmlFor={role} className={styles.roleItem}>
                               <input
                                 type="checkbox"
                                 id={role}
                                 onChange={handleCheckboxChange}
-                                style={{ width: '1rem', height: '1rem', accentColor: '#392579' }}
+                                className={styles.roleCheckbox}
                               />
-                              <label htmlFor={role} style={{ marginLeft: '0.5rem' }}>
-                                {role}
-                              </label>
-                            </div>
+                              <span>{role}</span>
+                            </label>
                           )
                         )}
                       </div>

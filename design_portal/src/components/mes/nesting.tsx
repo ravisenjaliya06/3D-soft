@@ -1,3 +1,4 @@
+import { hideFullScreenLoader, showFullScreenLoader } from '@/components/3dmodel/handler/items';
 import { RootState } from '@/components/3dmodel/store';
 import Header from '@/components/header/header';
 import Sidebar from '@/components/sidebar/sidebar';
@@ -90,6 +91,7 @@ const Nesting = () => {
   const handleGenerateBOM = async () => {
     if (isGeneratingBOM) return;
     setIsGeneratingBOM(true);
+    showFullScreenLoader('Generating BOM data...');
     try {
       // 1. Fetch Design Details
       const designResponse: any = await CommonService.get(
@@ -615,6 +617,7 @@ const Nesting = () => {
       console.error(err);
       alert('Failed to generate BOM Data.');
     } finally {
+      hideFullScreenLoader();
       setIsGeneratingBOM(false);
     }
   };
@@ -622,6 +625,7 @@ const Nesting = () => {
   const handleGenerateQuotation = async () => {
     if (isGeneratingQuote) return;
     setIsGeneratingQuote(true);
+    showFullScreenLoader('Generating quotation...');
     try {
       // 0. Fetch Organization Details for Company/Banking Info
       let organizationDetails: any = null;
@@ -1511,6 +1515,7 @@ const Nesting = () => {
       console.error(err);
       alert('Failed to generate Quotation Data.');
     } finally {
+      hideFullScreenLoader();
       setIsGeneratingQuote(false);
     }
   };
@@ -1536,7 +1541,7 @@ const Nesting = () => {
                     className={styles.viewDetailsButton}
                     style={{ marginRight: '1rem', backgroundColor: '#392579', color: 'white' }}
                   >
-                    {isGeneratingQuote ? 'Generating...' : 'Quotation'}
+                    Quotation
                   </button>
                   {/* ✅ BOM Data Button */}
                   <button
@@ -1545,13 +1550,14 @@ const Nesting = () => {
                     className={styles.viewDetailsButton}
                     style={{ marginRight: '1rem', backgroundColor: '#392579', color: 'white' }}
                   >
-                    {isGeneratingBOM ? 'Generating...' : 'BOM Data'}
+                    BOM Data
                   </button>
                   <button
                     onClick={async () => {
                       if (xmlDownloadInFlightRef.current) return;
                       xmlDownloadInFlightRef.current = true;
                       setIsDownloadingXML(true);
+                      showFullScreenLoader('Preparing XMLs...');
                       try {
                         const response: any = await CommonService.put(
                           API_ENDPOINT.DOWNLOAD_NESTING_PDF(design_id) +
@@ -1573,6 +1579,7 @@ const Nesting = () => {
                         alert('Failed to download XMLs');
                       } finally {
                         xmlDownloadInFlightRef.current = false;
+                        hideFullScreenLoader();
                         setIsDownloadingXML(false);
                       }
                     }}
@@ -1580,15 +1587,20 @@ const Nesting = () => {
                     className={styles.viewDetailsButton}
                     style={{ marginRight: '1rem', backgroundColor: '#392579', color: 'white' }}
                   >
-                    {isDownloadingXML ? 'Gathering XMLs...' : 'XMLs'}
+                    XMLs
                   </button>
                   {/* ✅ View Details Button */}
                   <button
-                    onClick={() => {
-                      if (design_id && version_id) {
-                        router.push(`/design/${design_id}/${version_id}/nesting-details`);
-                      } else {
-                        router.push(`/design/${design_id}`);
+                    onClick={async () => {
+                      showFullScreenLoader('Loading view details...');
+                      try {
+                        if (design_id && version_id) {
+                          await router.push(`/design/${design_id}/${version_id}/nesting-details`);
+                        } else {
+                          await router.push(`/design/${design_id}`);
+                        }
+                      } finally {
+                        hideFullScreenLoader();
                       }
                     }}
                     className={styles.viewDetailsButton}
