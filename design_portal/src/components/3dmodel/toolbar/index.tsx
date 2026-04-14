@@ -18,9 +18,7 @@ import React, { Suspense, useEffect, useRef, useState } from 'react';
 import { useSelector } from 'react-redux';
 import { toast } from 'react-toastify';
 import * as THREE from 'three';
-import { gettingDesignID } from '../utils/routeIds';
 import { removeExistingLines } from '../design/index';
-import { Center, Bounds } from "@react-three/drei";
 import {
   addDoorOnInvisibleBox,
   addDoubleDoorOnInvisibleBox,
@@ -56,14 +54,13 @@ import {
 } from '../store/dataSlice';
 import { selectIsLatestVersion } from '../store/selectors';
 import { CustomToast } from '../utils/CustomToast';
+import { gettingDesignID } from '../utils/routeIds';
 import { Datastate, IconMap } from './interface';
 import styles from './toolbar.module.css';
 
-
-
 const GltfModel = ({
   url,
-  onLoad
+  onLoad,
 }: {
   url: string;
   onLoad?: (dims: { width: number; height: number; depth: number }) => void;
@@ -102,15 +99,13 @@ const GltfModel = ({
 const ModelViewerComponent = ({
   file,
   onCanvasReady,
-  onModelLoad
+  onModelLoad,
 }: {
   file: File | null;
   onCanvasReady: (gl: THREE.WebGLRenderer) => void;
   onModelLoad: (dims: { width: number; height: number; depth: number }) => void;
 }) => {
   const [url, setUrl] = useState<string | null>(null);
-  const orbitControlsRef = useRef<any>(null);
-
   useEffect(() => {
     if (!file) {
       setUrl(null);
@@ -120,11 +115,6 @@ const ModelViewerComponent = ({
     setUrl(objectUrl);
     return () => URL.revokeObjectURL(objectUrl);
   }, [file]);
-
-  const handleReset = () => {
-    if (orbitControlsRef.current) {
-    }
-  };
 
   return (
     <div className={styles.modelViewerPreview}>
@@ -238,24 +228,23 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
     setUploadData({ name: '', width: 0, height: 0, depth: 0, file: null });
   };
 
-  const handleModelLoad = React.useCallback((dims: { width: number; height: number; depth: number }) => {
-    setUploadData((prev) => {
-      // Only update if values have actually changed to prevent render loops
-      if (
-        prev.width === dims.width &&
-        prev.height === dims.height &&
-        prev.depth === dims.depth
-      ) {
-        return prev;
-      }
-      return {
-        ...prev,
-        width: dims.width,
-        height: dims.height,
-        depth: dims.depth,
-      };
-    });
-  }, []);
+  const handleModelLoad = React.useCallback(
+    (dims: { width: number; height: number; depth: number }) => {
+      setUploadData((prev) => {
+        // Only update if values have actually changed to prevent render loops
+        if (prev.width === dims.width && prev.height === dims.height && prev.depth === dims.depth) {
+          return prev;
+        }
+        return {
+          ...prev,
+          width: dims.width,
+          height: dims.height,
+          depth: dims.depth,
+        };
+      });
+    },
+    []
+  );
 
   const handleUpload = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -290,14 +279,17 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
       const blob = await (await fetch(thumbnailBase64)).blob();
       formData.append('items[0]image', blob, `${uploadData.name}_thumbnail.png`);
     }
-    formData.append('items[0]data', JSON.stringify({
-      category: selectedFurnitureCategory,
-      dimensions: {
-        width: Number(uploadData.width) / 100, // Convert CM to Meters
-        height: Number(uploadData.height) / 100,
-        depth: Number(uploadData.depth) / 100,
-      }
-    }));
+    formData.append(
+      'items[0]data',
+      JSON.stringify({
+        category: selectedFurnitureCategory,
+        dimensions: {
+          width: Number(uploadData.width) / 100, // Convert CM to Meters
+          height: Number(uploadData.height) / 100,
+          depth: Number(uploadData.depth) / 100,
+        },
+      })
+    );
 
     formData.append('items[0]material[0]name', `${uploadData.name} Material`);
     formData.append('items[0]material[0]type', 'Miscellaneous');
@@ -406,7 +398,11 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
         } else {
           // Check for dynamic models with dimensions in data
           try {
-            const itemData = item.data ? (typeof item.data === 'string' ? JSON.parse(item.data) : item.data) : null;
+            const itemData = item.data
+              ? typeof item.data === 'string'
+                ? JSON.parse(item.data)
+                : item.data
+              : null;
             if (itemData?.dimensions) {
               targetSize = itemData.dimensions;
             }
@@ -1024,8 +1020,9 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
             <div className={styles.activegroup}>
               {activeOption !== 'furniture' && (
                 <div
-                  className={`${styles.activegroup_header} ${options.some((item) => item.option === activeOption) ? styles.no_arrow : ''
-                    }`}
+                  className={`${styles.activegroup_header} ${
+                    options.some((item) => item.option === activeOption) ? styles.no_arrow : ''
+                  }`}
                 >
                   {!options.some((item) => item.option === activeOption) && (
                     <img src={assets.back} onClick={handleback} alt="Back" />
@@ -1056,8 +1053,9 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
                       </div>
                       <span>{option}</span>
                       <div
-                        className={`${styles.left_toolbarlist_arrow} ${option === 'Furniture' ? styles.arrowAlways : styles.arrowHidden
-                          }`}
+                        className={`${styles.left_toolbarlist_arrow} ${
+                          option === 'Furniture' ? styles.arrowAlways : styles.arrowHidden
+                        }`}
                       >
                         <img src={assets.left_arrow} alt="arrow" />
                       </div>
@@ -1071,8 +1069,9 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
                   {furnitureTools.map(({ option, icon, isExpandable }) => (
                     <React.Fragment key={option}>
                       <div
-                        className={`${styles.furnitureItemslist} ${selectedFurnitureCategory === option ? styles.activeItem : ''
-                          } ${isExpandable && isModelOpen ? styles.activeItem : ''}`}
+                        className={`${styles.furnitureItemslist} ${
+                          selectedFurnitureCategory === option ? styles.activeItem : ''
+                        } ${isExpandable && isModelOpen ? styles.activeItem : ''}`}
                         onClick={() => handleFurnitureCategoryClick(option)}
                         style={{ cursor: 'pointer' }}
                       >
@@ -1104,8 +1103,9 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
                           {modelSubmenuItems.map((subItem) => (
                             <div
                               key={subItem.option}
-                              className={`${styles.dropdownItem} ${selectedFurnitureCategory === subItem.option ? styles.active : ''
-                                }`}
+                              className={`${styles.dropdownItem} ${
+                                selectedFurnitureCategory === subItem.option ? styles.active : ''
+                              }`}
                               onClick={() => handleFurnitureCategoryClick(subItem.option)}
                             >
                               <div className={styles.activegroup_tools}>
@@ -1155,20 +1155,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
           >
             <div className={styles.submenuHeader}>
               <div className={styles.submenuHeaderTitle}>
-                <div className={styles.submenuHeaderMain}>
-                  <h3 className={styles.headerTitle}>{selectedFurnitureCategory}</h3>
-                  {modelSubmenuItems.some((m) => m.option === selectedFurnitureCategory) && (
-                    <button
-                      className={`${styles.addModelBtn} ${styles.headerAddBtn}`}
-                      onClick={() => setShowUploadPopup(true)}
-                      title="Add new model"
-                      type="button"
-                    >
-                      <img src={assets.plusIcon} alt="add" />
-                      <span>Add</span>
-                    </button>
-                  )}
-                </div>
+                <h3 className={styles.headerTitle}>{selectedFurnitureCategory}</h3>
                 <img
                   src={assets.close}
                   alt="close"
@@ -1186,6 +1173,16 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
                     console.log(e.target.value);
                   }}
                 />
+                {modelSubmenuItems.some((m) => m.option === selectedFurnitureCategory) && (
+                  <button
+                    className={styles.searchAddBtn}
+                    onClick={() => setShowUploadPopup(true)}
+                    title="Add new model"
+                    type="button"
+                  >
+                    <img src={assets.plusIcon} alt="add" />
+                  </button>
+                )}
               </div>
               <img
                 src={assets.tool_part_line}
@@ -1223,17 +1220,17 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
                           ? item.image
                           : `${process.env.NEXT_PUBLIC_PUBLIC_API}${item.image}`
                         : (item.type === OBJECT_TYPES.CUPBOARD || item.type === 'Cabinet'
-                          ? `/assets/3dmodel/sidebar/${formatEnumLabel(item.name)}.png`
-                          : iconMap[
-                          item.type === PART_TYPES.PLANK
-                            ? formatEnumLabel(item.name)
-                            : item.type
-                          ]) || assets.cabinet
+                            ? `/assets/3dmodel/sidebar/${formatEnumLabel(item.name)}.png`
+                            : iconMap[
+                                item.type === PART_TYPES.PLANK
+                                  ? formatEnumLabel(item.name)
+                                  : item.type
+                              ]) || assets.cabinet
                     }
                     onError={(e) => {
                       const fallback =
                         iconMap[
-                        item.type === PART_TYPES.PLANK ? formatEnumLabel(item.name) : item.type
+                          item.type === PART_TYPES.PLANK ? formatEnumLabel(item.name) : item.type
                         ] || assets.cabinet;
                       e.currentTarget.src = fallback;
                       e.currentTarget.onerror = null;
@@ -1252,7 +1249,6 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
           </div>
         )}
       </aside>
-
       {addPartPopup && selectedCabinetItem && (
         <div
           className={styles.createpopupOverlay}
@@ -1273,7 +1269,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
           <div
             className={
               selectedCabinetItem.type === PART_TYPES.L_SHAPE_OBJECT ||
-                selectedCabinetItem.type === PART_TYPES.U_SHAPE_OBJECT
+              selectedCabinetItem.type === PART_TYPES.U_SHAPE_OBJECT
                 ? styles.createpopupLShape
                 : styles.createpopup
             }
@@ -1291,7 +1287,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
               onClick={closePopup}
             />
             {selectedCabinetItem.type === PART_TYPES.L_SHAPE_OBJECT ||
-              selectedCabinetItem.type === PART_TYPES.U_SHAPE_OBJECT ? (
+            selectedCabinetItem.type === PART_TYPES.U_SHAPE_OBJECT ? (
               <div className={styles.arrowContainer}>
                 <div className={styles.arrowButtonsContainer}>
                   <button
@@ -1360,7 +1356,6 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
           </div>
         </div>
       )}
-
       {showUploadPopup && (
         <div className={styles.uploadPopupOverlay} onClick={() => closePopup()}>
           <div className={styles.premiumUploadPopup} onClick={(e) => e.stopPropagation()}>
@@ -1405,11 +1400,17 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
                           }}
                           className={styles.hiddenInput}
                         />
-                        <img src={assets.progress_upload} alt="upload" style={{ width: '1.5rem', opacity: 0.8 }} />
+                        <img
+                          src={assets.progress_upload}
+                          alt="upload"
+                          style={{ width: '1.5rem', opacity: 0.8 }}
+                        />
                         <label htmlFor="glb-upload" className={styles.fileBoxLabel}>
                           {uploadData.file ? uploadData.file.name : 'Click to browse GLB file'}
                         </label>
-                        {!uploadData.file && <p className={styles.fileBoxHint}>Max file size: 20MB</p>}
+                        {!uploadData.file && (
+                          <p className={styles.fileBoxHint}>Max file size: 20MB</p>
+                        )}
                       </div>
                     </div>
 
@@ -1417,7 +1418,9 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
                       <InputField
                         label="Model Display Name*"
                         value={uploadData.name}
-                        onChange={(e: any) => setUploadData({ ...uploadData, name: e.target.value })}
+                        onChange={(e: any) =>
+                          setUploadData({ ...uploadData, name: e.target.value })
+                        }
                         placeholder="e.g. Modern Sofa"
                         borderColor="var(--primary-color-grey-2)"
                         fullWidth
@@ -1427,7 +1430,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
                           },
                           '& .MuiOutlinedInput-root': {
                             width: '100% !important',
-                          }
+                          },
                         }}
                       />
                     </div>
@@ -1437,18 +1440,20 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
                         label="Width (cm)"
                         type="number"
                         value={uploadData.width === 0 ? '' : uploadData.width}
-                        onChange={(e: any) => setUploadData({ ...uploadData, width: Number(e.target.value) })}
+                        onChange={(e: any) =>
+                          setUploadData({ ...uploadData, width: Number(e.target.value) })
+                        }
                         placeholder="0"
                         borderColor="var(--primary-color-grey-2)"
                         fullWidth
                         sx={{
                           '& .MuiInputBase-root': {
                             width: '100% !important',
-                            minWidth: 'unset !important'
+                            minWidth: 'unset !important',
                           },
                           '& .MuiOutlinedInput-root': {
                             width: '100% !important',
-                          }
+                          },
                         }}
                       />
                     </div>
@@ -1458,18 +1463,20 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
                         label="Height (cm)"
                         type="number"
                         value={uploadData.height === 0 ? '' : uploadData.height}
-                        onChange={(e: any) => setUploadData({ ...uploadData, height: Number(e.target.value) })}
+                        onChange={(e: any) =>
+                          setUploadData({ ...uploadData, height: Number(e.target.value) })
+                        }
                         placeholder="0"
                         borderColor="var(--primary-color-grey-2)"
                         fullWidth
                         sx={{
                           '& .MuiInputBase-root': {
                             width: '100% !important',
-                            minWidth: 'unset !important'
+                            minWidth: 'unset !important',
                           },
                           '& .MuiOutlinedInput-root': {
                             width: '100% !important',
-                          }
+                          },
                         }}
                       />
                     </div>
@@ -1479,18 +1486,20 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
                         label="Depth (cm)"
                         type="number"
                         value={uploadData.depth === 0 ? '' : uploadData.depth}
-                        onChange={(e: any) => setUploadData({ ...uploadData, depth: Number(e.target.value) })}
+                        onChange={(e: any) =>
+                          setUploadData({ ...uploadData, depth: Number(e.target.value) })
+                        }
                         placeholder="0"
                         borderColor="var(--primary-color-grey-2)"
                         fullWidth
                         sx={{
                           '& .MuiInputBase-root': {
                             width: '100% !important',
-                            minWidth: 'unset !important'
+                            minWidth: 'unset !important',
                           },
                           '& .MuiOutlinedInput-root': {
                             width: '100% !important',
-                          }
+                          },
                         }}
                       />
                     </div>
@@ -1526,7 +1535,8 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
             </div>
           </div>
         </div>
-      )}    </>
+      )}{' '}
+    </>
   );
 };
 

@@ -321,13 +321,17 @@ class ScenePayloadSerializer(serializers.Serializer):
             if material:
                 catalog.materials.add(material)
 
-    def _clean_data(self: "ScenePayloadSerializer", data: Any) -> Any:
+    def _clean_data(self: "ScenePayloadSerializer", data: object) -> object:
         """
         Recursively remove non-JSON serializable objects (like files)
         from a dictionary or list.
         """
         if isinstance(data, dict):
-            return {k: self._clean_data(v) for k, v in data.items() if not hasattr(v, "read")}
+            return {
+                k: self._clean_data(v)
+                for k, v in data.items()
+                if not hasattr(v, "read")
+            }
         if isinstance(data, list):
             return [self._clean_data(v) for v in data if not hasattr(v, "read")]
         return data
