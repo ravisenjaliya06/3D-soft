@@ -69,7 +69,6 @@ import { findMesh, formatEnumLabel } from '../sceneCreator/utils';
 import { DistanceInput } from './DistanceInput';
 import { Axis, Field, TextureGrain } from './interface';
 import { MaterialChangePopup } from './MaterialChangePopup';
-import SidebarInput from './SidebarInput';
 import SidebarInputWithSuffix from './SidebarInputWithSuffix';
 
 const Sidebar: React.FC = () => {
@@ -2103,15 +2102,21 @@ const Sidebar: React.FC = () => {
                               <p className="mb-[0rem] text-[0.6rem] font-[700] text-[var(--primary-color)]">
                                 Height
                               </p>
-                              <SidebarInput
+                              <SidebarInputWithSuffix
+                                wrapperClassName="relative w-[5rem]"
+                                inputClassName="h-[1.2rem] w-[5rem] [appearance:textfield] rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                                suffix="MM"
+                                type="number"
                                 min={1}
                                 step="1"
                                 value={dimensionsUI.height ?? ''}
-                                onUpdate={(val) =>
-                                  handleDimensionChange('height', Math.max(1, val))
+                                onChange={(e) =>
+                                  handleDimensionChange(
+                                    'height',
+                                    Math.max(1, Number(e.target.value))
+                                  )
                                 }
                                 disabled={isDisabled}
-                                className="h-[1.2rem] w-[5rem] [appearance:textfield] rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                               />
                             </div>
                           </div>
