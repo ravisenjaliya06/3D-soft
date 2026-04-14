@@ -2954,6 +2954,17 @@ const AddMaterialPopup: React.FC<Props> = ({
     }
   };
 
+  const handleTextureDropdownScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    const target = e.currentTarget;
+    if (target.scrollHeight - target.scrollTop <= target.clientHeight + 50) {
+      if (Array.isArray(texturesList) && visibleTextureCount < texturesList.length) {
+        setVisibleTextureCount((prev) => prev + 40);
+      } else if (nextPageUrl && !isLoadingTextures) {
+        fetchTextures(nextPageUrl);
+      }
+    }
+  };
+
   /** Show the correct input field based on field type (text, number, select, toggle) */
   const renderField = (field: Field, onActivate?: () => void) => {
     const value = formData[field.key as keyof MaterialPropertiesInput] ?? '';
@@ -2978,27 +2989,12 @@ const AddMaterialPopup: React.FC<Props> = ({
               <span
                 className={`${styles.textureDropdownArrow} ${isTextureDropdownOpen ? styles.open : ''}`}
               >
-                ▾
+                <img src={assets.dropdown} alt="dropdown" />
               </span>
             </button>
             {isTextureDropdownOpen && (
               <div className={styles.textureDropdownPanel}>
-                <div
-                  className={styles.textureGridDropdown}
-                  onScroll={(e: React.UIEvent<HTMLDivElement>) => {
-                    const target = e.currentTarget;
-                    if (target.scrollHeight - target.scrollTop <= target.clientHeight + 50) {
-                      if (
-                        Array.isArray(texturesList) &&
-                        visibleTextureCount < texturesList.length
-                      ) {
-                        setVisibleTextureCount((prev) => prev + 40);
-                      } else if (nextPageUrl && !isLoadingTextures) {
-                        fetchTextures(nextPageUrl);
-                      }
-                    }
-                  }}
-                >
+                <div className={styles.textureGridDropdown} onScroll={handleTextureDropdownScroll}>
                   {(Array.isArray(texturesList) ? texturesList : [])
                     .slice(0, visibleTextureCount)
                     .map((texture) => {

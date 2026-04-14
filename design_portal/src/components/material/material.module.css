@@ -685,7 +685,7 @@
 .textureDropdownTrigger {
   width: 100%;
   min-height: 2.8rem;
-  border: 1px solid var(--draft-border-color);
+  border: 0.063rem solid var(--draft-border-color);
   border-radius: 0.75rem;
   background: var(--primary-white);
   color: var(--soft-dark-grey);
