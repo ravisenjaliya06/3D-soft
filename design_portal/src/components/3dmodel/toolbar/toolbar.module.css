@@ -1,4 +1,4 @@
-leftside {
+.leftside {
   width: 4rem;
   height: 100vh;
   background-color: var(--primary-color);
