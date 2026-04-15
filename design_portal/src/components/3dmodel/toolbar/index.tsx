@@ -286,9 +286,9 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
       data: {
         category: selectedFurnitureCategory,
         dimensions: {
-          width: Number(uploadData.width) / 100, // Convert CM to Meters
-          height: Number(uploadData.height) / 100,
-          depth: Number(uploadData.depth) / 100,
+          width: Number(uploadData.width) / 1000, // Convert MM to Meters
+          height: Number(uploadData.height) / 1000,
+          depth: Number(uploadData.depth) / 1000,
         },
       },
       material: [
@@ -1478,7 +1478,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
 
                     <div className={styles.formRowThird}>
                       <InputField
-                        label="Width (cm)"
+                        label="Width (mm)"
                         type="number"
                         value={uploadData.width === 0 ? '' : uploadData.width}
                         onChange={(e: any) =>
@@ -1511,7 +1511,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
 
                     <div className={styles.formRowThird}>
                       <InputField
-                        label="Height (cm)"
+                        label="Height (mm)"
                         type="number"
                         value={uploadData.height === 0 ? '' : uploadData.height}
                         onChange={(e: any) =>
@@ -1544,7 +1544,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
 
                     <div className={styles.formRowThird}>
                       <InputField
-                        label="Depth (cm)"
+                        label="Depth (mm)"
                         type="number"
                         value={uploadData.depth === 0 ? '' : uploadData.depth}
                         onChange={(e: any) =>
