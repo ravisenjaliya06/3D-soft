@@ -342,6 +342,18 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
     }
   };
 
+  const handleUploadFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+
+    if (file && file.size > 20 * 1024 * 1024) {
+      toast.error('File size exceeds 20MB limit');
+      e.target.value = '';
+      return;
+    }
+
+    setUploadData((prev) => ({ ...prev, file: file || null }));
+  };
+
   const options = [{ option: 'Home', name: 'Home', icon: assets.img1 }];
 
   const fetchCabinetItem = async () => {
@@ -1420,15 +1432,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
                           id="glb-upload"
                           accept=".glb"
                           required
-                          onChange={(e) => {
-                            const file = e.target.files?.[0];
-                            if (file && file.size > 20 * 1024 * 1024) {
-                              toast.error('File size exceeds 20MB limit');
-                              e.target.value = '';
-                              return;
-                            }
-                            setUploadData({ ...uploadData, file: file || null });
-                          }}
+                          onChange={handleUploadFileChange}
                           className={styles.hiddenInput}
                         />
                         <img
