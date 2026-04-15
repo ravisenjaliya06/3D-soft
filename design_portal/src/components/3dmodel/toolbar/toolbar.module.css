@@ -134,11 +134,9 @@
   border-radius: 0.6rem;
 
   &:hover {
-    background: linear-gradient(
-      90deg,
-      rgba(204, 188, 255, 0.2) 0%,
-      rgba(204, 188, 255, 0.4) 87.74%
-    );
+    background: linear-gradient(90deg,
+        rgba(204, 188, 255, 0.2) 0%,
+        rgba(204, 188, 255, 0.4) 87.74%);
     opacity: 0.8;
     transform: translateY(-2px);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
@@ -708,7 +706,7 @@
   position: fixed;
   inset: 0;
   background: rgba(23, 15, 73, 0.4);
-  backdrop-filter: blur(8px);
+  backdrop-filter: blur(0.5rem);
   display: flex;
   justify-content: center;
   align-items: center;
@@ -723,8 +721,8 @@
   max-height: 90vh;
   background: #ffffff;
   border-radius: 1.5rem;
-  border: 1px solid rgba(224, 231, 255, 0.6);
-  box-shadow: 0 24px 60px rgba(15, 23, 42, 0.12);
+  border: 0.063rem solid rgba(224, 231, 255, 0.6);
+  box-shadow: 0 1.5rem 3.75rem rgba(15, 23, 42, 0.12);
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -812,7 +810,7 @@
   padding: 1.5rem 2rem;
   display: flex;
   flex-direction: column;
-  border-right: 1px solid var(--border-color);
+  border-right: 0.063rem solid var(--border-color);
   min-width: 20rem;
 }
 
@@ -856,7 +854,7 @@
 }
 
 /* Ensure the wrapper div from InputField also doesn't force width */
-.formGrid > div[class*='main'] {
+.formGrid>div[class*='main'] {
   width: 100% !important;
   max-width: none !important;
   margin: 0 !important;
@@ -890,7 +888,7 @@
   justify-content: center;
   min-height: 6rem;
   padding: 1rem;
-  border: 2px dashed rgba(148, 163, 184, 0.3);
+  border: 0.125rem dashed rgba(148, 163, 184, 0.3);
   border-radius: 0.2rem;
   background: #fcfdfe;
   color: var(--primary-color);
@@ -1110,7 +1108,7 @@
 }
 
 .alignDropdownItem {
-  padding: 8px 12px;
+  padding: 0.5rem 0.75rem;
   cursor: pointer;
 }
 
@@ -1678,8 +1676,7 @@
 }
 
 .arrowButtons:hover img {
-  filter: brightness(0) saturate(100%) invert(16%) sepia(40%) saturate(1800%) hue-rotate(233deg)
-    brightness(95%) contrast(95%);
+  filter: brightness(0) saturate(100%) invert(16%) sepia(40%) saturate(1800%) hue-rotate(233deg) brightness(95%) contrast(95%);
 }
 
 .createpopupLShape {
