@@ -19,7 +19,9 @@ export interface addmember {
 
 export interface Member {
   id: string;
-  name: string;
+  name?: string;
+  username?: string;
+  displayName?: string;
   email: string;
   groups: string[];
   is_invited: boolean;
