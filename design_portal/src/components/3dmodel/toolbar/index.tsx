@@ -58,6 +58,17 @@ import { gettingDesignID } from '../utils/routeIds';
 import { Datastate, IconMap } from './interface';
 import styles from './toolbar.module.css';
 
+const MODEL_CATEGORY_TO_ITEMS: Record<string, any[]> = {
+  Sofa: SOFA,
+  Fridge: FRIDGE,
+  Stove: STOVE,
+  TV: TV,
+  'Dinner Table': DINNER_TABLE,
+  Flower: FLOWER,
+  Microwave: MICROWAVE,
+  'Study Table': CENTER_STUDY_TABLE,
+};
+
 const GltfModel = ({
   url,
   onLoad,
@@ -69,24 +80,24 @@ const GltfModel = ({
   const hasLoadedRef = useRef(false);
 
   useEffect(() => {
-    if (scene && onLoad && !hasLoadedRef.current) {
-      const timer = setTimeout(() => {
-        const box = new THREE.Box3().setFromObject(scene);
-        const size = new THREE.Vector3();
-        box.getSize(size);
+    if (!scene || !onLoad || hasLoadedRef.current) return;
 
-        const isLikelyMM = size.x > 10 || size.z > 10;
-        const multiplier = isLikelyMM ? 0.1 : 100;
+    const timer = setTimeout(() => {
+      const size = new THREE.Vector3();
+      new THREE.Box3().setFromObject(scene).getSize(size);
 
-        onLoad({
-          width: Math.round(size.x * multiplier),
-          height: Math.round(size.y * multiplier),
-          depth: Math.round(size.z * multiplier),
-        });
-        hasLoadedRef.current = true;
-      }, 300);
-      return () => clearTimeout(timer);
-    }
+      const isLikelyMM = size.x > 10 || size.z > 10;
+      const multiplier = isLikelyMM ? 0.1 : 100;
+
+      onLoad({
+        width: Math.round(size.x * multiplier),
+        height: Math.round(size.y * multiplier),
+        depth: Math.round(size.z * multiplier),
+      });
+      hasLoadedRef.current = true;
+    }, 300);
+
+    return () => clearTimeout(timer);
   }, [scene, onLoad]);
 
   useEffect(() => {
@@ -249,57 +260,73 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
 
   const handleUpload = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!uploadData.file || !uploadData.name) {
-      toast.error('Please fill name and upload GLB file');
+
+    if (!uploadData.name) {
+      toast.error('Please enter a model name before saving.');
+      return;
+    }
+
+    if (!uploadData.file) {
+      toast.error('Please upload a GLB file before saving.');
       return;
     }
 
     const designId = gettingDesignID();
     if (!designId) {
       toast.error('Design ID not found. Please ensure you are in a design session.');
-      setIsUploading(false);
       return;
     }
 
     setIsUploading(true);
     const formData = new FormData();
 
-    let thumbnailBase64 = '';
-    if (previewRendererRef.current) {
-      thumbnailBase64 = previewRendererRef.current.domElement.toDataURL('image/png');
-      // Truncated log to avoid websocket payload errors
-      console.log('3D Screenshot captured successfully.');
-    }
-
-    formData.append('design_id', designId);
-    formData.append('items[0]name', uploadData.name);
-    formData.append('items[0]type', 'model');
-
-    if (thumbnailBase64) {
-      // Convert base64 to blob for better backend compatibility
-      const blob = await (await fetch(thumbnailBase64)).blob();
-      formData.append('items[0]image', blob, `${uploadData.name}_thumbnail.png`);
-    }
-    formData.append(
-      'items[0]data',
-      JSON.stringify({
+    const itemPayload = {
+      name: uploadData.name,
+      type: 'model',
+      data: {
         category: selectedFurnitureCategory,
         dimensions: {
           width: Number(uploadData.width) / 100, // Convert CM to Meters
           height: Number(uploadData.height) / 100,
           depth: Number(uploadData.depth) / 100,
         },
-      })
-    );
+      },
+      material: [
+        {
+          name: `${uploadData.name} Material`,
+          type: 'Miscellaneous',
+          properties: {
+            model_file: null,
+          },
+        },
+      ],
+    };
 
-    formData.append('items[0]material[0]name', `${uploadData.name} Material`);
-    formData.append('items[0]material[0]type', 'Miscellaneous');
+    let thumbnailBase64 = '';
+    if (previewRendererRef.current) {
+      thumbnailBase64 = previewRendererRef.current.domElement.toDataURL('image/png');
+    }
+
+    formData.append('design_id', designId);
+    formData.append('items[0]name', itemPayload.name);
+    formData.append('items[0]type', itemPayload.type);
+    formData.append('items[0]data', JSON.stringify(itemPayload.data));
+
+    if (thumbnailBase64) {
+      // Convert base64 to blob for better backend compatibility
+      const blob = await (await fetch(thumbnailBase64)).blob();
+      formData.append('items[0]image', blob, `${uploadData.name}_thumbnail.png`);
+    }
+
+    formData.append('items[0]material[0]name', itemPayload.material[0].name);
+    formData.append('items[0]material[0]type', itemPayload.material[0].type);
     formData.append('items[0]material[0]properties[model_file]', uploadData.file);
 
-    const url = API_ENDPOINT.CREATE_LIBRARY_CATALOGS(true);
-
     try {
-      const response = await commonService.post(url, formData);
+      const response = await commonService.post(
+        API_ENDPOINT.CREATE_LIBRARY_CATALOGS(true),
+        formData
+      );
       if (response.status === 201) {
         toast.success('Model uploaded successfully');
         closePopup();
@@ -811,7 +838,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
     const dynamicModels = cabinetItems
       .map((item: any) => (item && item.length > 0 ? item[0] : null))
       .filter((item: any) => {
-        if (!item || item.type !== 'model') return false;
+        if (!item || item.type !== OBJECT_TYPES.MODEL) return false;
         try {
           const itemData = typeof item.data === 'string' ? JSON.parse(item.data) : item.data;
 
@@ -900,16 +927,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
         .filter((item: any) => allowedTypes.includes(item.type));
       finalResult = [...baseItems, ...otherItems, ...dynamicModels];
     } else {
-      // Combine static hardcoded items with dynamic ones from backend
-      let staticItems: any[] = [];
-      if (category === 'Sofa') staticItems = SOFA;
-      else if (category === 'Fridge') staticItems = FRIDGE;
-      else if (category === 'Stove') staticItems = STOVE;
-      else if (category === 'TV') staticItems = TV;
-      else if (category === 'Dinner Table') staticItems = DINNER_TABLE;
-      else if (category === 'Flower') staticItems = FLOWER;
-      else if (category === 'Microwave') staticItems = MICROWAVE;
-      else if (category === 'Study Table') staticItems = CENTER_STUDY_TABLE;
+      const staticItems: any[] = MODEL_CATEGORY_TO_ITEMS[category] ?? [];
 
       if (staticItems.length > 0) {
         finalResult = [...staticItems, ...dynamicModels];
@@ -918,10 +936,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
           .map((item: any) => item[0])
           .filter(
             (item: any) =>
-              item &&
-              allowedTypes.includes(item.type) &&
-              item.type !== 'model' &&
-              item.type !== OBJECT_TYPES.MODEL
+              item && allowedTypes.includes(item.type) && item.type !== OBJECT_TYPES.MODEL
           );
         finalResult = [...otherItems, ...dynamicModels];
       }
