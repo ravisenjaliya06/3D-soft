@@ -1409,9 +1409,6 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
                 </div>
                 <h2>Upload {selectedFurnitureCategory || 'Model'}</h2>
               </div>
-              <div className={styles.previewHeaderLabel}>
-                <h3>3D View Preview</h3>
-              </div>
               <img
                 src={assets.close}
                 alt="close"
@@ -1597,6 +1594,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
               </div>
 
               <div className={styles.previewContainer}>
+                <label className={styles.uploadLabel}>3D View Preview</label>
                 <div className={styles.modelViewerContainer}>
                   <ModelViewerComponent
                     file={uploadData.file}

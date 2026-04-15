@@ -134,9 +134,11 @@
   border-radius: 0.6rem;
 
   &:hover {
-    background: linear-gradient(90deg,
-        rgba(204, 188, 255, 0.2) 0%,
-        rgba(204, 188, 255, 0.4) 87.74%);
+    background: linear-gradient(
+      90deg,
+      rgba(204, 188, 255, 0.2) 0%,
+      rgba(204, 188, 255, 0.4) 87.74%
+    );
     opacity: 0.8;
     transform: translateY(-2px);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
@@ -764,21 +766,7 @@
   white-space: nowrap;
 }
 
-.previewHeaderLabel {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  padding-left: 2rem;
-}
-
-.previewHeaderLabel h3 {
-  font-family: var(--font-family);
-  font-size: 1.05rem;
-  margin: 0;
-  color: var(--primary-color);
-  font-weight: 500;
-  opacity: 0.9;
-}
+/* Removed previewHeaderLabel */
 
 .uploadCloseBtn {
   width: 1.25rem;
@@ -821,6 +809,7 @@
   position: relative;
   flex: 1;
   min-width: 20rem;
+  padding: 1.5rem 2rem;
 }
 
 .previewHeader {
@@ -854,7 +843,7 @@
 }
 
 /* Ensure the wrapper div from InputField also doesn't force width */
-.formGrid>div[class*='main'] {
+.formGrid > div[class*='main'] {
   width: 100% !important;
   max-width: none !important;
   margin: 0 !important;
@@ -982,6 +971,10 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  background: #ffffff;
+  border: 0.063rem solid var(--border-color);
+  border-radius: 0.2rem;
+  overflow: hidden;
 }
 
 .noModelPlaceholder {
@@ -1676,7 +1669,8 @@
 }
 
 .arrowButtons:hover img {
-  filter: brightness(0) saturate(100%) invert(16%) sepia(40%) saturate(1800%) hue-rotate(233deg) brightness(95%) contrast(95%);
+  filter: brightness(0) saturate(100%) invert(16%) sepia(40%) saturate(1800%) hue-rotate(233deg)
+    brightness(95%) contrast(95%);
 }
 
 .createpopupLShape {
