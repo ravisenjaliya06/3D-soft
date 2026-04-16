@@ -17,67 +17,102 @@ export const MaterialToolbar: React.FC<MaterialToolbarProps> = ({
   selectedName,
 }) => {
   return (
-    <div className="flex h-[3.2rem] shrink-0 items-center justify-between rounded-2xl border border-[var(--table-title-border-color)] bg-gradient-to-r from-[var(--primary-white)] via-[var(--active-button-color)] to-[var(--hover-background-color-2)] px-[1rem] shadow-[0_4px_24px_var(--box-shadow-color),0_1px_4px_var(--box-shadow-color)]">
-      {/* Left side — Type / Name breadcrumb */}
-      <div className="flex items-center gap-[0.5rem] text-[0.8rem]">
-        {selectedType && (
+    <div style={{
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      height: '3.5rem',
+      padding: '0 1.25rem',
+      background: 'white',
+      borderRadius: '0.175rem',
+      border: '1px solid #e8eaf0',
+      boxShadow: '0 1px 6px rgba(57,37,121,0.06)',
+      flexShrink: 0,
+      gap: '1rem',
+    }}>
+      {/* Left — Breadcrumb */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', minWidth: 0 }}>
+        {selectedType ? (
           <>
-            <div className="flex items-center gap-[0.35rem]">
-              <div className="h-[0.5rem] w-[0.5rem] rounded-full bg-gradient-to-br from-[var(--wizardstepbox-bg-color)] to-[var(--primary-color)]" />
-              <span className="font-bold tracking-wide text-[var(--primary-color)]">
-                {selectedType}
-              </span>
-            </div>
+            <span style={{
+              fontSize: '0.82rem',
+              fontWeight: 700,
+              color: 'var(--primary-color)',
+              letterSpacing: '-0.01em',
+              whiteSpace: 'nowrap',
+            }}>
+              {selectedType}
+            </span>
             {selectedName && (
               <>
-                <svg
-                  className="h-[0.7rem] w-[0.7rem] text-[var(--scrollbar-color)]"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth={2.5}
-                >
+                <svg viewBox="0 0 24 24" fill="none" stroke="#b0b8c9" strokeWidth={2.5} width={10} height={10}>
                   <path strokeLinecap="round" d="m9 18 6-6-6-6" />
                 </svg>
-                <span className="font-medium text-[var(--project-item-text)]">{selectedName}</span>
+                <span style={{ fontSize: '0.78rem', color: '#7c8db5', fontWeight: 500, whiteSpace: 'nowrap' }}>
+                  {selectedName}
+                </span>
               </>
             )}
           </>
+        ) : (
+          <span style={{ fontSize: '0.82rem', color: '#b0b8c9', fontWeight: 500 }}>Select a category</span>
         )}
       </div>
 
-      {/* Right side — filter + search + action */}
-      <div className="ml-auto flex items-center gap-[0.6rem]">
-        <button className="flex h-[2.1rem] w-[2.1rem] items-center justify-center rounded-xl border border-[var(--table-title-border-color)] bg-gradient-to-br from-[var(--hover-background-color-2)] to-[var(--active-button-color)] transition-all duration-200 hover:scale-105 hover:border-[var(--wizardstepbox-bg-color)] hover:shadow-[0_4px_12px_var(--box-shadow-color)] active:scale-95">
-          <img
-            src={assets.filter || '/placeholder.svg'}
-            alt="Filter"
-            className="h-[0.9rem] w-[0.9rem] opacity-70"
-          />
+      {/* Right — Controls */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginLeft: 'auto', flexShrink: 0 }}>
+        {/* Filter */}
+        <button
+          title="Filter"
+          style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            width: '2.1rem', height: '2.1rem', borderRadius: '0.5rem',
+            border: '1px solid #e8eaf0', background: 'white', cursor: 'pointer',
+            transition: 'all 0.15s ease',
+          }}
+          onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = '#f4f0ff'; (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--primary-color)'; }}
+          onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = 'white'; (e.currentTarget as HTMLButtonElement).style.borderColor = '#e8eaf0'; }}
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="var(--primary-color)" strokeWidth={2} width={14} height={14} style={{ opacity: 0.7 }}>
+            <path strokeLinecap="round" d="M3 6h18M7 12h10M11 18h2" />
+          </svg>
         </button>
-        <div className="relative flex items-center">
-          {/* Search Icon */}
+
+        {/* Search */}
+        <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
           <svg
-            className="pointer-events-none absolute left-[0.65rem] h-[0.85rem] w-[0.85rem] text-[var(--wizardstepbox-bg-color)] opacity-50"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth={2.5}
+            viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth={2.5}
+            width={13} height={13}
+            style={{ position: 'absolute', left: '0.7rem', pointerEvents: 'none' }}
           >
             <circle cx="11" cy="11" r="6" />
             <path strokeLinecap="round" d="m20 20-4.35-4.35" />
           </svg>
-
-          {/* Input */}
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
             placeholder="Search materials..."
-            className="h-[2.1rem] w-[14rem] rounded-xl border border-[var(--table-title-border-color)] bg-gradient-to-r from-[var(--hover-background-color-2)] to-[var(--active-button-color)] py-1 pr-3 pl-[2.2rem] text-[0.75rem] text-[var(--text-color)] transition-all duration-200 outline-none placeholder:text-[var(--subtext-color)] focus:border-[var(--wizardstepbox-bg-color)] focus:bg-white focus:shadow-[0_0_0_3px_var(--table-buttom-border-color)] focus:placeholder:text-[var(--scrollbar-color)]"
+            style={{
+              height: '2.1rem',
+              width: '16rem',
+              borderRadius: '0.5rem',
+              border: '1px solid #e8eaf0',
+              background: '#f9fafc',
+              color: '#2d2d3a',
+              fontSize: '0.8rem',
+              paddingLeft: '2.2rem',
+              paddingRight: '0.85rem',
+              outline: 'none',
+              transition: 'all 0.2s ease',
+              fontFamily: 'inherit',
+            }}
+            onFocus={e => { e.currentTarget.style.borderColor = 'var(--primary-color)'; e.currentTarget.style.background = 'white'; e.currentTarget.style.boxShadow = '0 0 0 3px rgba(57,37,121,0.08)'; }}
+            onBlur={e => { e.currentTarget.style.borderColor = '#e8eaf0'; e.currentTarget.style.background = '#f9fafc'; e.currentTarget.style.boxShadow = 'none'; }}
           />
         </div>
 
+        {/* Action Button from parent */}
         {actionButton}
       </div>
     </div>

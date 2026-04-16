@@ -19,8 +19,8 @@
 /* Right side main content part */
 .maincontent {
   flex: 1;
-  padding: 1.25rem 1.875rem;
-  margin: 3rem;
+  padding: 0.8rem 1.5rem;
+  margin: 3rem 1.5rem 1rem 1.5rem;
   overflow: hidden;
   display: flex;
   flex-direction: column;
@@ -88,10 +88,10 @@
 
 .mesdesigncontent {
   background: var(--primary-white);
-  border-radius: 1.25rem;
-  padding: 1.5625rem 1.875rem;
-  box-shadow: 0 4px 24px var(--box-shadow-color);
-  border: 1px solid var(--table-title-border-color);
+  border-radius: 0.75rem;
+  padding: 1.2rem 1.5rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  border: 1px solid #e8eaf0;
   display: flex;
   flex-direction: column;
   flex: 1;
@@ -100,12 +100,12 @@
 }
 
 .mesdesigncontent h2 {
-  font-size: 1.3rem;
-  margin-bottom: 1.25rem;
+  font-size: 0.85rem;
+  margin-bottom: 0.85rem;
   font-weight: 700;
-  color: var(--primary-color);
+  color: #1a1a2e;
   font-family: var(--font-family);
-  letter-spacing: -0.01em;
+  letter-spacing: 0.01em;
 }
 
 /* ─── Table ─── */
@@ -113,11 +113,11 @@
   width: 100%;
   overflow-x: auto;
   overflow-y: auto;
-  border-radius: 1rem;
-  border: 1px solid var(--table-title-border-color);
+  border-radius: 0.6rem;
+  border: 1px solid #e8eaf0;
   flex: 1;
   scrollbar-width: thin;
-  scrollbar-color: var(--scrollbar-color) transparent;
+  scrollbar-color: #d5d6e0 transparent;
 }
 
 .tablecontainer::-webkit-scrollbar {
@@ -146,7 +146,7 @@
 }
 
 .tablecontainer thead {
-  background: linear-gradient(180deg, var(--active-button-color), var(--primary-hover));
+  background: #fafafd;
   position: sticky;
   top: 0;
   z-index: 10;
@@ -154,36 +154,37 @@
 
 .tablecontainer thead th {
   text-align: left;
-  padding: 0.85rem 1.25rem;
-  font-size: 0.7rem;
-  color: var(--primary-selected-color);
+  padding: 0.55rem 1rem;
+  font-size: 0.55rem;
+  color: #a0a2b0;
   font-weight: 700;
-  border-bottom: 1px solid var(--table-title-border-color);
+  border-bottom: 1px solid #f0f1f5;
   font-family: var(--font-family);
   text-transform: uppercase;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.07em;
 }
 
 .tablecontainer tbody tr {
-  background: var(--primary-white);
-  border-bottom: 1px solid var(--table-buttom-border-color);
-  transition: all 0.2s ease;
+  background: #ffffff;
+  border-bottom: 1px solid #f0f1f5;
+  transition: all 0.15s ease;
 }
 
 .tablecontainer tbody tr:nth-child(even) {
-  background: var(--thbackground-color);
+  background: #fafafd;
 }
 
 .tablecontainer tbody tr:hover {
-  background: var(--selectedrow-color);
-  box-shadow: inset 3px 0 0 var(--primary-selected-color);
+  background: #f5f3ff;
+  box-shadow: inset 3px 0 0 #6c5ce7;
 }
 
 .tablecontainer tbody td {
-  padding: 0.85rem 1.25rem;
-  font-size: 0.8rem;
-  color: var(--project-item-text);
+  padding: 0.5rem 1rem;
+  font-size: 0.7rem;
+  color: #3d3e50;
   font-family: var(--font-family);
+  font-weight: 600;
 }
 
 /* ─── Scrollbar (designs section) ─── */
@@ -476,20 +477,22 @@
   align-items: center;
   justify-content: center;
   font-family: var(--font-family);
-  font-size: 0.68rem;
-  font-weight: 600;
-  padding: 0.25rem 0.6rem;
+  font-size: 0.56rem;
+  font-weight: 700;
+  padding: 0.2rem 0.55rem;
   margin: 0rem;
-  gap: 0.3rem;
-  border-radius: 2rem;
-  background: var(--draft-color);
-  color: var(--primary-color);
-  border: 1px solid var(--table-title-border-color);
+  gap: 0.25rem;
+  border-radius: 10rem;
+  background: #e1d9fb;
+  color: #392579;
+  border: none;
+  letter-spacing: 0.04em;
+  text-transform: capitalize;
 }
 
 .status p {
   font-family: var(--font-family);
-  font-size: 0.68rem;
+  font-size: 0.56rem;
   padding: 0;
   margin: 0;
 }
@@ -672,90 +675,92 @@
 .breadcrumb {
   display: flex;
   align-items: center;
-  margin-bottom: 0.75rem;
+  margin-bottom: 0.6rem;
   font-family: var(--font-family);
-  font-size: 0.8rem;
-  color: var(--primary-selected-color);
-  gap: 0.15rem;
-  padding: 0.5rem 0.75rem;
-  background: var(--active-button-color);
-  border-radius: 0.6rem;
+  font-size: 0.6rem;
+  color: #6c5ce7;
+  gap: 0.1rem;
+  padding: 0.35rem 0.6rem;
+  background: #f5f3ff;
+  border-radius: 0.4rem;
 }
 
 .breadcrumbItem {
-  color: var(--primary-selected-color);
+  color: #6c5ce7;
   font-weight: 600;
-  padding: 0.15rem 0.4rem;
-  border-radius: 0.4rem;
-  transition: all 0.2s ease;
+  padding: 0.1rem 0.35rem;
+  border-radius: 0.3rem;
+  transition: all 0.15s ease;
 }
 
 .breadcrumbItem:hover {
   text-decoration: none;
-  background: var(--primary-hover);
-  color: var(--primary-color);
+  background: rgba(108, 92, 231, 0.08);
+  color: #5a4bd1;
 }
 
 .breadcrumbSeparator {
-  margin: 0 0.2rem;
-  color: var(--option-color);
-  font-weight: 300;
+  margin: 0 0.15rem;
+  color: #a0a2b0;
+  font-weight: 400;
 }
 
 /* ─── Error Message ─── */
 .errorMessage {
-  background: var(--primary-light-red);
-  color: var(--primary-red);
-  padding: 0.75rem 1rem;
-  border-radius: 0.75rem;
-  margin-bottom: 1rem;
+  background: #fff5f5;
+  color: #e53e3e;
+  padding: 0.5rem 0.8rem;
+  border-radius: 0.4rem;
+  margin-bottom: 0.75rem;
   font-family: var(--font-family);
-  font-size: 0.8rem;
-  border: 1px solid var(--delete-border-color);
+  font-size: 0.65rem;
+  font-weight: 600;
+  border: 1px solid rgba(229, 62, 62, 0.15);
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.4rem;
 }
 
 /* ─── Loading Message ─── */
 .loadingMessage {
   text-align: center;
-  padding: 2rem;
+  padding: 1.5rem;
   font-family: var(--font-family);
-  font-size: 0.9rem;
-  color: var(--primary-selected-color);
-  font-weight: 500;
+  font-size: 0.7rem;
+  color: #6c5ce7;
+  font-weight: 600;
 }
 
 /* ─── No Data ─── */
 .noData {
   text-align: center;
-  padding: 2rem;
+  padding: 1.5rem;
   font-family: var(--font-family);
-  font-size: 0.85rem;
-  color: var(--soft-dark-grey);
-  font-weight: 500;
+  font-size: 0.7rem;
+  color: #a0a2b0;
+  font-weight: 600;
 }
 
 /* ─── View Button ─── */
 .viewButton {
-  background: var(--gradient-primary);
-  color: var(--primary-white);
+  background: #6c5ce7;
+  color: #ffffff;
   border: none;
-  border-radius: 0.6rem;
-  padding: 0.45rem 1rem;
+  border-radius: 0.35rem;
+  padding: 0.3rem 0.75rem;
   font-family: var(--font-family);
-  font-size: 0.75rem;
-  font-weight: 600;
+  font-size: 0.58rem;
+  font-weight: 700;
   cursor: pointer;
-  transition: all 0.2s ease;
-  box-shadow: 0 2px 8px var(--box-shadow-color);
+  transition: all 0.15s ease;
+  box-shadow: 0 2px 6px rgba(108, 92, 231, 0.2);
+  letter-spacing: 0.02em;
 }
 
 .viewButton:hover {
-  background: var(--gradient-primary-hover);
+  background: #5a4bd1;
   transform: translateY(-1px);
-  box-shadow: 0 4px 16px var(--box-shadow-color);
+  box-shadow: 0 4px 12px rgba(108, 92, 231, 0.3);
 }
 
 /* ─── Download Button ─── */

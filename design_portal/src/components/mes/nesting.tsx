@@ -1539,7 +1539,6 @@ const Nesting = () => {
                     onClick={handleGenerateQuotation}
                     disabled={isGeneratingQuote || displayData.length === 0}
                     className={styles.viewDetailsButton}
-                    style={{ marginRight: '1rem', backgroundColor: '#392579', color: 'white' }}
                   >
                     Quotation
                   </button>
@@ -1548,7 +1547,6 @@ const Nesting = () => {
                     onClick={handleGenerateBOM}
                     disabled={isGeneratingBOM || displayData.length === 0}
                     className={styles.viewDetailsButton}
-                    style={{ marginRight: '1rem', backgroundColor: '#392579', color: 'white' }}
                   >
                     BOM Data
                   </button>
@@ -1585,7 +1583,6 @@ const Nesting = () => {
                     }}
                     disabled={isDownloadingXML || displayData.length === 0}
                     className={styles.viewDetailsButton}
-                    style={{ marginRight: '1rem', backgroundColor: '#392579', color: 'white' }}
                   >
                     XMLs
                   </button>

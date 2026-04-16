@@ -107,14 +107,14 @@ const InputField = ({
               '& .MuiOutlinedInput-root': {
                 '& fieldset': {
                   border: `0.063rem solid ${error ? 'red' : borderColor} !important`,
-                  borderRadius: '0.2rem !important',
+                  borderRadius: '0.175rem !important',
                   padding: '0rem 0.4rem',
                 },
                 '&:hover fieldset': {
                   border: `0.063rem solid ${borderColor} !important`,
                 },
                 '&.Mui-focused fieldset': {
-                  border: '0.063rem solid var(--primary-color-grey-2) !important',
+                  border: '0.063rem solid #392579 !important',
                 },
                 '&.Mui-error fieldset': {
                   border: '0.063rem solid red !important',
@@ -123,22 +123,24 @@ const InputField = ({
               '& .MuiInputBase-input': {
                 color: 'var(--primary-color)',
                 padding: '0rem 0.5rem 0rem 0.7rem',
-                height: '2.8rem',
+                height: '2.3rem',
                 fontFamily: 'var(--font-family)',
-                fontSize: '0.85rem',
-                borderRadius: '0.4rem !important',
+                fontSize: '0.75rem',
+                borderRadius: '0.175rem !important',
               },
               '& .MuiInputLabel-root': {
                 color: error ? 'red' : 'var(--text-gray)',
                 fontFamily: 'var(--font-family)',
-                fontSize: '0.8rem',
-                transform: 'translate(1rem, 0.6rem)',
+                fontSize: '0.75rem',
+                transform: 'translate(1rem, 0.4rem)',
                 transition: 'all 0.2s ease-out',
               },
               '& .MuiInputLabel-root.Mui-focused, & .MuiInputLabel-root.MuiFormLabel-filled': {
-                fontSize: '0.9rem',
-                color: error ? 'red' : 'var(--text-gray)',
+                fontSize: '0.8rem',
+                color: error ? 'red' : '#392579',
                 transform: 'translate(0.7rem, -0.4rem) scale(0.7)',
+                backgroundColor: 'white',
+                padding: '0 0.25rem',
               },
               '& .MuiInputBase-root': {
                 width: props.fullWidth
