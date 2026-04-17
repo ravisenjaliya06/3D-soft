@@ -405,7 +405,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
     if (item.path) {
       if (!threeDView || !threeDView.scene) return;
 
-      showFullScreenLoader(`Loading ${item.name}...`);
+      await showFullScreenLoader(`Loading ${item.name}...`);
       try {
         // Set realistic target dimensions (in meters) based on category
         let targetSize = { width: 0.12, height: 0.12, depth: 0.12 };

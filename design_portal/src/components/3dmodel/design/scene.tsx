@@ -172,7 +172,7 @@ export const addVerticalPlanksToBox = async (
 ) => {
   if (!selectedCabinetItem) return console.error('No cabinet item selected');
 
-  showFullScreenLoader('Adding vertical planks.');
+  await showFullScreenLoader('Adding vertical planks.');
 
   if (!boxMesh || count <= 0) {
     hideFullScreenLoader();
@@ -254,7 +254,7 @@ export const addHorizontalPlanksInsideBox = async (
 ) => {
   if (!selectedCabinetItem) return console.error('No cabinet item selected');
 
-  showFullScreenLoader('Loading design objects.');
+  await showFullScreenLoader('Loading design objects.');
 
   if (!boxMesh || count <= 0) {
     hideFullScreenLoader();
@@ -348,7 +348,7 @@ export const addDoorOnInvisibleBox = async (
     console.error('No cabinet item selected');
     return;
   }
-  showFullScreenLoader('Loading design objects.');
+  await showFullScreenLoader('Loading design objects.');
 
   if (!boxMesh) {
     hideFullScreenLoader();
@@ -522,7 +522,7 @@ export const addDoubleDoorOnInvisibleBox = async (
     console.error('No cabinet item selected');
     return;
   }
-  showFullScreenLoader('Loading design objects.');
+  await showFullScreenLoader('Loading design objects.');
 
   if (!boxMesh) {
     hideFullScreenLoader();
@@ -765,7 +765,7 @@ export const addDrawersOnInvisibleBox = async (
 ) => {
   if (!boxMesh || drawers <= 0) return;
 
-  showFullScreenLoader('Adding Drawer...');
+  await showFullScreenLoader('Adding Drawer...');
   try {
     const geometry = boxMesh.geometry as THREE.BufferGeometry;
     geometry.computeBoundingBox();

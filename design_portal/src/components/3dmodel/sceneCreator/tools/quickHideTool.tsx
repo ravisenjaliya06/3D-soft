@@ -48,7 +48,7 @@ export class OutlineManager {
     this.isQuickHideActive = state;
   }
 
-  public toggle() {
+  public async toggle() {
     if (!this.scene) {
       console.error('OutlineManager: Scene is undefined. Toggle aborted.');
       return;
@@ -57,7 +57,9 @@ export class OutlineManager {
     // Cancel any in-flight loop from the previous toggle
     this.cancelFlag = true;
 
-    showFullScreenLoader(this.isQuickHideActive ? 'Applying Quick Hide...' : 'Restoring Scene...');
+    await showFullScreenLoader(
+      this.isQuickHideActive ? 'Applying Quick Hide...' : 'Restoring Scene...'
+    );
 
     setTimeout(() => {
       this.cancelFlag = false;

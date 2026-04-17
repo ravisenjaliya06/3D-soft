@@ -24,27 +24,19 @@ export const handleFormData = <T extends Record<string, string>>(
     }
   }
 
-  if ('password' in formData && !errors['password']) {
+  if ('password' in formData && !errors['password'] && options?.isRegister) {
     const password = String(formData.password);
+
     if (password.length < 8) {
       errors['password'] = 'Password must be at least 8 characters long.';
-    } else if (options?.isRegister) {
-      if (!/[a-z]/.test(password)) {
-        errors['password'] = 'Password must contain at least one lowercase letter.';
-      } else if (!/[A-Z]/.test(password)) {
-        errors['password'] = 'Password must contain at least one uppercase letter.';
-      } else if (!/\d/.test(password)) {
-        errors['password'] = 'Password must contain at least one numeric character.';
-      } else if (!/[!@#$%^&*(),.?":{}|<>]/.test(password)) {
-        errors['password'] = 'Password must contain at least one special character.';
-      }
-    } else {
-      // Basic validation for login or other forms
-      if (!/[a-zA-Z]/.test(password)) {
-        errors['password'] = 'Password must contain at least one letter.';
-      } else if (!/\d/.test(password)) {
-        errors['password'] = 'Password must contain at least one numeric character.';
-      }
+    } else if (!/[a-z]/.test(password)) {
+      errors['password'] = 'Password must contain at least one lowercase letter.';
+    } else if (!/[A-Z]/.test(password)) {
+      errors['password'] = 'Password must contain at least one uppercase letter.';
+    } else if (!/\d/.test(password)) {
+      errors['password'] = 'Password must contain at least one numeric character.';
+    } else if (!/[!@#$%^&*(),.?":{}|<>]/.test(password)) {
+      errors['password'] = 'Password must contain at least one special character.';
     }
   }
 

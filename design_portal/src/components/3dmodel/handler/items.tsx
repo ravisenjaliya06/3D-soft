@@ -12,7 +12,7 @@ import { store } from '../store';
 import { updateObject } from '../store/dataSlice';
 import { selectMinifixStandards } from '../store/selectors';
 
-export function showFullScreenLoader(message = 'Loading...') {
+export async function showFullScreenLoader(message = 'Loading...') {
   /**
    * Shows a full screen loader with a message
    */
@@ -49,6 +49,8 @@ export function showFullScreenLoader(message = 'Loading...') {
     </style>
   `;
   document.body.appendChild(loader);
+
+  await new Promise((resolve) => setTimeout(resolve, 100));
 }
 
 export function hideFullScreenLoader() {

@@ -20,7 +20,7 @@ export const handleSignIn = async (
   setConfirmPasswordError: (message: string | null) => void,
   setOrganizationNameError: (message: string | null) => void
 ) => {
-  showFullScreenLoader();
+  await showFullScreenLoader();
   setIsLoading(true);
   const { formData, errors } = handleFormData<RegisterForm>(registerPayload, setError, {
     isRegister: true,

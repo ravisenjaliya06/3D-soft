@@ -64,7 +64,7 @@ export class LShapeObjectManager {
       return;
     }
 
-    showFullScreenLoader('Adding L-shape object.');
+    await showFullScreenLoader('Adding L-shape object.');
 
     if (!boxMesh) {
       hideFullScreenLoader();
@@ -414,7 +414,7 @@ export class LShapeObjectManager {
     cupboardMesh: THREE.Mesh
   ): Promise<void> {
     if (!cupboardMesh) return;
-    showFullScreenLoader('Adding L-shape objects.');
+    await showFullScreenLoader('Adding L-shape objects.');
 
     await this.removeLShapeObjects(cupboardMesh);
 
