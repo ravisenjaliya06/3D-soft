@@ -6,7 +6,7 @@ import { FLOOR_PLAN_TYPES, MeshObjectData } from '../sceneCreator/interface';
 import { getFootprintQuadFromReferenceEdge, perpLeft2D } from '../sceneCreator/utils';
 import { RootState } from '../store';
 import { setobjectSelected, toggleWallDrawing } from '../store/dataSlice';
-import { GRID_SIZE, REACTSVGPANZOOM_INITIAL_VALUE } from './constants';
+import { FEET_CHANGE, GRID_SIZE, REACTSVGPANZOOM_INITIAL_VALUE } from './constants';
 import { Grids } from './grid';
 import { TwoDSidebar } from './TwoDSidebar';
 import { useWallDrawing } from './walls/useWallDrawing';
@@ -32,7 +32,8 @@ export default function PlannerGrid() {
     resetDrawing,
   } = useWallDrawing(GRID_SIZE.WIDTH, GRID_SIZE.HEIGHT);
 
-  const [localInput, setLocalInput] = useState<string | null>(null);
+  const [localInputFt, setLocalInputFt] = useState<string | null>(null);
+  const [localInputMm, setLocalInputMm] = useState<string | null>(null);
 
   const selectedObjectId = useSelector((state: RootState) => state.data.selectedObject);
   const objects = useSelector((state: RootState) => state.data.objects);
@@ -79,7 +80,8 @@ export default function PlannerGrid() {
 
   useEffect(() => {
     if (!preview) {
-      setLocalInput(null);
+      setLocalInputFt(null);
+      setLocalInputMm(null);
     }
   }, [preview]);
 
@@ -103,7 +105,7 @@ export default function PlannerGrid() {
     const plen = Math.hypot(dx, dy) || 1;
     const pl = perpLeft2D(dx / plen, dy / plen);
     const labelLift = 36;
-    const labelX = midRef.x - pl.x * sign * labelLift - 40;
+    const labelX = midRef.x - pl.x * sign * labelLift - 90;
     const labelY = midRef.y - pl.y * sign * labelLift - 14;
     previewWallLayer = (
       <g>
@@ -135,7 +137,13 @@ export default function PlannerGrid() {
         <circle cx={rs.x} cy={rs.y} r={6} fill="#1290ff" stroke="#fff" strokeWidth={2} />
         <circle cx={re.x} cy={re.y} r={6} fill="#1290ff" stroke="#fff" strokeWidth={2} />
 
-        <foreignObject x={labelX} y={labelY} width={80} height={30} style={{ overflow: 'visible' }}>
+        <foreignObject
+          x={labelX}
+          y={labelY}
+          width={180}
+          height={30}
+          style={{ overflow: 'visible' }}
+        >
           <div
             style={{
               display: 'flex',
@@ -143,31 +151,39 @@ export default function PlannerGrid() {
               justifyContent: 'center',
               width: '100%',
               height: '100%',
+              gap: '4px',
             }}
           >
             <input
               autoFocus
               type="number"
               step="0.01"
-              value={localInput !== null ? localInput : (preview.length / 30.48).toFixed(2)}
+              value={
+                localInputFt !== null ? localInputFt : (preview.length / FEET_CHANGE).toFixed(2)
+              }
               onChange={(e) => {
                 const valStr = e.target.value;
-                setLocalInput(valStr);
+                setLocalInputFt(valStr);
                 const valNum = parseFloat(valStr);
                 if (!isNaN(valNum)) {
-                  setInputLength(valNum * 30.48);
+                  const cm = valNum * FEET_CHANGE;
+                  setLocalInputMm((cm * 10).toFixed(2));
+                  setInputLength(cm);
                 } else {
+                  setLocalInputMm('');
                   setInputLength(null);
                 }
               }}
               onKeyDown={(e) => {
                 if (e.key === 'Enter') {
                   finalizeWallByInput();
-                  setLocalInput(null);
+                  setLocalInputFt(null);
+                  setLocalInputMm(null);
                 } else if (e.key === 'Escape') {
                   dispatch(toggleWallDrawing(false));
                   resetDrawing();
-                  setLocalInput(null);
+                  setLocalInputFt(null);
+                  setLocalInputMm(null);
                 }
               }}
               onFocus={(e) => e.target.select()}
@@ -186,7 +202,6 @@ export default function PlannerGrid() {
             />
             <span
               style={{
-                marginLeft: '4px',
                 fontSize: '12px',
                 fontWeight: 'bold',
                 color: '#333',
@@ -194,6 +209,59 @@ export default function PlannerGrid() {
               }}
             >
               ft
+            </span>
+            <input
+              type="number"
+              step="0.01"
+              value={localInputMm !== null ? localInputMm : (preview.length * 10).toFixed(2)}
+              onChange={(e) => {
+                const valStr = e.target.value;
+                setLocalInputMm(valStr);
+                const valNum = parseFloat(valStr);
+                if (!isNaN(valNum)) {
+                  const cm = valNum / 10;
+                  setLocalInputFt((cm / FEET_CHANGE).toFixed(2));
+                  setInputLength(cm);
+                } else {
+                  setLocalInputFt('');
+                  setInputLength(null);
+                }
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  finalizeWallByInput();
+                  setLocalInputFt(null);
+                  setLocalInputMm(null);
+                } else if (e.key === 'Escape') {
+                  dispatch(toggleWallDrawing(false));
+                  resetDrawing();
+                  setLocalInputFt(null);
+                  setLocalInputMm(null);
+                }
+              }}
+              onFocus={(e) => e.target.select()}
+              style={{
+                width: '60px',
+                padding: '2px 4px',
+                fontSize: '12px',
+                fontWeight: 'bold',
+                textAlign: 'center',
+                border: '2px solid #1290ff',
+                borderRadius: '4px',
+                outline: 'none',
+                background: 'white',
+                boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+              }}
+            />
+            <span
+              style={{
+                fontSize: '12px',
+                fontWeight: 'bold',
+                color: '#333',
+                textShadow: '0 0 2px white',
+              }}
+            >
+              mm
             </span>
           </div>
         </foreignObject>

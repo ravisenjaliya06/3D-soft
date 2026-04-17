@@ -37,3 +37,5 @@ export const GridRecordFactory = Record<GridData>({
   type: 'horizontal-streak',
   properties: { step: 30.48 },
 });
+
+export const FEET_CHANGE = 30.48;
