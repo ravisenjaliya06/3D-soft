@@ -360,9 +360,29 @@ export function useWallDrawing(svgWidth: number, svgHeight: number) {
     createWallSegment(startPoint, finalCoords);
   };
 
+  const getConnectedWallAngle = (startPoint: WallPoint) => {
+    const connectedWall = walls.find((wall) => {
+      const { startPoint: s, endPoint: e } = getWallReferenceEdgePoints(wall);
+
+      return (
+        (Math.round(s.x) === Math.round(startPoint.x) &&
+          Math.round(s.y) === Math.round(startPoint.y)) ||
+        (Math.round(e.x) === Math.round(startPoint.x) &&
+          Math.round(e.y) === Math.round(startPoint.y))
+      );
+    });
+
+    if (!connectedWall) return null;
+
+    const { startPoint: s, endPoint: e } = getWallReferenceEdgePoints(connectedWall);
+
+    return Math.atan2(e.y - s.y, e.x - s.x);
+  };
+
   // We explicitly add the generic <T> here because react-svg-pan-zoom defines
   // <T,> makes this function generic so it can handle any event payload type.
   // The comma prevents TypeScript from parsing it as JSX.
+
   const handleViewerMouseMove = <T,>(event: ViewerMouseEvent<T>) => {
     if (!isWallDrawingActive || !startPointId) {
       setPreviewEnd(null);
@@ -371,7 +391,50 @@ export function useWallDrawing(svgWidth: number, svgHeight: number) {
 
     const localCoordinates = getLogicalCoords(event, offsetX, offsetY);
     const snapped = snapToGrid(localCoordinates.x, localCoordinates.y);
-    setPreviewEnd(snapped);
+
+    const start = points.find((p) => p.id === startPointId);
+    if (!start) return;
+
+    const baseAngle = getConnectedWallAngle(start);
+
+    if (baseAngle === null) {
+      setPreviewEnd(snapped);
+      return;
+    }
+
+    const dx = snapped.x - start.x;
+    const dy = snapped.y - start.y;
+
+    const distance = Math.hypot(dx, dy);
+    const currentAngle = Math.atan2(dy, dx);
+
+    // Possible snap angles
+    const angles = [baseAngle, baseAngle + Math.PI / 2, baseAngle - Math.PI / 2];
+
+    let bestAngle = angles[0];
+    let minDiff = Infinity;
+
+    angles.forEach((angle) => {
+      const diff = Math.abs(currentAngle - angle);
+      if (diff < minDiff) {
+        minDiff = diff;
+        bestAngle = angle;
+      }
+    });
+
+    const SNAP_THRESHOLD = 15 * (Math.PI / 180);
+
+    if (minDiff < SNAP_THRESHOLD) {
+      // Snap to aligned angle
+      const alignedEnd = {
+        x: start.x + distance * Math.cos(bestAngle),
+        y: start.y + distance * Math.sin(bestAngle),
+      };
+      setPreviewEnd(alignedEnd);
+    } else {
+      // Free movement (any angle like 120°)
+      setPreviewEnd(snapped);
+    }
   };
 
   // this function helps to the preview data of the wall
@@ -392,9 +455,9 @@ export function useWallDrawing(svgWidth: number, svgHeight: number) {
     const effectiveEnd =
       inputLength !== null
         ? {
-            x: start.x + inputLength * Math.cos(angleRad),
-            y: start.y + inputLength * Math.sin(angleRad),
-          }
+          x: start.x + inputLength * Math.cos(angleRad),
+          y: start.y + inputLength * Math.sin(angleRad),
+        }
         : previewEnd;
 
     const offsetSign = computeWallOffsetSignForNewWall(start, effectiveEnd, walls);

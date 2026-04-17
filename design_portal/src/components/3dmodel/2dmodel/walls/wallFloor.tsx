@@ -3,8 +3,8 @@ import { getWallReferenceEdgePoints } from '../../sceneCreator/utils';
 import { WallPoint } from '../interface';
 
 export function getFloorPolygon(walls: MeshObjectData[]): WallPoint[] {
-  // Return empty result if a polygon cannot exist
-  if (walls.length < 2) return [];
+  // Return empty result if a polygon cannot exist (at least 3 walls required)
+  if (walls.length < 3) return [];
 
   // Store all unique wall endpoints as polygon vertices
   const pointMap = new Map<string, WallPoint>();
@@ -24,34 +24,6 @@ export function getFloorPolygon(walls: MeshObjectData[]): WallPoint[] {
 
   // Convert stored points into an array
   const points = Array.from(pointMap.values());
-
-  // Special handling for 2 connected walls (L-shape) to form a rectangle
-  if (points.length === 3) {
-    let corner: WallPoint | undefined;
-    let neighbors: WallPoint[] = [];
-
-    // Find the corner (shared point)
-    for (const [key, count] of pointCounts.entries()) {
-      if (count === 2) {
-        corner = pointMap.get(key);
-      } else {
-        const p = pointMap.get(key);
-        if (p) neighbors.push(p);
-      }
-    }
-
-    if (corner && neighbors.length === 2) {
-      // Calculate 4th point to complete the parallelogram
-      const p1 = neighbors[0];
-      const p2 = neighbors[1];
-      const newPoint = {
-        x: p1.x + p2.x - corner.x,
-        y: p1.y + p2.y - corner.y,
-        id: crypto.randomUUID(),
-      };
-      points.push(newPoint);
-    }
-  }
 
   // Compute the centroid of all polygon points
   const center = {
@@ -118,8 +90,8 @@ export function findConnectedWalls(walls: MeshObjectData[]): MeshObjectData[][] 
   for (const wall of walls) {
     if (!visited.has(wall.id)) {
       const group = bfs(wall);
-      // Only return groups with at least 2 walls as requested
-      if (group.length >= 2) {
+      // Only return groups with at least 3 walls as requested
+      if (group.length >= 3) {
         connectedGroups.push(group);
       }
     }

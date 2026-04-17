@@ -171,7 +171,7 @@ export function useWallAdjustment() {
       if (obj.type === FLOOR_PLAN_TYPES.FLOOR && obj.floorData) {
         // Find which walls are part of this floor
         const floorWalls = allProposedWalls.filter((w) => obj.floorData?.walls.includes(w.id));
-        if (floorWalls.length >= 2) {
+        if (floorWalls.length >= 3) {
           const newFloorPoints = getFloorPolygon(floorWalls);
           objectUpdates.push({
             id: obj.id,
