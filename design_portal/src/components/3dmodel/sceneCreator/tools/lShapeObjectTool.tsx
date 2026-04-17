@@ -422,6 +422,7 @@ export class LShapeObjectManager {
     const material = this.getDefaultMaterial();
 
     const pairs = this.findVerticallyAttachedPairs(drawersAndDoors, cupboardMesh);
+    console.log('pairs', pairs);
     for (const [topObj, bottomObj] of pairs) {
       await this.addLShapeAtCenter(topObj, bottomObj, cupboardMesh, material);
     }
@@ -665,5 +666,244 @@ export class LShapeObjectManager {
         child.parent.remove(child);
       }
     });
+  }
+
+  /**
+   * Find vertical neighbors (above and/or below) for a specific drawer or door.
+   * Returns an array of pairs: [topObj, bottomObj] involving the selected object.
+   */
+  private static findVerticalNeighborsForObject(
+    selectedMesh: THREE.Mesh,
+    cupboardMesh: THREE.Mesh
+  ): Array<[THREE.Mesh, THREE.Mesh]> {
+    const pairs: Array<[THREE.Mesh, THREE.Mesh]> = [];
+
+    const drawersAndDoors = DrawerDoorUtils.findDrawersAndDoors(cupboardMesh);
+    if (drawersAndDoors.length < 2) return pairs;
+
+    cupboardMesh.updateMatrixWorld(true);
+    drawersAndDoors.forEach((obj) => obj.updateMatrixWorld(true));
+
+    // Group by type — only consider objects of the same type as the selected one
+    const selectedType = selectedMesh.userData.type;
+    const sameTypeObjects = drawersAndDoors.filter((obj) => obj.userData.type === selectedType);
+
+    if (sameTypeObjects.length < 2) return pairs;
+
+    // Group by horizontal alignment
+    const alignedGroups = DrawerDoorUtils.groupByHorizontalAlignment(sameTypeObjects, cupboardMesh);
+
+    // Find which group the selected mesh belongs to
+    const selectedId = selectedMesh.userData.objectId;
+    for (const group of alignedGroups) {
+      const isInGroup = group.some((obj) => obj.userData.objectId === selectedId);
+      if (!isInGroup) continue;
+
+      // Sort vertically (top to bottom)
+      const sortedGroup = DrawerDoorUtils.sortVertically(group, cupboardMesh);
+
+      // Find the index of the selected object
+      const selectedIndex = sortedGroup.findIndex((obj) => obj.userData.objectId === selectedId);
+      if (selectedIndex === -1) continue;
+
+      // Check upward neighbor (selected is bottom, neighbor above is top)
+      if (selectedIndex > 0) {
+        const topObj = sortedGroup[selectedIndex - 1];
+        const bottomObj = sortedGroup[selectedIndex];
+
+        const targetMeshTop = MeshUtils.findTargetMesh(topObj);
+        const targetMeshBottom = MeshUtils.findTargetMesh(bottomObj);
+
+        if (
+          targetMeshTop &&
+          targetMeshBottom &&
+          MeshUtils.areVerticallyAdjacent(targetMeshTop, targetMeshBottom, cupboardMesh)
+        ) {
+          pairs.push([topObj, bottomObj]);
+        }
+      }
+
+      // Check downward neighbor (selected is top, neighbor below is bottom)
+      if (selectedIndex < sortedGroup.length - 1) {
+        const topObj = sortedGroup[selectedIndex];
+        const bottomObj = sortedGroup[selectedIndex + 1];
+
+        const targetMeshTop = MeshUtils.findTargetMesh(topObj);
+        const targetMeshBottom = MeshUtils.findTargetMesh(bottomObj);
+
+        if (
+          targetMeshTop &&
+          targetMeshBottom &&
+          MeshUtils.areVerticallyAdjacent(targetMeshTop, targetMeshBottom, cupboardMesh)
+        ) {
+          pairs.push([topObj, bottomObj]);
+        }
+      }
+
+      break; // The selected object can only belong to one alignment group
+    }
+
+    return pairs;
+  }
+
+  /**
+   * Add L-shape objects for a single selected drawer or door.
+   * Only affects the selected object and its immediate vertical neighbor(s).
+   */
+  public static async addLShapeForSingleObject(
+    scene: THREE.Scene,
+    selectedMesh: THREE.Mesh,
+    cupboardMesh: THREE.Mesh
+  ): Promise<void> {
+    if (!selectedMesh || !cupboardMesh) return;
+
+    showFullScreenLoader('Adding L-shape object.');
+
+    // 1. Remove any existing L-shapes for this object first
+    this.removeLShapeForDrawerOrDoor(selectedMesh, cupboardMesh);
+
+    // 2. Restore height for this object (in case it was previously reduced)
+    await this.restoreObjectHeight(selectedMesh, cupboardMesh);
+
+    // 3. Find vertical neighbors
+    const pairs = this.findVerticalNeighborsForObject(selectedMesh, cupboardMesh);
+
+    if (pairs.length === 0) {
+      console.log('[LShape] No adjacent vertical neighbor found for selected object.');
+      hideFullScreenLoader();
+      return;
+    }
+
+    // 4. For neighbors involved in the pairs, also restore their height and remove their L-shapes
+    const processedIds = new Set<string>([selectedMesh.userData.objectId]);
+    for (const [topObj, bottomObj] of pairs) {
+      for (const obj of [topObj, bottomObj]) {
+        const objId = obj.userData.objectId;
+        if (objId && !processedIds.has(objId)) {
+          this.removeLShapeForDrawerOrDoor(obj, cupboardMesh);
+          await this.restoreObjectHeight(obj, cupboardMesh);
+          processedIds.add(objId);
+        }
+      }
+    }
+
+    // 5. Add L-shapes for each discovered pair
+    const material = this.getDefaultMaterial();
+    for (const [topObj, bottomObj] of pairs) {
+      await this.addLShapeAtCenter(topObj, bottomObj, cupboardMesh, material);
+    }
+
+    generateCompartmentsFromMesh(cupboardMesh);
+    hideFullScreenLoader();
+  }
+
+  /**
+   * Add L-shape object for a single drawer/door in a specific direction (up or down).
+   * - 'up' means the L-shape is placed between this object and the one ABOVE it.
+   * - 'down' means the L-shape is placed between this object and the one BELOW it.
+   * The user manually chooses the direction via buttons in the sidebar.
+   */
+  public static async addLShapeForSingleObjectInDirection(
+    scene: THREE.Scene,
+    selectedMesh: THREE.Mesh,
+    cupboardMesh: THREE.Mesh,
+    direction: 'up' | 'down'
+  ): Promise<void> {
+    if (!selectedMesh || !cupboardMesh) return;
+
+    showFullScreenLoader('Adding L-shape object.');
+
+    // 1. Remove any existing L-shapes for this object first
+    this.removeLShapeForDrawerOrDoor(selectedMesh, cupboardMesh);
+    await this.restoreObjectHeight(selectedMesh, cupboardMesh);
+
+    // 2. Find vertical neighbors
+    const allPairs = this.findVerticalNeighborsForObject(selectedMesh, cupboardMesh);
+
+    if (allPairs.length === 0) {
+      console.log('[LShape] No adjacent vertical neighbor found for selected object.');
+      hideFullScreenLoader();
+      return;
+    }
+
+    // 3. Filter pairs based on direction
+    // 'up' → selected is the BOTTOM object in the pair (neighbor is above)
+    // 'down' → selected is the TOP object in the pair (neighbor is below)
+    const selectedId = selectedMesh.userData.objectId;
+    const filteredPairs = allPairs.filter(([topObj, bottomObj]) => {
+      if (direction === 'up') {
+        // We want the pair where the selected object is the bottom one
+        return bottomObj.userData.objectId === selectedId;
+      } else {
+        // We want the pair where the selected object is the top one
+        return topObj.userData.objectId === selectedId;
+      }
+    });
+
+    if (filteredPairs.length === 0) {
+      console.log(`[LShape] No adjacent neighbor found in direction: ${direction}`);
+      hideFullScreenLoader();
+      return;
+    }
+
+    // 4. Restore height / remove L-shapes for the neighbor too
+    const processedIds = new Set<string>([selectedId]);
+    for (const [topObj, bottomObj] of filteredPairs) {
+      for (const obj of [topObj, bottomObj]) {
+        const objId = obj.userData.objectId;
+        if (objId && !processedIds.has(objId)) {
+          this.removeLShapeForDrawerOrDoor(obj, cupboardMesh);
+          await this.restoreObjectHeight(obj, cupboardMesh);
+          processedIds.add(objId);
+        }
+      }
+    }
+
+    // 5. Add L-shape only for the filtered pair(s) in the chosen direction
+    const material = this.getDefaultMaterial();
+    for (const [topObj, bottomObj] of filteredPairs) {
+      await this.addLShapeAtCenter(topObj, bottomObj, cupboardMesh, material);
+    }
+
+    generateCompartmentsFromMesh(cupboardMesh);
+    hideFullScreenLoader();
+  }
+
+  /**
+   * Remove L-shape objects for a single selected drawer or door
+   * and restore heights only for the affected objects.
+   */
+  public static async removeLShapeForSingleObject(
+    selectedMesh: THREE.Mesh,
+    cupboardMesh: THREE.Mesh
+  ): Promise<void> {
+    if (!selectedMesh || !cupboardMesh) return;
+
+    showFullScreenLoader('Removing L-shape object.');
+
+    // Find vertical neighbors before removing (so we know which objects to restore)
+    const pairs = this.findVerticalNeighborsForObject(selectedMesh, cupboardMesh);
+
+    // Remove L-shapes for the selected object
+    this.removeLShapeForDrawerOrDoor(selectedMesh, cupboardMesh);
+
+    // Restore height for the selected object
+    await this.restoreObjectHeight(selectedMesh, cupboardMesh);
+
+    // Also restore heights of neighbor objects that were part of L-shape pairs
+    const processedIds = new Set<string>([selectedMesh.userData.objectId]);
+    for (const [topObj, bottomObj] of pairs) {
+      for (const obj of [topObj, bottomObj]) {
+        const objId = obj.userData.objectId;
+        if (objId && !processedIds.has(objId)) {
+          this.removeLShapeForDrawerOrDoor(obj, cupboardMesh);
+          await this.restoreObjectHeight(obj, cupboardMesh);
+          processedIds.add(objId);
+        }
+      }
+    }
+
+    generateCompartmentsFromMesh(cupboardMesh);
+    hideFullScreenLoader();
   }
 }

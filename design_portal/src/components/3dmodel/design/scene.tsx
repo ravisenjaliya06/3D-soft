@@ -1696,6 +1696,47 @@ export const addLShapeToDrawersAndDoors = async (scene: THREE.Scene, cupboardMes
 };
 
 /**
+ * Add L-shape object for a single selected drawer or door.
+ * Only affects the selected object and its immediate vertical neighbor(s).
+ */
+export const addLShapeForSingleDrawerOrDoor = async (
+  scene: THREE.Scene,
+  selectedMesh: THREE.Mesh,
+  cupboardMesh: THREE.Mesh
+) => {
+  await LShapeObjectManager.addLShapeForSingleObject(scene, selectedMesh, cupboardMesh);
+};
+
+/**
+ * Remove L-shape objects for a single selected drawer or door
+ * and restore heights only for the affected objects.
+ */
+export const removeLShapeForSingleDrawerOrDoor = async (
+  selectedMesh: THREE.Mesh,
+  cupboardMesh: THREE.Mesh
+) => {
+  await LShapeObjectManager.removeLShapeForSingleObject(selectedMesh, cupboardMesh);
+};
+
+/**
+ * Add L-shape object for a single drawer/door in a specific direction (up or down).
+ * User manually chooses direction via sidebar buttons.
+ */
+export const addLShapeInDirection = async (
+  scene: THREE.Scene,
+  selectedMesh: THREE.Mesh,
+  cupboardMesh: THREE.Mesh,
+  direction: 'up' | 'down'
+) => {
+  await LShapeObjectManager.addLShapeForSingleObjectInDirection(
+    scene,
+    selectedMesh,
+    cupboardMesh,
+    direction
+  );
+};
+
+/**
  * Helper function to manually update banding mesh dimensions and positions
  */
 const updateBandingMeshes = (

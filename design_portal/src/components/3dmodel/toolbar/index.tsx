@@ -44,6 +44,7 @@ import {
 import { SyncManager } from '../sceneCreator/syncState';
 import { formatEnumLabel } from '../sceneCreator/utils';
 import { store } from '../store';
+import { setCatalogItems } from '../store/catalogSlice';
 import {
   addObjects,
   setHoverdMesh,
@@ -365,6 +366,8 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
         console.log(cabinetResponse.data, 'cabinetResponse.data');
       }
       setCabinetItems(cabinetResponse.data);
+      // Store in Redux so other components (e.g. L-shape tool) can access catalog material data
+      store.dispatch(setCatalogItems(cabinetResponse.data));
     }
   };
 
