@@ -189,7 +189,16 @@ export class SyncManager {
     });
 
     if (mesh.parent) {
-      mesh.parent.remove(mesh);
+      const parent = mesh.parent;
+      parent.remove(mesh);
+
+      // Clean up empty batch_group containers to prevent scene clutter
+      if (
+        (parent.name === 'batch_group' || parent.userData?.type === 'batch_group') &&
+        parent.children.length === 0
+      ) {
+        parent.parent?.remove(parent);
+      }
     } else {
       this.scene.remove(mesh);
     }
@@ -728,7 +737,7 @@ export class SyncManager {
     });
 
     if (this._isObjectType(rootItem?.type ? rootItem.type : '')) {
-      this.scene.add(root);
+      this._addToTarget(root, this.scene);
       if (!this.isAutoSync) await this._applyDrag(root);
     } else {
       this._attachToParentOrScene(root, rootItem?.parent);
@@ -948,7 +957,7 @@ export class SyncManager {
     }
 
     if (!targetParentId) {
-      this.scene.add(mesh);
+      this._addToTarget(mesh, this.scene);
       return;
     }
 
@@ -964,6 +973,23 @@ export class SyncManager {
 
     parent.add(mesh);
     generateCompartmentsFromMesh(parent);
+  }
+
+  private _addToTarget(mesh: THREE.Object3D, target: THREE.Object3D) {
+    /**
+     * Adds an object to a target container.
+     * If the object is a 'batch_group' wrapper, it unwraps its children
+     * and adds them directly to the target.
+     */
+    if (
+      (mesh.name === 'batch_group' || mesh.userData?.type === 'batch_group') &&
+      mesh instanceof THREE.Group
+    ) {
+      const children = mesh.children.slice();
+      children.forEach((child) => target.add(child));
+    } else {
+      target.add(mesh);
+    }
   }
 
   private async _sync3D(list: MeshObjectData[]): Promise<void> {

@@ -62,7 +62,35 @@ export class ObjectsRemoverFromScene {
   }
 
   private _addRemovedObjectInList() {
-    this.scene.children.forEach((object) => {
+    // We must use a static copy of children because we might remove wrappers (groups) 
+    // from the scene during iteration, which would cause original array indices to shift and skip items.
+    const children = this.scene.children.slice();
+    children.forEach((object) => {
+      // Handle batch groups created during multi-object syncs
+      if (
+        object.name === 'batch_group' ||
+        object.userData?.type === 'batch_group' ||
+        object.userData?.isBatchGroup === true
+      ) {
+        object.traverse((child) => {
+          if (
+            child instanceof THREE.Mesh &&
+            child.userData?.objectId &&
+            (Object.values(OBJECT_TYPES).includes(child.userData.type) ||
+              Object.values(PART_TYPES).includes(child.userData.type) ||
+              Object.values(DRAWER_PLANK_TYPES).includes(child.userData.type) ||
+              Object.values(FLOOR_PLAN_TYPES).includes(child.userData.type))
+          ) {
+            if (!this.objectsToRemove.includes(child)) {
+              this.objectsToRemove.push(child);
+            }
+          }
+        });
+        // Remove the group wrapper itself from the scene after processing its children
+        this.scene.remove(object);
+        return;
+      }
+
       if (
         object instanceof THREE.Mesh &&
         (Object.values(OBJECT_TYPES).includes(object.userData.type) ||

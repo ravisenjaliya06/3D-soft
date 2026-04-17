@@ -216,6 +216,7 @@ export class DesignBuilder {
     } else {
       finalRoot = new THREE.Group();
       finalRoot.name = 'batch_group';
+      finalRoot.userData.type = 'batch_group';
       rootMeshes.forEach((m) => finalRoot.add(m));
     }
 
