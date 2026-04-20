@@ -380,7 +380,7 @@ class ScenePayloadSerializer(serializers.Serializer):
             return [self._clean_data(v) for v in data if not hasattr(v, "read")]
         return data
 
-    def validate(self, data):
+    def validate(self: "ScenePayloadSerializer", data: dict) -> dict:
         request = self.context["request"]
         is_library = request.query_params.get("is_library", "false").lower() == "true"
         if not is_library:
