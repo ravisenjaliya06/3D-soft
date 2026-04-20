@@ -22,7 +22,7 @@ import {
 } from './interface';
 import { BandingTool } from './tools/bandingTool';
 import { GroovingTool } from './tools/groovingTool';
-import { convertKeysToCamel, globalTextureLoader, normalizeUVs } from './utils';
+import { convertKeysToCamel, globalTextureLoader, normalizeUVs, updateEdges } from './utils';
 
 export class MeshBuilder {
   private meshData: MeshObjectData;
@@ -163,6 +163,11 @@ export class MeshBuilder {
         texture.colorSpace = THREE.SRGBColorSpace;
         texture.repeat.set(1, 1);
 
+        // Improved texture quality settings
+        texture.anisotropy = 8; // Good balance between quality and performance
+        texture.minFilter = THREE.LinearMipmapLinearFilter;
+        texture.magFilter = THREE.LinearFilter;
+
         //it is for texture grain when design loaded
         texture.center.set(0.5, 0.5);
         if (this.meshData.textureGrain === TEXTURE_GRAIN.VERTICAL) {
@@ -175,12 +180,20 @@ export class MeshBuilder {
     return texture;
   }
 
-  private _createTextureMaterial(materialData: Material): THREE.MeshStandardMaterial {
+  private _createTextureMaterial(materialData: Material): THREE.MeshPhysicalMaterial {
     const texture = this._createTexture(materialData);
-    if (!texture) return new THREE.MeshStandardMaterial({ visible: false });
-    return new THREE.MeshStandardMaterial({
+    if (!texture) return new THREE.MeshPhysicalMaterial({ visible: false });
+
+    // Use MeshPhysicalMaterial for a more premium look with clearcoat and better reflections
+    return new THREE.MeshPhysicalMaterial({
       map: texture,
       wireframe: false,
+      roughness: materialData.properties?.roughness ?? 0.8,
+      metalness: materialData.properties?.metalness ?? 0.05,
+      clearcoat: materialData.properties?.clearcoat ?? 0.0,
+      clearcoatRoughness: 0.1,
+      reflectivity: 0.5,
+      envMapIntensity: 1.0,
     });
   }
 
@@ -198,8 +211,15 @@ export class MeshBuilder {
       } else if (this.meshData.type === FLOOR_PLAN_TYPES.WALL) {
         const wallTexture = this._createTexture(materialData);
         createdMaterial = wallTexture
-          ? new THREE.MeshStandardMaterial({ map: wallTexture })
-          : new THREE.MeshStandardMaterial({ color: 0xffffff });
+          ? new THREE.MeshStandardMaterial({
+              map: wallTexture,
+              roughness: 0.9,
+              metalness: 0,
+            })
+          : new THREE.MeshStandardMaterial({
+              color: 0xe8e6e1,
+              roughness: 0.85,
+            });
       } else if (materialData.type === MATERIAL_TYPES.MISCELLANEOUS) {
         // Support floor material type - use same texture loading as Panel Stock
         createdMaterial = this._createTextureMaterial(materialData);
@@ -924,6 +944,7 @@ export class MeshBuilder {
       mesh.geometry = geometry;
       await this._handleMaterial();
       this._createGrooving();
+      updateEdges(mesh, geometry);
     });
 
     this._setName(mesh);
@@ -1181,7 +1202,7 @@ export class MeshBuilder {
       this._setScale(mesh);
     }
     if (changes.material) {
-      if (!(mesh.material instanceof THREE.MeshStandardMaterial)) return;
+      if (!(mesh.material instanceof THREE.Material)) return;
       const newMaterial = changes.material;
       const oldMaterialArray = Array.isArray(oldMaterial)
         ? oldMaterial
@@ -1221,6 +1242,7 @@ export class MeshBuilder {
       mesh.geometry.dispose();
       const geometry = await this._getGeometry();
       mesh.geometry = geometry;
+      updateEdges(mesh, geometry);
     }
   }
 
