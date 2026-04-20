@@ -34,19 +34,36 @@ class FloorBuilder {
   }
 
   private createMaterial(): THREE.MeshStandardMaterial {
-    // Start completely transparent so there is no gray placeholder color
     const material = new THREE.MeshStandardMaterial({
       side: THREE.DoubleSide,
       transparent: true,
       opacity: 0,
     });
 
-    textureLoader(this.textureUrl, 5, 5)
+    textureLoader(this.textureUrl, 1, 1)
       .then((texture) => {
+        //  FIX: proper wrapping
+        texture.wrapS = THREE.RepeatWrapping;
+        texture.wrapT = THREE.RepeatWrapping;
+
+        // control tiling (adjust if needed)
+        texture.repeat.set(1, 1);
+
+        // make texture horizontal
+        texture.center.set(0.5, 0.5);
+        texture.rotation = Math.PI / 2;
+
+        // quality improvement
+        texture.anisotropy = 16;
+        texture.colorSpace = THREE.SRGBColorSpace;
+
+        // apply texture
         material.map = texture;
-        material.transparent = false; // Disable transparency when texture loads
+        material.transparent = false;
         material.opacity = 1;
-        material.roughness = 0.8;
+        material.roughness = 0.85;
+        material.metalness = 0;
+
         material.needsUpdate = true;
       })
       .catch((e) => {
@@ -60,7 +77,6 @@ class FloorBuilder {
 
     return material;
   }
-
   public createMesh(): THREE.Mesh | null {
     if (this.points.length < 3) return null;
 

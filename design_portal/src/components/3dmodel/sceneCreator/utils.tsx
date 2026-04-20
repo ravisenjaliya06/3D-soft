@@ -11,7 +11,7 @@ import { prefetchTexture } from '../helper/glbLoader';
 import { Dimensions } from '../interface';
 import { store } from '../store';
 import { addPoint, setWalls } from '../store/dataSlice';
-import { EDGES, FLOOR_PLAN_TYPES, MeshObjectData, PART_TYPES } from './interface';
+import { EDGES, FLOOR_PLAN_TYPES, MeshObjectData, OBJECT_TYPES, PART_TYPES } from './interface';
 import { SyncManager } from './syncState';
 import { ObjectsRemoverFromScene } from './tools/deleteOrClearTool';
 import { ObjectsSaver } from './tools/objectSaver';
@@ -132,6 +132,10 @@ export const textureLoader = (
         texture.wrapS = THREE.RepeatWrapping;
         texture.wrapT = THREE.RepeatWrapping;
         texture.repeat.set(repeatX, repeatY);
+        texture.anisotropy = 8;
+        texture.colorSpace = THREE.SRGBColorSpace;
+        texture.minFilter = THREE.LinearMipmapLinearFilter;
+        texture.magFilter = THREE.LinearFilter;
         resolve(texture);
       },
       undefined,
@@ -836,4 +840,39 @@ export function mapAxis(
   }
 
   return { nextSize, nextCenter };
+}
+
+// update edges of the mesh
+export function updateEdges(mesh: THREE.Mesh, geometry: THREE.BufferGeometry) {
+  const type = mesh.userData.type;
+  if (
+    type === OBJECT_TYPES.SINK ||
+    type === OBJECT_TYPES.MODEL ||
+    type === FLOOR_PLAN_TYPES.FLOOR ||
+    mesh.userData.isInvisibleBox
+  ) {
+    return;
+  }
+
+  const existingEdges = mesh.children.find((child) => child.userData.isWireframeEdge);
+  if (existingEdges) {
+    mesh.remove(existingEdges);
+    if ((existingEdges as THREE.LineSegments).geometry) {
+      (existingEdges as THREE.LineSegments).geometry.dispose();
+    }
+    if ((existingEdges as THREE.LineSegments).material) {
+      ((existingEdges as THREE.LineSegments).material as THREE.Material).dispose();
+    }
+  }
+
+  const edges = new THREE.EdgesGeometry(geometry);
+  const edgesMaterial = new THREE.LineBasicMaterial({ color: 0x000000 });
+  const edgeLines = new THREE.LineSegments(edges, edgesMaterial);
+  edgeLines.userData.isWireframeEdge = true;
+
+  // Respect the wireframe visibility setting from Redux
+  const isWireframeVisible = store.getState().data.isWireframeVisible;
+  edgeLines.visible = isWireframeVisible;
+
+  mesh.add(edgeLines);
 }

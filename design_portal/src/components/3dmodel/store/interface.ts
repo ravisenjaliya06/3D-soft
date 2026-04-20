@@ -184,6 +184,7 @@ export interface DataState {
   points: WallPoint[];
   floor: Floor[];
   globalDoorsOpen?: boolean;
+  isWireframeVisible: boolean;
 }
 export interface HistoryAction {
   id: string;

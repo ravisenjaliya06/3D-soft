@@ -22,6 +22,7 @@ const initialState: DataState = {
   points: [],
   floor: [],
   globalDoorsOpen: false,
+  isWireframeVisible: false,
 };
 
 const dataSlice = createSlice({
@@ -198,6 +199,9 @@ const dataSlice = createSlice({
         state.isMeasurementActive = false;
       }
     },
+    toggleWireframe: (state, action: PayloadAction<boolean>) => {
+      state.isWireframeVisible = action.payload;
+    },
     setHoverdMesh: (state, action: PayloadAction<THREE.Mesh | null>) => {
       state.hoverdMesh = action.payload;
     },
@@ -258,6 +262,7 @@ export const {
   setCreationCancelHint,
   togglAlignment,
   setGlobalDoorsOpen,
+  toggleWireframe,
 } = dataSlice.actions;
 
 export const {

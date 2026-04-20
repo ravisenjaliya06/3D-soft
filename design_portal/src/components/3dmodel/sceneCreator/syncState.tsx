@@ -16,7 +16,7 @@ import {
   PART_TYPES,
 } from './interface';
 import { MeshBuilder } from './meshBuilder';
-import { convertKeysToCamel, create2DWallFromMeshData, mapAxis } from './utils';
+import { convertKeysToCamel, create2DWallFromMeshData, mapAxis, updateEdges } from './utils';
 
 export class SyncManager {
   private scene: THREE.Scene;
@@ -614,6 +614,7 @@ export class SyncManager {
       // Apply geometry
       child.geometry.dispose();
       child.geometry = new THREE.BoxGeometry(nextWidth, nextHeight, nextDepth);
+      updateEdges(child, child.geometry);
 
       child.position.set(nextX, nextY, nextZ);
 

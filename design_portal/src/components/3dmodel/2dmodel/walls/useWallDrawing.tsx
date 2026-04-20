@@ -455,9 +455,9 @@ export function useWallDrawing(svgWidth: number, svgHeight: number) {
     const effectiveEnd =
       inputLength !== null
         ? {
-          x: start.x + inputLength * Math.cos(angleRad),
-          y: start.y + inputLength * Math.sin(angleRad),
-        }
+            x: start.x + inputLength * Math.cos(angleRad),
+            y: start.y + inputLength * Math.sin(angleRad),
+          }
         : previewEnd;
 
     const offsetSign = computeWallOffsetSignForNewWall(start, effectiveEnd, walls);

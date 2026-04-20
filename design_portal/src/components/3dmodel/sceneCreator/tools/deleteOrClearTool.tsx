@@ -62,7 +62,7 @@ export class ObjectsRemoverFromScene {
   }
 
   private _addRemovedObjectInList() {
-    // We must use a static copy of children because we might remove wrappers (groups) 
+    // We must use a static copy of children because we might remove wrappers (groups)
     // from the scene during iteration, which would cause original array indices to shift and skip items.
     const children = this.scene.children.slice();
     children.forEach((object) => {
