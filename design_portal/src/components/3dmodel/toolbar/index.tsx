@@ -284,13 +284,17 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
     const itemPayload = {
       name: uploadData.name,
       type: 'model',
+      is_main: true,
+      dimensions: {
+        width: Number(uploadData.width) / 1000, // Convert MM to Meters
+        height: Number(uploadData.height) / 1000,
+        depth: Number(uploadData.depth) / 1000,
+      },
+      position: { x: 0, y: 1, z: 0 },
+      rotation: { x: 0, y: 0, z: 0 },
+      scale: { x: 1, y: 1, z: 1 },
       data: {
         category: selectedFurnitureCategory,
-        dimensions: {
-          width: Number(uploadData.width) / 1000, // Convert MM to Meters
-          height: Number(uploadData.height) / 1000,
-          depth: Number(uploadData.depth) / 1000,
-        },
       },
       material: [
         {
@@ -311,6 +315,11 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
     formData.append('design_id', designId);
     formData.append('items[0]name', itemPayload.name);
     formData.append('items[0]type', itemPayload.type);
+    formData.append('items[0]is_main', 'true');
+    formData.append('items[0]dimensions', JSON.stringify(itemPayload.dimensions));
+    formData.append('items[0]position', JSON.stringify(itemPayload.position));
+    formData.append('items[0]rotation', JSON.stringify(itemPayload.rotation));
+    formData.append('items[0]scale', JSON.stringify(itemPayload.scale));
     formData.append('items[0]data', JSON.stringify(itemPayload.data));
 
     if (thumbnailBase64) {
@@ -319,9 +328,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
       formData.append('items[0]image', blob, `${uploadData.name}_thumbnail.png`);
     }
 
-    formData.append('items[0]material[0]name', itemPayload.material[0].name);
-    formData.append('items[0]material[0]type', itemPayload.material[0].type);
-    formData.append('items[0]material[0]properties[model_file]', uploadData.file);
+    formData.append('items[0]model_file', uploadData.file);
 
     try {
       const response = await commonService.post(
@@ -454,7 +461,104 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
           }
         }
 
-        const model = await GLBLoader(item.path, item.name, targetSize);
+        // Determine category and set appropriate realistic dimensions
+        if (
+          item.path.includes('/sofa/') ||
+          (item.data &&
+            (typeof item.data === 'string' ? item.data : JSON.stringify(item.data)).includes(
+              'Sofa'
+            ))
+        ) {
+          targetSize = { width: 2.0, height: 0.8, depth: 0.9 };
+        } else if (
+          item.path.includes('/fridge/') ||
+          (item.data &&
+            (typeof item.data === 'string' ? item.data : JSON.stringify(item.data)).includes(
+              'Fridge'
+            ))
+        ) {
+          targetSize = { width: 0.8, height: 1.7, depth: 0.7 };
+        } else if (
+          item.path.includes('/stove/') ||
+          (item.data &&
+            (typeof item.data === 'string' ? item.data : JSON.stringify(item.data)).includes(
+              'Stove'
+            ))
+        ) {
+          targetSize = { width: 0.6, height: 0.9, depth: 0.6 };
+        } else if (
+          item.path.includes('/tv/') ||
+          (item.data &&
+            (typeof item.data === 'string' ? item.data : JSON.stringify(item.data)).includes('TV'))
+        ) {
+          targetSize = { width: 1.2, height: 0.7, depth: 0.1 };
+        } else if (
+          item.path.includes('/dinnertable/') ||
+          (item.data &&
+            (typeof item.data === 'string' ? item.data : JSON.stringify(item.data)).includes(
+              'Dinner Table'
+            ))
+        ) {
+          targetSize = { width: 1.5, height: 0.75, depth: 0.9 };
+        } else if (
+          item.path.includes('/flower/') ||
+          (item.data &&
+            (typeof item.data === 'string' ? item.data : JSON.stringify(item.data)).includes(
+              'Flower'
+            ))
+        ) {
+          targetSize = { width: 0.3, height: 0.4, depth: 0.3 };
+        } else if (
+          item.path.includes('/microwave/') ||
+          (item.data &&
+            (typeof item.data === 'string' ? item.data : JSON.stringify(item.data)).includes(
+              'Microwave'
+            ))
+        ) {
+          targetSize = { width: 0.5, height: 0.3, depth: 0.4 };
+        } else if (
+          item.path.includes('/table/') ||
+          (item.data &&
+            (typeof item.data === 'string' ? item.data : JSON.stringify(item.data)).includes(
+              'Study Table'
+            ))
+        ) {
+          targetSize = { width: 1.2, height: 0.75, depth: 0.6 };
+        } else {
+          // Check for dynamic models with dimensions in data
+          try {
+            const itemData = item.data
+              ? typeof item.data === 'string'
+                ? JSON.parse(item.data)
+                : item.data
+              : null;
+            if (itemData?.dimensions) {
+              targetSize = itemData.dimensions;
+            }
+          } catch (_err) {
+            console.error('Error parsing item data', _err);
+          }
+        }
+
+        const isExternal =
+          item.path.startsWith('http') ||
+          item.path.startsWith('https') ||
+          item.path.startsWith('data:');
+        const apiBase = process.env.NEXT_PUBLIC_PUBLIC_API || '';
+        const cleanBase = apiBase.endsWith('/') ? apiBase.slice(0, -1) : apiBase;
+        const cleanPath = item.path.startsWith('/') ? item.path : `/${item.path}`;
+
+        const activePath = isExternal
+          ? item.path
+          : item.path.startsWith('/assets/') || item.path.startsWith('/glb/')
+            ? item.path
+            : `${cleanBase}${cleanPath}`;
+
+        if (process.env.NEXT_PUBLIC_DEBUG === 'true') {
+          console.log(`[DynamicModel Debug] Loading ${item.name} from:`, activePath);
+        }
+
+        const model = await GLBLoader(activePath, item.name, targetSize);
         let position: THREE.Vector3 | null = null;
 
         if (model) {
@@ -857,12 +961,19 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
         try {
           const itemData = typeof item.data === 'string' ? JSON.parse(item.data) : item.data;
 
-          // Set path from material properties if available
-          const modelFile = item.material?.[0]?.properties?.model_file;
-          if (modelFile) {
-            item.path = modelFile.startsWith('http')
-              ? modelFile
-              : `${process.env.NEXT_PUBLIC_PUBLIC_API}${modelFile}`;
+          // Set path from various possible locations in the response
+          const modelFile =
+            item.model_file ||
+            item.material?.[0]?.properties?.model_file ||
+            item.material?.[0]?.model_file ||
+            item.properties?.model_file;
+
+          if (modelFile && !item.path) {
+            const apiBase = process.env.NEXT_PUBLIC_PUBLIC_API || '';
+            const cleanBase = apiBase.endsWith('/') ? apiBase.slice(0, -1) : apiBase;
+            const cleanFile = modelFile.startsWith('/') ? modelFile : `/${modelFile}`;
+
+            item.path = modelFile.startsWith('http') ? modelFile : `${cleanBase}${cleanFile}`;
           }
 
           return itemData?.category === category;

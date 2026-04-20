@@ -123,8 +123,12 @@ export class SceneBuilder {
     });
 
     renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.setPixelRatio(1);
+    renderer.setPixelRatio(window.devicePixelRatio);
     renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.2;
 
     this.mount.appendChild(renderer.domElement);
     return renderer;
@@ -135,13 +139,16 @@ export class SceneBuilder {
     directionalLight: THREE.DirectionalLight;
     hemiLight: THREE.HemisphereLight | null;
   } {
-    // Ambient light
-    const ambientLight = new THREE.AmbientLight(0xffffff, 1.9);
+    // Ambient light - provides soft base illumination
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
 
-    // Directional light
-    const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
-    directionalLight.position.set(5, 8, 5);
+    // Directional light - provides shadows and highlights
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 1.2);
+    directionalLight.position.set(5, 10, 7.5);
     directionalLight.castShadow = true;
+    directionalLight.shadow.mapSize.set(1024, 1024);
+    directionalLight.shadow.bias = -0.0001;
+
     return { ambientLight, directionalLight, hemiLight: null };
   }
 
@@ -178,6 +185,13 @@ export class SceneBuilder {
     // this.scene.add(this.grid);
 
     this.scene.background = new THREE.Color(0xdddddd);
+
+    // Create a procedural environment map so metallic/shiny GLB models don't look black
+    const pmremGenerator = new THREE.PMREMGenerator(this.renderer);
+    pmremGenerator.compileEquirectangularShader();
+    const envScene = new THREE.Scene();
+    envScene.background = new THREE.Color(0xffffff); // White background for bright reflections
+    this.scene.environment = pmremGenerator.fromScene(envScene).texture;
 
     // Add lighting
     this.scene.add(this.ambientLight);
@@ -218,7 +232,11 @@ export class SceneBuilder {
   public toggleSky(): void {}
 
   private initSelector() {
-    this.selector = new SelectObjectController(this.camera as THREE.PerspectiveCamera, this.scene);
+    this.selector = new SelectObjectController(
+      this.camera as THREE.PerspectiveCamera,
+      this.scene,
+      this.config.dispatch
+    );
   }
 
   private initMoveHandler() {

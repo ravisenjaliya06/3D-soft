@@ -269,6 +269,16 @@ class SceneGetSerializer(serializers.Serializer):
             "image": (
                 f"{settings.MEDIA_URL}{catalog.image.name}" if catalog.image else None
             ),
+            "model_file": (
+                f"{settings.MEDIA_URL}{catalog.model_file.name}"
+                if catalog.model_file
+                else None
+            ),
+            "path": (
+                f"{settings.MEDIA_URL}{catalog.model_file.name}"
+                if catalog.model_file
+                else None
+            ),
             "parent": str(catalog.parent_id) if catalog.parent_id else None,
             "material": self._serialize_materials_without_cnc(catalog.materials.all()),
         }
@@ -311,8 +321,39 @@ class ScenePayloadSerializer(serializers.Serializer):
     ) -> None:
         """
         Attach material using MaterialSerializer (create if missing).
+        Supports both structured and flattened multipart field naming.
         """
+        # Python imports
+        import re
+
         material_data = item.get("material")
+
+        # If material_data is missing, check for flattened keys like material[0]name
+        if not material_data:
+            material_data = []
+            # Find all material indices (e.g., "0" from "material[0]name")
+            indices = set()
+            for k in item:
+                match = re.match(r"material\[(\d+)\]", k)
+                if match:
+                    indices.add(int(match.group(1)))
+
+            for i in sorted(list(indices)):
+                m_item = {
+                    "name": item.get(f"material[{i}]name"),
+                    "type": item.get(f"material[{i}]type"),
+                    "properties": {},
+                }
+
+                # Extract properties (like model_file) for this material
+                # Only "model_file" is typically sent as a property in this flow
+                model_file = item.get(f"material[{i}]properties[model_file]")
+                if model_file:
+                    m_item["properties"]["model_file"] = model_file
+
+                if m_item["name"]:
+                    material_data.append(m_item)
+
         if not material_data:
             return
 
@@ -376,6 +417,12 @@ class ScenePayloadSerializer(serializers.Serializer):
                     image_file = image_data
                     item.pop("image", None)
 
+                model_file_data = item.get("model_file")
+                model_file = None
+                if model_file_data and not isinstance(model_file_data, str):
+                    model_file = model_file_data
+                    item.pop("model_file", None)
+
                 catalog = DesignCatalog.objects.create(
                     organization=organization,
                     version=version,
@@ -384,6 +431,7 @@ class ScenePayloadSerializer(serializers.Serializer):
                     parent=None,
                     is_library=is_library,
                     image=image_file,
+                    model_file=model_file,
                     data=self._clean_data(item.copy()),
                 )
 
