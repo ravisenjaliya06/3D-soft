@@ -380,6 +380,29 @@ class ScenePayloadSerializer(serializers.Serializer):
             return [self._clean_data(v) for v in data if not hasattr(v, "read")]
         return data
 
+    def validate(self, data):
+        request = self.context["request"]
+        is_library = request.query_params.get("is_library", "false").lower() == "true"
+        if not is_library:
+            return data
+
+        items = data.get("items")
+        if not items:
+            return data
+
+        organization = request.user.selected_organization
+        for item in items:
+            name = item.get("name")
+            if not name:
+                continue
+
+            if DesignCatalog.objects.filter(name=name, organization=organization).exists():
+                raise serializers.ValidationError(
+                    "This name is already present, please choose another name."
+                )
+
+        return data
+
     def create(self: "ScenePayloadSerializer", validated_data: Dict[str, Any]) -> dict:
         request = self.context["request"]
         organization = request.user.selected_organization
