@@ -1,7 +1,9 @@
 import React from 'react';
 
-interface SidebarInputWithSuffixProps
-  extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'className'> {
+interface SidebarInputWithSuffixProps extends Omit<
+  React.InputHTMLAttributes<HTMLInputElement>,
+  'className'
+> {
   wrapperClassName?: string;
   inputClassName?: string;
   suffix?: string;

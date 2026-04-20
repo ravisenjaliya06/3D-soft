@@ -1426,7 +1426,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
                   <div className={styles.formGrid}>
                     <div className={styles.formRowFull}>
                       <label className={styles.uploadLabel}>Model File (.glb)</label>
-                      <div className={styles.fileUploadBox}>
+                      <label htmlFor="glb-upload" className={styles.fileUploadBox}>
                         <input
                           type="file"
                           id="glb-upload"
@@ -1440,13 +1440,13 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
                           alt="upload"
                           style={{ width: '1.5rem', opacity: 0.8 }}
                         />
-                        <label htmlFor="glb-upload" className={styles.fileBoxLabel}>
+                        <div className={styles.fileBoxLabel}>
                           {uploadData.file ? uploadData.file.name : 'Click to browse GLB file'}
-                        </label>
+                        </div>
                         {!uploadData.file && (
                           <p className={styles.fileBoxHint}>Max file size: 20MB</p>
                         )}
-                      </div>
+                      </label>
                     </div>
 
                     <div className={styles.formRowFull}>
