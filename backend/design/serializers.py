@@ -1,5 +1,6 @@
 # Python imports
 import base64
+import re
 from typing import Any, Dict
 from urllib.request import Request
 from uuid import uuid4
@@ -323,39 +324,36 @@ class ScenePayloadSerializer(serializers.Serializer):
         request: Request,
     ) -> None:
         """
-        Attach material using MaterialSerializer (create if missing).
-        Supports both structured and flattened multipart field naming.
+        Attach material using MaterialSerializer.
+        Supports structured and flattened multipart field naming.
         """
-        # Python imports
-        import re
+        material_data = item.get("material") or []
 
-        material_data = item.get("material")
-
-        # If material_data is missing, check for flattened keys like material[0]name
+        # Parse flattened indices if structured list is missing
         if not material_data:
-            material_data = []
-            # Find all material indices (e.g., "0" from "material[0]name")
-            indices = set()
-            for k in item:
-                match = re.match(r"material\[(\d+)\]", k)
-                if match:
-                    indices.add(int(match.group(1)))
 
-            for i in sorted(list(indices)):
-                m_item = {
+            indices = sorted(
+                list(
+                    {
+                        int(re.match(r"material\[(\d+)\]", k).group(1))
+                        for k in item
+                        if re.match(r"material\[(\d+)\]", k)
+                    }
+                )
+            )
+
+            for i in indices:
+                m_payload = {
                     "name": item.get(f"material[{i}]name"),
                     "type": item.get(f"material[{i}]type"),
                     "properties": {},
                 }
-
-                # Extract properties (like model_file) for this material
-                # Only "model_file" is typically sent as a property in this flow
                 model_file = item.get(f"material[{i}]properties[model_file]")
                 if model_file:
-                    m_item["properties"]["model_file"] = model_file
+                    m_payload["properties"]["model_file"] = model_file
 
-                if m_item["name"]:
-                    material_data.append(m_item)
+                if m_payload["name"]:
+                    material_data.append(m_payload)
 
         if not material_data:
             return
