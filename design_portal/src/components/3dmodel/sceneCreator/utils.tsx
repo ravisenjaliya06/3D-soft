@@ -10,6 +10,7 @@ import { prefetchTexture } from '../helper/glbLoader';
 import { Dimensions } from '../interface';
 import { store } from '../store';
 import { addPoint, setWalls } from '../store/dataSlice';
+import { gettingDesignID } from '../utils/routeIds';
 import { EDGES, FLOOR_PLAN_TYPES, MeshObjectData, OBJECT_TYPES, PART_TYPES } from './interface';
 import { SyncManager } from './syncState';
 import { ObjectsRemoverFromScene } from './tools/deleteOrClearTool';

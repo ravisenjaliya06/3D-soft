@@ -261,6 +261,17 @@ class SceneGetSerializer(serializers.Serializer):
         if edge_data is not None:
             data["edge_banding"] = edge_data
 
+        model_url = None
+        if catalog.model_file:
+            model_url = f"{settings.MEDIA_URL}{catalog.model_file.name}"
+        else:
+            # Fallback for old models stored in materials
+            for material in catalog.materials.all():
+                props = self._serialize_properties(material)
+                if props and props.get("model_file"):
+                    model_url = props.get("model_file")
+                    break
+
         return {
             **data,
             "id": str(catalog.id),
@@ -269,16 +280,8 @@ class SceneGetSerializer(serializers.Serializer):
             "image": (
                 f"{settings.MEDIA_URL}{catalog.image.name}" if catalog.image else None
             ),
-            "model_file": (
-                f"{settings.MEDIA_URL}{catalog.model_file.name}"
-                if catalog.model_file
-                else None
-            ),
-            "path": (
-                f"{settings.MEDIA_URL}{catalog.model_file.name}"
-                if catalog.model_file
-                else None
-            ),
+            "model_file": model_url,
+            "path": model_url,
             "parent": str(catalog.parent_id) if catalog.parent_id else None,
             "material": self._serialize_materials_without_cnc(catalog.materials.all()),
         }
