@@ -396,7 +396,9 @@ class ScenePayloadSerializer(serializers.Serializer):
             if not name:
                 continue
 
-            if DesignCatalog.objects.filter(name=name, organization=organization).exists():
+            if DesignCatalog.objects.filter(
+                name=name, organization=organization
+            ).exists():
                 raise serializers.ValidationError(
                     "This name is already present, please choose another name."
                 )
