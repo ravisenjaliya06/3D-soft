@@ -23,6 +23,7 @@ const initialState: DataState = {
   floor: [],
   globalDoorsOpen: false,
   isWireframeVisible: false,
+  wallPointMode: 'internal',
 };
 
 const dataSlice = createSlice({
@@ -186,6 +187,9 @@ const dataSlice = createSlice({
     setWallDrawStartPointId: (state, action: PayloadAction<string | null>) => {
       state.wallDrawStartPointId = action.payload;
     },
+    setWallPointMode: (state, action: PayloadAction<'external' | 'internal' | 'center'>) => {
+      state.wallPointMode = action.payload;
+    },
     setUnitType: (state, action: PayloadAction<'mm' | 'cm' | 'in'>) => {
       state.currentUnitType = action.payload;
     },
@@ -258,6 +262,7 @@ export const {
   toggleMeasurement,
   toggleWallDrawing,
   setWallDrawStartPointId,
+  setWallPointMode,
   setUnitType,
   setCreationCancelHint,
   togglAlignment,

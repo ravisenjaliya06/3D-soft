@@ -39,6 +39,7 @@ export function useWallDrawing(svgWidth: number, svgHeight: number) {
   const walls = objects.filter((obj) => obj.type === FLOOR_PLAN_TYPES.WALL);
   const isWallDrawingActive = storeSelector.isWallDrawingActive;
   const startPointId = storeSelector.wallDrawStartPointId;
+  const wallPointMode = storeSelector.wallPointMode;
 
   const [previewEnd, setPreviewEnd] = useState<{ x: number; y: number } | null>(null);
   const [inputLength, setInputLength] = useState<number | null>(null);
@@ -137,7 +138,13 @@ export function useWallDrawing(svgWidth: number, svgHeight: number) {
     }
 
     const thickness = WALL_THICKNESS_2D_UNITS;
-    const wallOffsetSign = computeWallOffsetSignForNewWall(startPoint, clickedPoint, walls);
+    const computedOffsetSign = computeWallOffsetSignForNewWall(startPoint, clickedPoint, walls);
+    const wallOffsetSign =
+      wallPointMode === 'center'
+        ? undefined
+        : wallPointMode === 'internal'
+          ? -computedOffsetSign
+          : computedOffsetSign;
 
     const { startPoint: centerStart, endPoint: centerEnd } = referenceEdgeToCenterline(
       startPoint,
@@ -461,13 +468,19 @@ export function useWallDrawing(svgWidth: number, svgHeight: number) {
         : previewEnd;
 
     const offsetSign = computeWallOffsetSignForNewWall(start, effectiveEnd, walls);
+    const resolvedOffsetSign =
+      wallPointMode === 'center'
+        ? undefined
+        : wallPointMode === 'internal'
+          ? -offsetSign
+          : offsetSign;
 
     return {
       start,
       length: effectiveLength,
       angle: angleDeg,
       effectiveEnd,
-      offsetSign,
+      offsetSign: resolvedOffsetSign,
       thickness: WALL_THICKNESS_2D_UNITS,
     };
   };

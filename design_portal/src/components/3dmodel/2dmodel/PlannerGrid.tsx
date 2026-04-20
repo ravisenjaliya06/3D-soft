@@ -5,7 +5,7 @@ import { ReactSVGPanZoom, Tool, TOOL_AUTO, Value } from 'react-svg-pan-zoom';
 import { FLOOR_PLAN_TYPES, MeshObjectData } from '../sceneCreator/interface';
 import { getFootprintQuadFromReferenceEdge, perpLeft2D } from '../sceneCreator/utils';
 import { RootState } from '../store';
-import { setobjectSelected, toggleWallDrawing } from '../store/dataSlice';
+import { setWallPointMode, setobjectSelected, toggleWallDrawing } from '../store/dataSlice';
 import { FEET_CHANGE, GRID_SIZE, REACTSVGPANZOOM_INITIAL_VALUE } from './constants';
 import { Grids } from './grid';
 import { TwoDSidebar } from './TwoDSidebar';
@@ -38,6 +38,7 @@ export default function PlannerGrid() {
   const selectedObjectId = useSelector((state: RootState) => state.data.selectedObject);
   const objects = useSelector((state: RootState) => state.data.objects);
   const isDrawingActive = useSelector((state: RootState) => state.data.isWallDrawingActive);
+  const wallPointMode = useSelector((state: RootState) => state.data.wallPointMode);
 
   const selectedWall = objects.find(
     (obj: MeshObjectData) => obj.id === selectedObjectId && obj.type === FLOOR_PLAN_TYPES.WALL
@@ -90,13 +91,31 @@ export default function PlannerGrid() {
   let previewWallLayer: ReactNode = null;
   if (preview && preview.length > 0.5) {
     const t = preview.thickness ?? 30;
-    const sign = preview.offsetSign ?? 1;
-    const [rs, re, oppRe, oppRs] = getFootprintQuadFromReferenceEdge(
-      preview.start,
-      preview.effectiveEnd,
-      sign,
-      t
-    );
+    const isCentered = preview.offsetSign == null;
+    const [rs, re, oppRe, oppRs] = isCentered
+      ? (() => {
+          const dx = preview.effectiveEnd.x - preview.start.x;
+          const dy = preview.effectiveEnd.y - preview.start.y;
+          const len = Math.hypot(dx, dy);
+          if (len < 1e-6) {
+            return [preview.start, preview.effectiveEnd, preview.effectiveEnd, preview.start] as const;
+          }
+          const ux = dx / len;
+          const uy = dy / len;
+          const pl = perpLeft2D(ux, uy);
+          const half = t / 2;
+          const a = { x: preview.start.x - pl.x * half, y: preview.start.y - pl.y * half };
+          const b = { x: preview.effectiveEnd.x - pl.x * half, y: preview.effectiveEnd.y - pl.y * half };
+          const c = { x: preview.effectiveEnd.x + pl.x * half, y: preview.effectiveEnd.y + pl.y * half };
+          const d = { x: preview.start.x + pl.x * half, y: preview.start.y + pl.y * half };
+          return [a, b, c, d] as const;
+        })()
+      : getFootprintQuadFromReferenceEdge(
+          preview.start,
+          preview.effectiveEnd,
+          preview.offsetSign ?? 1,
+          t
+        );
     const footprintPts = `${rs.x},${rs.y} ${re.x},${re.y} ${oppRe.x},${oppRe.y} ${oppRs.x},${oppRs.y}`;
     const midRef = { x: (rs.x + re.x) / 2, y: (rs.y + re.y) / 2 };
     const midOpp = { x: (oppRe.x + oppRs.x) / 2, y: (oppRe.y + oppRs.y) / 2 };
@@ -105,8 +124,9 @@ export default function PlannerGrid() {
     const plen = Math.hypot(dx, dy) || 1;
     const pl = perpLeft2D(dx / plen, dy / plen);
     const labelLift = 36;
-    const labelX = midRef.x - pl.x * sign * labelLift - 90;
-    const labelY = midRef.y - pl.y * sign * labelLift - 14;
+    const labelDirection = isCentered ? 1 : (preview.offsetSign ?? 1);
+    const labelX = midRef.x - pl.x * labelDirection * labelLift - 90;
+    const labelY = midRef.y - pl.y * labelDirection * labelLift - 14;
     previewWallLayer = (
       <g>
         <polygon points={footprintPts} fill="url(#wallDoubleHatch)" opacity="0.6" stroke="none" />
@@ -383,11 +403,13 @@ export default function PlannerGrid() {
         </svg>
       </ReactSVGPanZoom>
 
-      {selectedWall && (
+      {isDrawingActive && (
         <TwoDSidebar
-          object={selectedWall}
+          object={selectedWall ?? null}
           pos={sidebarPos}
           onDragStart={() => setIsDraggingSidebar(true)}
+          pointMode={wallPointMode}
+          onPointModeChange={(mode) => dispatch(setWallPointMode(mode))}
         />
       )}
     </div>
