@@ -130,6 +130,8 @@ export default function PlannerGrid() {
     const footprintPts = `${rs.x},${rs.y} ${re.x},${re.y} ${oppRe.x},${oppRe.y} ${oppRs.x},${oppRs.y}`;
     const midRef = { x: (rs.x + re.x) / 2, y: (rs.y + re.y) / 2 };
     const midOpp = { x: (oppRe.x + oppRs.x) / 2, y: (oppRe.y + oppRs.y) / 2 };
+    const markerStart = isCentered ? preview.start : rs;
+    const markerEnd = isCentered ? preview.effectiveEnd : re;
     const dx = preview.effectiveEnd.x - preview.start.x;
     const dy = preview.effectiveEnd.y - preview.start.y;
     const plen = Math.hypot(dx, dy) || 1;
@@ -165,8 +167,22 @@ export default function PlannerGrid() {
           strokeDasharray="6 4"
         />
 
-        <circle cx={rs.x} cy={rs.y} r={6} fill="#1290ff" stroke="#fff" strokeWidth={2} />
-        <circle cx={re.x} cy={re.y} r={6} fill="#1290ff" stroke="#fff" strokeWidth={2} />
+        <circle
+          cx={markerStart.x}
+          cy={markerStart.y}
+          r={6}
+          fill="#1290ff"
+          stroke="#fff"
+          strokeWidth={2}
+        />
+        <circle
+          cx={markerEnd.x}
+          cy={markerEnd.y}
+          r={6}
+          fill="#1290ff"
+          stroke="#fff"
+          strokeWidth={2}
+        />
 
         <foreignObject
           x={labelX}
