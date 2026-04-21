@@ -1,44 +1,110 @@
 import { MeshObjectData } from '../../sceneCreator/interface';
-import { getWallReferenceEdgePoints } from '../../sceneCreator/utils';
+import { getWallFootprintQuad, getWallReferenceEdgePoints } from '../../sceneCreator/utils';
 import { WallPoint } from '../interface';
 
 export function getFloorPolygon(walls: MeshObjectData[]): WallPoint[] {
-  // Return empty result if a polygon cannot exist (at least 3 walls required)
   if (walls.length < 3) return [];
 
-  // Store all unique wall endpoints as polygon vertices
-  const pointMap = new Map<string, WallPoint>();
-  const pointCounts = new Map<string, number>();
+  const lineIntersection = (
+    a1: WallPoint,
+    a2: WallPoint,
+    b1: WallPoint,
+    b2: WallPoint
+  ): WallPoint | null => {
+    const x1 = a1.x;
+    const y1 = a1.y;
+    const x2 = a2.x;
+    const y2 = a2.y;
+    const x3 = b1.x;
+    const y3 = b1.y;
+    const x4 = b2.x;
+    const y4 = b2.y;
 
-  walls.forEach((wall) => {
-    const { startPoint, endPoint } = getWallReferenceEdgePoints(wall);
-    const key1 = `${Math.round(startPoint.x)},${Math.round(startPoint.y)}`;
-    const key2 = `${Math.round(endPoint.x)},${Math.round(endPoint.y)}`;
+    const denominator = (x1 - x2) * (y3 - y4) - (y1 - y2) * (x3 - x4);
+    if (Math.abs(denominator) < 1e-6) return null;
 
-    pointMap.set(key1, startPoint);
-    pointMap.set(key2, endPoint);
+    const detA = x1 * y2 - y1 * x2;
+    const detB = x3 * y4 - y3 * x4;
 
-    pointCounts.set(key1, (pointCounts.get(key1) || 0) + 1);
-    pointCounts.set(key2, (pointCounts.get(key2) || 0) + 1);
-  });
-
-  // Convert stored points into an array
-  const points = Array.from(pointMap.values());
-
-  // Compute the centroid of all polygon points
-  const center = {
-    x: points.reduce((sum, point) => sum + point.x, 0) / points.length,
-    y: points.reduce((sum, point) => sum + point.y, 0) / points.length,
+    const px = (detA * (x3 - x4) - (x1 - x2) * detB) / denominator;
+    const py = (detA * (y3 - y4) - (y1 - y2) * detB) / denominator;
+    return { x: px, y: py };
   };
 
-  // Sort vertices based on their angle around the centroid
-  points.sort((pointA, pointB) => {
-    const angleA = Math.atan2(pointA.y - center.y, pointA.x - center.x);
-    const angleB = Math.atan2(pointB.y - center.y, pointB.x - center.x);
+  const midpoint = (a: WallPoint, b: WallPoint): WallPoint => ({
+    x: (a.x + b.x) / 2,
+    y: (a.y + b.y) / 2,
+  });
+
+  const roomSeedPoints = walls.flatMap((wall) => {
+    const [a, b, c, d] = getWallFootprintQuad(wall);
+    return [a, b, c, d];
+  });
+  const center = {
+    x: roomSeedPoints.reduce((sum, point) => sum + point.x, 0) / roomSeedPoints.length,
+    y: roomSeedPoints.reduce((sum, point) => sum + point.y, 0) / roomSeedPoints.length,
+  };
+
+  const innerSegments = walls.map((wall) => {
+    const [a, b, c, d] = getWallFootprintQuad(wall);
+    const edge1 = { start: a, end: b };
+    const edge2 = { start: d, end: c };
+
+    const edge1Mid = midpoint(edge1.start, edge1.end);
+    const edge2Mid = midpoint(edge2.start, edge2.end);
+
+    const dist1 = Math.hypot(edge1Mid.x - center.x, edge1Mid.y - center.y);
+    const dist2 = Math.hypot(edge2Mid.x - center.x, edge2Mid.y - center.y);
+    const chosen = dist1 <= dist2 ? edge1 : edge2;
+
+    const crossToCenter =
+      (chosen.end.x - chosen.start.x) * (center.y - chosen.start.y) -
+      (chosen.end.y - chosen.start.y) * (center.x - chosen.start.x);
+
+    const oriented =
+      crossToCenter >= 0
+        ? chosen
+        : {
+            start: chosen.end,
+            end: chosen.start,
+          };
+
+    return {
+      ...oriented,
+      mid: midpoint(oriented.start, oriented.end),
+    };
+  });
+
+  if (innerSegments.length < 3) return [];
+
+  innerSegments.sort((segA, segB) => {
+    const angleA = Math.atan2(segA.mid.y - center.y, segA.mid.x - center.x);
+    const angleB = Math.atan2(segB.mid.y - center.y, segB.mid.x - center.x);
     return angleA - angleB;
   });
 
-  // Return final ordered polygon vertices
+  const points: WallPoint[] = [];
+  for (let i = 0; i < innerSegments.length; i += 1) {
+    const current = innerSegments[i];
+    const next = innerSegments[(i + 1) % innerSegments.length];
+    const intersection = lineIntersection(current.start, current.end, next.start, next.end);
+    if (intersection) {
+      points.push(intersection);
+    } else {
+      points.push({ x: current.end.x, y: current.end.y });
+    }
+  }
+
+  if (points.length < 3) return [];
+
+  let signedArea = 0;
+  for (let i = 0; i < points.length; i += 1) {
+    const a = points[i];
+    const b = points[(i + 1) % points.length];
+    signedArea += a.x * b.y - b.x * a.y;
+  }
+  if (Math.abs(signedArea) < 1e-3) return [];
+
   return points;
 }
 

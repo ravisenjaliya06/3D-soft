@@ -10,11 +10,11 @@ import {
 } from '../../sceneCreator/interface';
 import { SyncManager } from '../../sceneCreator/syncState';
 import {
-  computeWallOffsetSignForNewWall,
   convertPosition2DTo3D,
   findRotation,
   getWallReferenceEdgePoints,
   referenceEdgeToCenterline,
+  resolveWallOffsetSign,
   WALL_THICKNESS_2D_UNITS,
 } from '../../sceneCreator/utils';
 import { RootState } from '../../store';
@@ -138,13 +138,7 @@ export function useWallDrawing(svgWidth: number, svgHeight: number) {
     }
 
     const thickness = WALL_THICKNESS_2D_UNITS;
-    const computedOffsetSign = computeWallOffsetSignForNewWall(startPoint, clickedPoint, walls);
-    const wallOffsetSign =
-      wallPointMode === 'center'
-        ? undefined
-        : wallPointMode === 'internal'
-          ? -computedOffsetSign
-          : computedOffsetSign;
+    const wallOffsetSign = resolveWallOffsetSign(startPoint, clickedPoint, wallPointMode, walls);
 
     const { startPoint: centerStart, endPoint: centerEnd } = referenceEdgeToCenterline(
       startPoint,
@@ -168,6 +162,7 @@ export function useWallDrawing(svgWidth: number, svgHeight: number) {
         depth: thickness,
       },
       wallOffsetSign,
+      wallLocationLine: wallPointMode,
       position: convertPosition2DTo3D({ startPoint: centerStart, endPoint: centerEnd }),
       rotation: findRotation({ startPoint: centerStart, endPoint: centerEnd }),
       scale: { x: 0.01, y: 0.001, z: 0.01 },
@@ -467,13 +462,7 @@ export function useWallDrawing(svgWidth: number, svgHeight: number) {
           }
         : previewEnd;
 
-    const offsetSign = computeWallOffsetSignForNewWall(start, effectiveEnd, walls);
-    const resolvedOffsetSign =
-      wallPointMode === 'center'
-        ? undefined
-        : wallPointMode === 'internal'
-          ? -offsetSign
-          : offsetSign;
+    const resolvedOffsetSign = resolveWallOffsetSign(start, effectiveEnd, wallPointMode, walls);
 
     return {
       start,

@@ -302,6 +302,17 @@ export default function PlannerGrid() {
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === ' ' && isDrawingActive) {
+        event.preventDefault();
+        const nextMode =
+          wallPointMode === 'internal'
+            ? 'center'
+            : wallPointMode === 'center'
+              ? 'external'
+              : 'internal';
+        dispatch(setWallPointMode(nextMode));
+        return;
+      }
       if (event.key === 'Escape') {
         dispatch(toggleWallDrawing(false));
         resetDrawing();
@@ -312,7 +323,7 @@ export default function PlannerGrid() {
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [resetDrawing, dispatch]);
+  }, [resetDrawing, dispatch, isDrawingActive, wallPointMode]);
 
   const onViewerClick = (event: any) => {
     if (isDrawingActive) {
@@ -355,10 +366,6 @@ export default function PlannerGrid() {
           <g transform={`translate(${GRID_SIZE.WIDTH / 2}, ${GRID_SIZE.HEIGHT / 2})`}>
             <Grids width={GRID_SIZE.WIDTH} height={GRID_SIZE.HEIGHT} />
 
-            {walls.map((wall) => (
-              <Wall2D key={wall.id} wall={wall} />
-            ))}
-
             {rooms.map((room, i) => {
               const floorPoints = getFloorPolygon(room);
               return (
@@ -372,6 +379,10 @@ export default function PlannerGrid() {
                 />
               );
             })}
+
+            {walls.map((wall) => (
+              <Wall2D key={wall.id} wall={wall} />
+            ))}
 
             <defs>
               <pattern

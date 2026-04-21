@@ -277,6 +277,45 @@ export function computeWallOffsetSignForNewWall(
   return 1;
 }
 
+/**
+ * Resolve effective wall side from a Coohom-style location line.
+ *
+ * - `center`: thickness is symmetric around the drawn reference edge
+ * - `external`: uses attachment-first baseline side
+ * - `internal`: mirrored side of external
+ *
+ * Baseline side comes from `computeWallOffsetSignForNewWall` so when a segment starts
+ * from an existing wall endpoint, continuity is preserved for chained drawing.
+ */
+export function resolveWallOffsetSign(
+  refStart: WallPoint,
+  refEnd: WallPoint,
+  mode: 'internal' | 'center' | 'external',
+  existingWalls: MeshObjectData[]
+): number | undefined {
+  if (mode === 'center') {
+    return undefined;
+  }
+  const baselineSign = computeWallOffsetSignForNewWall(refStart, refEnd, existingWalls);
+
+  // For connected chains, keep location-line continuity with the attached segment.
+  // For a brand-new segment (no attachment), keep internal/external mirrored around center.
+  const tol = 0.75;
+  const near = (a: WallPoint, b: WallPoint) =>
+    Math.abs(a.x - b.x) < tol && Math.abs(a.y - b.y) < tol;
+
+  const attachedWall = existingWalls.find((w) => {
+    const { startPoint: rs, endPoint: re } = getWallReferenceEdgePoints(w);
+    return near(refStart, rs) || near(refStart, re);
+  });
+
+  if (attachedWall && attachedWall.wallLocationLine && attachedWall.wallLocationLine !== 'center') {
+    return attachedWall.wallLocationLine === mode ? baselineSign : -baselineSign;
+  }
+
+  return mode === 'internal' ? -baselineSign : baselineSign;
+}
+
 /** Footprint from reference edge endpoints (shared by preview and placed walls). */
 export function getFootprintQuadFromReferenceEdge(
   rs: WallPoint,
