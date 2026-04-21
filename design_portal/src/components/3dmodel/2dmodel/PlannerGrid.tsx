@@ -5,7 +5,7 @@ import { ReactSVGPanZoom, Tool, TOOL_AUTO, Value } from 'react-svg-pan-zoom';
 import { FLOOR_PLAN_TYPES, MeshObjectData } from '../sceneCreator/interface';
 import { getFootprintQuadFromReferenceEdge, perpLeft2D } from '../sceneCreator/utils';
 import { RootState } from '../store';
-import { setWallPointMode, setobjectSelected, toggleWallDrawing } from '../store/dataSlice';
+import { setobjectSelected, setWallPointMode, toggleWallDrawing } from '../store/dataSlice';
 import { FEET_CHANGE, GRID_SIZE, REACTSVGPANZOOM_INITIAL_VALUE } from './constants';
 import { Grids } from './grid';
 import { TwoDSidebar } from './TwoDSidebar';
@@ -98,15 +98,26 @@ export default function PlannerGrid() {
           const dy = preview.effectiveEnd.y - preview.start.y;
           const len = Math.hypot(dx, dy);
           if (len < 1e-6) {
-            return [preview.start, preview.effectiveEnd, preview.effectiveEnd, preview.start] as const;
+            return [
+              preview.start,
+              preview.effectiveEnd,
+              preview.effectiveEnd,
+              preview.start,
+            ] as const;
           }
           const ux = dx / len;
           const uy = dy / len;
           const pl = perpLeft2D(ux, uy);
           const half = t / 2;
           const a = { x: preview.start.x - pl.x * half, y: preview.start.y - pl.y * half };
-          const b = { x: preview.effectiveEnd.x - pl.x * half, y: preview.effectiveEnd.y - pl.y * half };
-          const c = { x: preview.effectiveEnd.x + pl.x * half, y: preview.effectiveEnd.y + pl.y * half };
+          const b = {
+            x: preview.effectiveEnd.x - pl.x * half,
+            y: preview.effectiveEnd.y - pl.y * half,
+          };
+          const c = {
+            x: preview.effectiveEnd.x + pl.x * half,
+            y: preview.effectiveEnd.y + pl.y * half,
+          };
           const d = { x: preview.start.x + pl.x * half, y: preview.start.y + pl.y * half };
           return [a, b, c, d] as const;
         })()

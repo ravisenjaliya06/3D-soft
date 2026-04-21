@@ -133,7 +133,9 @@ export const TwoDSidebar: React.FC<TwoDSidebarProps> = ({
       </div>
       <div className={styles.sidebarSection}>
         <div className={styles.sidebarTitle}>Points Selection</div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginTop: '0.75rem' }}>
+        <div
+          style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginTop: '0.75rem' }}
+        >
           {(['internal', 'center', 'external'] as const).map((mode) => (
             <label
               key={mode}

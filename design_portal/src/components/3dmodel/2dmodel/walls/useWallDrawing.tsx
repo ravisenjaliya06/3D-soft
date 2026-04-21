@@ -218,6 +218,9 @@ export function useWallDrawing(svgWidth: number, svgHeight: number) {
         });
 
         const points = getFloorPolygon(room);
+        if (points.length < 3) {
+          return;
+        }
 
         // Calculate bounding box for floor dimensions
         const xs = points.map((p) => p.x);

@@ -173,6 +173,9 @@ export function useWallAdjustment() {
         const floorWalls = allProposedWalls.filter((w) => obj.floorData?.walls.includes(w.id));
         if (floorWalls.length >= 3) {
           const newFloorPoints = getFloorPolygon(floorWalls);
+          if (newFloorPoints.length < 3) {
+            return;
+          }
           objectUpdates.push({
             id: obj.id,
             floorData: {
