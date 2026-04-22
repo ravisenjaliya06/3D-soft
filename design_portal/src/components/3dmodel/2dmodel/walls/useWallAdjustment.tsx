@@ -10,6 +10,7 @@ import {
 } from '../../sceneCreator/utils';
 import { RootState } from '../../store';
 import { updatePoints } from '../../store/dataSlice';
+import { MAXIMUM_WALL_OBJECT } from '../constants';
 import { WallPoint } from '../interface';
 import { getFloorPolygon } from './wallFloor';
 
@@ -171,9 +172,9 @@ export function useWallAdjustment() {
       if (obj.type === FLOOR_PLAN_TYPES.FLOOR && obj.floorData) {
         // Find which walls are part of this floor
         const floorWalls = allProposedWalls.filter((w) => obj.floorData?.walls.includes(w.id));
-        if (floorWalls.length >= 3) {
+        if (floorWalls.length >= MAXIMUM_WALL_OBJECT) {
           const newFloorPoints = getFloorPolygon(floorWalls);
-          if (newFloorPoints.length < 3) {
+          if (newFloorPoints.length < MAXIMUM_WALL_OBJECT) {
             return;
           }
           objectUpdates.push({

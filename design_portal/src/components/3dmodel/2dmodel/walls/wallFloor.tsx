@@ -1,15 +1,13 @@
 import { MeshObjectData } from '../../sceneCreator/interface';
 import { getWallFootprintQuad, getWallReferenceEdgePoints } from '../../sceneCreator/utils';
+import { FLOOR_POINT_MERGE_TOLERANCE, FLOOR_POINT_SNAP, MAXIMUM_WALL_OBJECT } from '../constants';
 import { WallPoint } from '../interface';
 
 export function getFloorPolygon(walls: MeshObjectData[]): WallPoint[] {
-  if (walls.length < 3) return [];
-
-  const POINT_SNAP = 1;
-  const POINT_MERGE_TOLERANCE = 3;
+  if (walls.length < MAXIMUM_WALL_OBJECT) return [];
 
   const pointKey = (p: WallPoint) =>
-    `${Math.round(p.x / POINT_SNAP)}:${Math.round(p.y / POINT_SNAP)}`;
+    `${Math.round(p.x / FLOOR_POINT_SNAP)}:${Math.round(p.y / FLOOR_POINT_SNAP)}`;
 
   const distance = (a: WallPoint, b: WallPoint) => Math.hypot(a.x - b.x, a.y - b.y);
   const polygonArea = (pts: WallPoint[]) => {
@@ -30,7 +28,7 @@ export function getFloorPolygon(walls: MeshObjectData[]): WallPoint[] {
       unique.set(pointKey(endPoint), { x: endPoint.x, y: endPoint.y });
     });
     const points = Array.from(unique.values());
-    if (points.length < 3) return [];
+    if (points.length < MAXIMUM_WALL_OBJECT) return [];
     const center = {
       x: points.reduce((sum, p) => sum + p.x, 0) / points.length,
       y: points.reduce((sum, p) => sum + p.y, 0) / points.length,
@@ -158,7 +156,7 @@ export function getFloorPolygon(walls: MeshObjectData[]): WallPoint[] {
     })
     .filter((s): s is CandidateSegment => Boolean(s));
 
-  if (chosenSegments.length < 3) return fallbackFromReferenceEndpoints();
+  if (chosenSegments.length < MAXIMUM_WALL_OBJECT) return fallbackFromReferenceEndpoints();
 
   const nodeByKey = new Map<string, WallPoint>();
   const neighbors = new Map<string, Set<string>>();
@@ -253,23 +251,23 @@ export function getFloorPolygon(walls: MeshObjectData[]): WallPoint[] {
     .filter((p): p is WallPoint => Boolean(p))
     .map((p) => ({ x: p.x, y: p.y }));
 
-  if (points.length < 3) return fallbackFromReferenceEndpoints();
+  if (points.length < MAXIMUM_WALL_OBJECT) return fallbackFromReferenceEndpoints();
 
   const deduped: WallPoint[] = [];
   for (const p of points) {
     const last = deduped[deduped.length - 1];
-    if (!last || Math.hypot(last.x - p.x, last.y - p.y) > POINT_MERGE_TOLERANCE) {
+    if (!last || Math.hypot(last.x - p.x, last.y - p.y) > FLOOR_POINT_MERGE_TOLERANCE) {
       deduped.push(p);
     }
   }
   if (deduped.length >= 2) {
     const first = deduped[0];
     const last = deduped[deduped.length - 1];
-    if (Math.hypot(first.x - last.x, first.y - last.y) < POINT_MERGE_TOLERANCE) {
+    if (Math.hypot(first.x - last.x, first.y - last.y) < FLOOR_POINT_MERGE_TOLERANCE) {
       deduped.pop();
     }
   }
-  if (deduped.length < 3) return fallbackFromReferenceEndpoints();
+  if (deduped.length < MAXIMUM_WALL_OBJECT) return fallbackFromReferenceEndpoints();
 
   const signedArea = polygonArea(deduped);
   if (Math.abs(signedArea) < 1e-3) return fallbackFromReferenceEndpoints();

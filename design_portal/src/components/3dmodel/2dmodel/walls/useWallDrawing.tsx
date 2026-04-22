@@ -26,6 +26,7 @@ import {
   setWalls,
   updateObjects,
 } from '../../store/dataSlice';
+import { MAXIMUM_WALL_OBJECT } from '../constants';
 import { WallPoint } from '../interface';
 import { snapToGrid } from '../utils';
 import { findRoomsFromWalls, getFloorPolygon } from './wallFloor';
@@ -218,7 +219,7 @@ export function useWallDrawing(svgWidth: number, svgHeight: number) {
         });
 
         const points = getFloorPolygon(room);
-        if (points.length < 3) {
+        if (points.length < MAXIMUM_WALL_OBJECT) {
           return;
         }
 
