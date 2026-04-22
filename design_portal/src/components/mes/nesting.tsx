@@ -14,6 +14,125 @@ import styles from '../mes/nesting.module.css';
 
 type ExportFormat = 'excel' | 'pdf';
 
+const BOM_CUTTING_HEADERS = [
+  'Part ID',
+  'Part Name',
+  'Cabinet/Assembly',
+  'Material',
+  'Thickness',
+  'Length',
+  'Width',
+  'Qty',
+  'Area (sqm)',
+  'Grain Dir',
+  'Edge L1',
+  'Edge L2',
+  'Edge W1',
+  'Edge W2',
+];
+
+const BOM_PANEL_HEADERS = [
+  'Material Type',
+  'Thickness',
+  'Sheet Size',
+  'Sheets Required',
+  'Sheet Cost',
+  'Wastage %',
+  'Total Material Cost',
+  'Total Labor Cost',
+];
+
+const BOM_EDGE_HEADERS = [
+  'Part ID',
+  'Part Name',
+  'Edge Type',
+  'Thickness',
+  'Total Length (m)',
+  'Rate/m',
+  'Total Cost',
+  'Remarks',
+];
+
+const BOM_HARDWARE_HEADERS = [
+  'Hardware ID',
+  'Item Name',
+  'Specification',
+  'Brand',
+  'Qty',
+  'Unit Price',
+  'Installation',
+  'Total Cost',
+  'Supplier',
+];
+
+const QUOTATION_HEADERS = [
+  'Sr.',
+  'Unit/Component Description',
+  'Dimensions (L×W×H)',
+  'Material',
+  'Qty',
+  'Rate/Unit',
+  'Amount',
+  'HSN',
+  'GST%',
+];
+
+const PDF_THEME = {
+  titleColor: [57, 37, 121] as [number, number, number],
+  lightGray: [242, 242, 242] as [number, number, number],
+  tableHeaderBg: [0, 0, 0] as [number, number, number],
+  tableHeaderText: [255, 255, 255] as [number, number, number],
+  border: [180, 180, 180] as [number, number, number],
+};
+
+const getQuoteTerms = () => [
+  '1. PAYMENT TERMS:',
+  '   - 40% advance payment with purchase order confirmation',
+  '   - 30% payment upon material delivery and start of manufacturing',
+  '   - 20% payment upon installation completion',
+  '   - 10% final payment after client sign-off and handover',
+  '',
+  '2. DELIVERY & INSTALLATION:',
+  '   - Manufacturing time: 15-20 working days from order confirmation and advance payment',
+  '   - Installation time: 3-4 working days (subject to site readiness)',
+  '   - Site should be ready with completed flooring, painting, electrical points, and civil work',
+  '   - Customer to provide permissions for material delivery and installation access',
+  '',
+  '3. WARRANTY:',
+  '   - 1 year comprehensive warranty on manufacturing defects and workmanship',
+  '   - 5 years warranty on branded hardware (Blum/Hettich/Hafele/Ebco) as per manufacturer terms',
+  '   - Warranty does not cover misuse, mishandling, accidents, or natural wear and tear',
+  '   - Annual maintenance contract available separately after warranty period',
+  '',
+  '4. INCLUSIONS:',
+  '   - All materials as per detailed specifications mentioned above',
+  '   - Complete manufacturing with CNC cutting, drilling, edge banding, and finishing',
+  '   - Transportation to site within Ahmedabad city limits (25 km radius)',
+  '   - Complete on-site installation, assembly, fitting, and alignment',
+  '   - Final cleaning and handover with care & maintenance instructions',
+  '',
+  '5. EXCLUSIONS:',
+  '   - Any civil work, masonry work, electrical work, plumbing, or painting work',
+  '   - Structural modifications or wall preparation work',
+  '   - Loading/unloading charges at site (if elevator not available above 2nd floor)',
+  '   - Transportation beyond 25 km from our factory (extra charges applicable)',
+  '   - Any items not specifically mentioned in this quotation',
+  '',
+  '6. DESIGN & CHANGES:',
+  '   - Design approval to be taken before manufacturing starts',
+  '   - Any design changes after approval will attract additional charges (minimum 15% of changed items)',
+  '   - Material/hardware changes subject to availability and price revision',
+  '   - Final measurements to be taken at site before manufacturing',
+  '',
+  '7. GENERAL TERMS:',
+  '   - Quotation validity: 30 days from issue date',
+  '   - GST charged as per prevailing rates at billing time',
+  '   - All disputes subject to Ahmedabad jurisdiction only',
+  '   - Material specifications are subject to availability; equivalent quality alternatives may be provided with customer consent',
+  "   - Payment should be made via cheque/NEFT/RTGS in favor of 'Bravento Furniture Solutions'",
+  '   - Any additional work during installation is chargeable',
+];
+
 const Nesting = () => {
   const router = useRouter();
   const design_id = (router.query.designid as string) || window.location.pathname.split('/')[2];
@@ -93,6 +212,45 @@ const Nesting = () => {
     return `${Math.round(value)} mm`;
   };
 
+  const buildMaterialPriceMap = (materials: any[]) => {
+    const priceMap: Record<string, number> = {};
+    materials.forEach((material) => {
+      priceMap[material.id] = parseFloat(
+        material.properties?.sell_price || material.sell_price || 0
+      );
+    });
+    return priceMap;
+  };
+
+  const buildMergedPartsList = (layoutData: any[], sourceData: any[]) =>
+    (layoutData.length > 0 ? layoutData : sourceData).map((p: any) => {
+      const layoutUniqueId = p['Unique ID'] || p.unique_id || p.ID;
+      const reduxPart = sourceData.find(
+        (d: any) =>
+          d.id === p.id || d.id === p.ID || (d.unique_id && d.unique_id === layoutUniqueId)
+      );
+
+      let eBands = p.edgebands || [];
+      if (eBands.length === 0) {
+        const rEdge = reduxPart?.edgeBanding || reduxPart?.edgeband;
+        if (rEdge) {
+          eBands = [];
+          if (rEdge.left) eBands.push('LEFT');
+          if (rEdge.right) eBands.push('RIGHT');
+          if (rEdge.top) eBands.push('TOP');
+          if (rEdge.bottom) eBands.push('BOTTOM');
+          if (rEdge.front) eBands.push('LEFT');
+          if (rEdge.back) eBands.push('RIGHT');
+          eBands = [...new Set(eBands)];
+        }
+      }
+      return {
+        ...p,
+        unique_id: reduxPart?.unique_id || layoutUniqueId,
+        edgebands: eBands,
+      };
+    });
+
   const downloadBOMPdf = (
     design: any,
     cuttingRows: any[],
@@ -106,97 +264,211 @@ const Nesting = () => {
     const totalLaborCost = Math.round(totalMaterialCost * 0.2);
     const estimatedCost = totalMaterialCost + totalEdgeCost + totalLaborCost;
     const finalPrice = Math.round(estimatedCost * 1.5);
+    const leftMargin = 40;
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const printableWidth = pageWidth - leftMargin * 2;
+    const firstPageTop = 34;
+    const tableLineColor: [number, number, number] = [210, 210, 210];
 
-    doc.setFontSize(14);
-    doc.text('BRAVENTO - Bill of Materials', 40, 36);
-    doc.setFontSize(10);
-    doc.text(`Project: ${design.design_name || '-'}`, 40, 54);
-    doc.text(`Project Code: ${design.project_code || design.id || '-'}`, 40, 68);
-    doc.text(`Customer: ${design.customer_name || '-'}`, 40, 82);
+    doc.setFillColor(...PDF_THEME.titleColor);
+    doc.rect(leftMargin, firstPageTop, printableWidth * 0.68, 18, 'F');
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(15);
+    doc.text(
+      'BRAVENTO - Bill of Materials',
+      leftMargin + printableWidth * 0.34,
+      firstPageTop + 13,
+      {
+        align: 'center',
+      }
+    );
+    doc.setTextColor(0, 0, 0);
+
+    const metaStartY = firstPageTop + 24;
+    const metaRows = [
+      [
+        'Project ID:',
+        design.project_code || design.id || '-',
+        '',
+        'Project Name:',
+        design.design_name || '-',
+        '',
+        'Customer:',
+        design.customer_name || '-',
+      ],
+      [
+        'Date:',
+        new Date(design.created_at || Date.now()).toLocaleDateString('en-GB'),
+        '',
+        'Designer:',
+        design.created_by?.username || '-',
+        '',
+        'Revision:',
+        '1',
+      ],
+      [
+        'Product Type:',
+        design.project_type || '-',
+        '',
+        'Finish:',
+        '-',
+        '',
+        'Status:',
+        design.status || '-',
+      ],
+      ['Project Description:', design?.description || 'Bespoke Cabinetry', '', '', '', '', '', ''],
+      ['Created Date:', new Date().toLocaleDateString('en-GB'), '', '', '', '', '', ''],
+    ];
 
     autoTable(doc, {
-      startY: 100,
-      head: [['Cost Summary', 'Amount']],
+      startY: metaStartY,
+      body: metaRows,
+      theme: 'grid',
+      styles: {
+        font: 'helvetica',
+        fontSize: 9,
+        lineColor: tableLineColor,
+        lineWidth: 0.5,
+        cellPadding: { top: 3, right: 4, bottom: 3, left: 4 },
+      },
+      bodyStyles: { halign: 'left', valign: 'middle' },
+      columnStyles: {
+        0: { fontStyle: 'bold', cellWidth: 78 },
+        1: { cellWidth: 95 },
+        2: { cellWidth: 12 },
+        3: { fontStyle: 'bold', cellWidth: 78 },
+        4: { cellWidth: 95 },
+        5: { cellWidth: 12 },
+        6: { fontStyle: 'bold', cellWidth: 78 },
+        7: { cellWidth: 95 },
+      },
+      margin: { left: leftMargin },
+    });
+
+    const costHeaderY = ((doc as any).lastAutoTable?.finalY || metaStartY + 90) + 10;
+    doc.setFillColor(...PDF_THEME.titleColor);
+    doc.rect(leftMargin, costHeaderY, printableWidth * 0.68, 18, 'F');
+    doc.setTextColor(255, 255, 255);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(13);
+    doc.text('Cost Summary', leftMargin + printableWidth * 0.34, costHeaderY + 13, {
+      align: 'center',
+    });
+    doc.setTextColor(0, 0, 0);
+
+    autoTable(doc, {
+      startY: costHeaderY + 18,
       body: [
-        ['Total Material Cost', `${Math.round(totalMaterialCost)} Rs`],
-        ['Total Edge Band Cost', `${totalEdgeCost.toFixed(2)} Rs`],
-        ['Total Labor Cost', `${totalLaborCost} Rs`],
-        ['Estimated Cost', `${Math.round(estimatedCost)} Rs`],
-        ['Final Selling Price', `${finalPrice} Rs`],
+        [
+          'Total Material Cost:',
+          `${Math.round(totalMaterialCost)} Rs`,
+          'Total Edge Band Cost:',
+          `${totalEdgeCost.toFixed(2)} Rs`,
+          'Total Labor Cost:',
+          `${totalLaborCost} Rs`,
+        ],
+        ['Total Hardware Cost:', '-', 'Total Hardware Margin:', '-', 'Total Glass Cost:', '-'],
+        [
+          'Estimated Cost:',
+          `${estimatedCost.toFixed(3)} Rs`,
+          'Markup/Margin:',
+          '50%',
+          'Final Selling Price:',
+          `${finalPrice} Rs`,
+        ],
       ],
       theme: 'grid',
-      headStyles: { fillColor: [57, 37, 121] },
+      styles: {
+        font: 'helvetica',
+        fontSize: 9.5,
+        lineColor: tableLineColor,
+        lineWidth: 0.5,
+        cellPadding: { top: 3, right: 4, bottom: 3, left: 4 },
+      },
+      bodyStyles: { halign: 'left' },
+      columnStyles: {
+        0: { fontStyle: 'bold', cellWidth: 90 },
+        1: { cellWidth: 95 },
+        2: { fontStyle: 'bold', cellWidth: 98 },
+        3: { cellWidth: 95 },
+        4: { fontStyle: 'bold', cellWidth: 92 },
+        5: { cellWidth: 95 },
+      },
+      margin: { left: leftMargin },
     });
 
     doc.addPage();
+    doc.setFont('helvetica', 'bold');
     doc.setFontSize(13);
     doc.text('Cutting List', 40, 32);
     autoTable(doc, {
       startY: 48,
-      head: [
-        [
-          'Part ID',
-          'Part Name',
-          'Cabinet/Assembly',
-          'Material',
-          'Thickness',
-          'Length',
-          'Width',
-          'Qty',
-          'Area (sqm)',
-        ],
-      ],
-      body: cuttingRows.map((row) => row.slice(0, 9)),
-      theme: 'striped',
-      styles: { fontSize: 8 },
-      headStyles: { fillColor: [57, 37, 121] },
+      head: [BOM_CUTTING_HEADERS],
+      body: cuttingRows,
+      theme: 'grid',
+      styles: { font: 'helvetica', fontSize: 8, lineColor: PDF_THEME.border },
+      headStyles: {
+        fillColor: PDF_THEME.tableHeaderBg,
+        textColor: PDF_THEME.tableHeaderText,
+        halign: 'center',
+      },
+      alternateRowStyles: { fillColor: PDF_THEME.lightGray },
+      columnStyles: { 1: { cellWidth: 105 }, 2: { cellWidth: 92 }, 3: { cellWidth: 65 } },
     });
 
     doc.addPage();
+    doc.setFont('helvetica', 'bold');
     doc.setFontSize(13);
     doc.text('Panel Details', 40, 32);
     autoTable(doc, {
       startY: 48,
-      head: [
-        [
-          'Material Type',
-          'Thickness',
-          'Sheet Size',
-          'Sheets Required',
-          'Sheet Cost',
-          'Wastage %',
-          'Total Material Cost',
-          'Total Labor Cost',
-        ],
-      ],
+      head: [BOM_PANEL_HEADERS],
       body: panelRows,
-      theme: 'striped',
-      styles: { fontSize: 8 },
-      headStyles: { fillColor: [57, 37, 121] },
+      theme: 'grid',
+      styles: { font: 'helvetica', fontSize: 8, lineColor: PDF_THEME.border },
+      headStyles: {
+        fillColor: PDF_THEME.tableHeaderBg,
+        textColor: PDF_THEME.tableHeaderText,
+        halign: 'center',
+      },
+      alternateRowStyles: { fillColor: PDF_THEME.lightGray },
     });
 
     doc.addPage();
+    doc.setFont('helvetica', 'bold');
     doc.setFontSize(13);
     doc.text('Edge Banding', 40, 32);
     autoTable(doc, {
       startY: 48,
-      head: [['Part ID', 'Part Name', 'Edge Type', 'Thickness', 'Total Length (m)', 'Total Cost']],
-      body: edgeRows.map((row) => [row[0], row[1], row[2], row[3], row[4], row[6]]),
-      theme: 'striped',
-      styles: { fontSize: 8 },
-      headStyles: { fillColor: [57, 37, 121] },
+      head: [BOM_EDGE_HEADERS],
+      body: edgeRows,
+      theme: 'grid',
+      styles: { font: 'helvetica', fontSize: 8, lineColor: PDF_THEME.border },
+      headStyles: {
+        fillColor: PDF_THEME.tableHeaderBg,
+        textColor: PDF_THEME.tableHeaderText,
+        halign: 'center',
+      },
+      alternateRowStyles: { fillColor: PDF_THEME.lightGray },
     });
 
     doc.addPage();
+    doc.setFont('helvetica', 'bold');
     doc.setFontSize(13);
     doc.text('Hardware List', 40, 32);
     autoTable(doc, {
       startY: 48,
-      head: [['Hardware ID', 'Item Name', 'Specification', 'Brand', 'Qty', 'Installation']],
-      body: hardwareRows.map((row) => [row[0], row[1], row[2], row[3], row[4], row[6]]),
-      theme: 'striped',
-      styles: { fontSize: 8 },
-      headStyles: { fillColor: [57, 37, 121] },
+      head: [BOM_HARDWARE_HEADERS],
+      body: hardwareRows,
+      theme: 'grid',
+      styles: { font: 'helvetica', fontSize: 8, lineColor: PDF_THEME.border },
+      headStyles: {
+        fillColor: PDF_THEME.tableHeaderBg,
+        textColor: PDF_THEME.tableHeaderText,
+        halign: 'center',
+      },
+      alternateRowStyles: { fillColor: PDF_THEME.lightGray },
     });
 
     doc.save(`BOM_${design.design_name || 'Design'}.pdf`);
@@ -240,41 +512,10 @@ const Nesting = () => {
         console.warn('Material catalog data not available', e);
       }
 
-      const materialPriceMap: Record<string, number> = {};
-      allMaterials.forEach((m) => {
-        materialPriceMap[m.id] = parseFloat(m.properties?.sell_price || m.sell_price || 0);
-      });
+      const materialPriceMap = buildMaterialPriceMap(allMaterials);
 
       // Merge data and layoutData to ensure edgebands are caught if they exist in Redux
-      const partsList = (layoutData.length > 0 ? layoutData : data).map((p: any) => {
-        // The API might return "Unique ID" or "Unique_ID" or "ID" depending on the table.
-        const layoutUniqueId = p['Unique ID'] || p.unique_id || p.ID;
-
-        const reduxPart = data.find(
-          (d: any) =>
-            d.id === p.id || d.id === p.ID || (d.unique_id && d.unique_id === layoutUniqueId)
-        );
-
-        let eBands = p.edgebands || [];
-        if (eBands.length === 0) {
-          const rEdge = reduxPart?.edgeBanding || reduxPart?.edgeband;
-          if (rEdge) {
-            eBands = [];
-            if (rEdge.left) eBands.push('LEFT');
-            if (rEdge.right) eBands.push('RIGHT');
-            if (rEdge.top) eBands.push('TOP');
-            if (rEdge.bottom) eBands.push('BOTTOM');
-            if (rEdge.front) eBands.push('LEFT'); // front = left face
-            if (rEdge.back) eBands.push('RIGHT'); // back = right face
-            eBands = [...new Set(eBands)]; // deduplicate
-          }
-        }
-        return {
-          ...p,
-          unique_id: reduxPart?.unique_id || layoutUniqueId,
-          edgebands: eBands,
-        };
-      });
+      const partsList = buildMergedPartsList(layoutData, data);
 
       const wb = XLSX.utils.book_new();
 
@@ -304,22 +545,6 @@ const Nesting = () => {
         parentNameMap[obj.id] = obj.name || obj.type || obj.id;
       });
 
-      const cuttingHeader = [
-        'Part ID',
-        'Part Name',
-        'Cabinet/Assembly',
-        'Material',
-        'Thickness',
-        'Length',
-        'Width',
-        'Qty',
-        'Area (sqm)',
-        'Grain Dir',
-        'Edge L1',
-        'Edge L2',
-        'Edge W1',
-        'Edge W2',
-      ];
       const cuttingRows = partsList.map((part: any) => {
         const h = parseFloat(part.height || part?.dimensions?.height || 0);
         const w = parseFloat(part.width || part?.dimensions?.width || 0);
@@ -370,7 +595,7 @@ const Nesting = () => {
       const cuttingSheetData = [
         [{ v: 'CUTTING LIST FOR BEAM SAW', t: 's', s: titleStyle }, ...Array(13).fill('')],
         [],
-        cuttingHeader.map((h) => ({ v: h, s: headerStyle })),
+        BOM_CUTTING_HEADERS.map((h) => ({ v: h, s: headerStyle })),
         ...cuttingRows,
       ];
       const wsCutting = XLSX.utils.aoa_to_sheet(cuttingSheetData);
@@ -420,16 +645,6 @@ const Nesting = () => {
         thicknessMap[t].count += 1;
         if (cost > thicknessMap[t].costPerSheet) thicknessMap[t].costPerSheet = cost;
       });
-      const panelHeader = [
-        'Material Type',
-        'Thickness',
-        'Sheet Size',
-        'Sheets Required',
-        'Sheet Cost',
-        'Wastage %',
-        'Total Material Cost',
-        'Total Labor Cost',
-      ];
       let totalMaterialCost = 0;
       const panelRows = Object.keys(thicknessMap).map((t) => {
         const sheetsReq = Math.ceil(thicknessMap[t].area / (2.44 * 1.22));
@@ -450,7 +665,7 @@ const Nesting = () => {
       const panelSheetData = [
         [{ v: 'PANEL DETAILS & SHEET OPTIMIZATION', t: 's', s: titleStyle }, ...Array(7).fill('')],
         [],
-        panelHeader.map((h) => ({ v: h, s: headerStyle })),
+        BOM_PANEL_HEADERS.map((h) => ({ v: h, s: headerStyle })),
         ...panelRows,
       ];
       const wsPanel = XLSX.utils.aoa_to_sheet(panelSheetData);
@@ -469,16 +684,6 @@ const Nesting = () => {
       XLSX.utils.book_append_sheet(wb, wsPanel, 'Panel Details');
 
       // --- Sheet 4: Edge Banding ---
-      const edgeHeader = [
-        'Part ID',
-        'Part Name',
-        'Edge Type',
-        'Thickness',
-        'Total Length (m)',
-        'Rate/m',
-        'Total Cost',
-        'Remarks',
-      ];
       const edgeRows: any[] = [];
       let totalEdgeCost = 0;
       cuttingRows.forEach((row: any) => {
@@ -511,7 +716,7 @@ const Nesting = () => {
       const edgeSheetData = [
         [{ v: 'EDGE BANDING DETAILS', t: 's', s: titleStyle }, ...Array(7).fill('')],
         [],
-        edgeHeader.map((h) => ({ v: h, s: headerStyle })),
+        BOM_EDGE_HEADERS.map((h) => ({ v: h, s: headerStyle })),
         ...edgeRows,
       ];
       const wsEdge = XLSX.utils.aoa_to_sheet(edgeSheetData);
@@ -544,17 +749,6 @@ const Nesting = () => {
           });
         }
       });
-      const hardwareHeader = [
-        'Hardware ID',
-        'Item Name',
-        'Specification',
-        'Brand',
-        'Qty',
-        'Unit Price',
-        'Installation',
-        'Total Cost',
-        'Supplier',
-      ];
       const hardwareRows = [
         [
           'HW-001',
@@ -593,7 +787,7 @@ const Nesting = () => {
       const hardwareSheetData = [
         [{ v: 'HARDWARE & FITTINGS', t: 's', s: titleStyle }, ...Array(8).fill('')],
         [],
-        hardwareHeader.map((h) => ({ v: h, s: headerStyle })),
+        BOM_HARDWARE_HEADERS.map((h) => ({ v: h, s: headerStyle })),
         ...hardwareRows,
       ];
       const wsHardware = XLSX.utils.aoa_to_sheet(hardwareSheetData);
@@ -760,83 +954,236 @@ const Nesting = () => {
   ) => {
     const doc = new jsPDF({ unit: 'pt', format: 'a4' });
     const formatCurrency = (num: number) =>
-      '₹' + num.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      `Rs ${num.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    const pageHeight = doc.internal.pageSize.getHeight();
+    const leftMargin = 40;
+    const rightMargin = 40;
+    const contentWidth = doc.internal.pageSize.getWidth() - leftMargin - rightMargin;
+    const bottomMargin = 36;
+    let cursorY = 36;
+
+    const ensureSpace = (neededHeight: number, nextPageY = 40) => {
+      if (cursorY + neededHeight > pageHeight - bottomMargin) {
+        doc.addPage();
+        cursorY = nextPageY;
+      }
+    };
 
     const companyName = organizationDetails?.company_name || 'BRAVENTO FURNITURE SOLUTIONS';
+    const companyAddress =
+      organizationDetails?.company_address ||
+      'Address: 123, Furniture Complex, S.G. Highway, Ahmedabad - 380015, Gujarat, India';
+    const contactLine = `Phone: ${organizationDetails?.company_phone || '+91 79 1234 5678'} | Email: ${
+      organizationDetails?.company_email || 'sales@bravento.com'
+    } | Website: ${organizationDetails?.company_website || 'www.bravento.com'}`;
+    const taxLine = `GSTIN: ${
+      organizationDetails?.company_gstin || '24XXXXX1234X1Z5'
+    } | PAN: ${organizationDetails?.company_pan || 'XXXXX1234X'}`;
+
+    const quoteNo = `QT/${new Date().getFullYear()}/${design_id.substring(0, 4).toUpperCase()}`;
+    const quoteDate = new Date()
+      .toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
+      .replace(/ /g, '-');
+    const validDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
+      .toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
+      .replace(/ /g, '-');
+
+    // Header block
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(...PDF_THEME.titleColor);
     doc.setFontSize(14);
-    doc.text(companyName, 40, 36);
+    doc.text(companyName, 297, cursorY, { align: 'center' });
+    cursorY += 16;
+    doc.setTextColor(0, 0, 0);
+    doc.setFont('helvetica', 'italic');
     doc.setFontSize(10);
-    doc.text('QUOTATION', 40, 54);
-    doc.text(`Project: ${design.design_name || '-'}`, 40, 70);
-    doc.text(`Customer: ${design.customer_name || '-'}`, 40, 84);
+    doc.text('Custom Furniture Design & Manufacturing', 297, cursorY, { align: 'center' });
+    cursorY += 14;
+    doc.setFont('helvetica', 'normal');
+    doc.text(companyAddress, 297, cursorY, { align: 'center' });
+    cursorY += 14;
+    doc.text(contactLine, 297, cursorY, { align: 'center' });
+    cursorY += 14;
+    doc.setFont('helvetica', 'bold');
+    doc.text(taxLine, 297, cursorY, { align: 'center' });
+    cursorY += 10;
 
+    doc.setFillColor(...PDF_THEME.titleColor);
+    doc.rect(leftMargin, cursorY, contentWidth, 20, 'F');
+    doc.setTextColor(255, 255, 255);
+    doc.setFont('helvetica', 'bold');
+    doc.text('QUOTATION', 297, cursorY + 14, { align: 'center' });
+    doc.setTextColor(0, 0, 0);
+    cursorY += 30;
+
+    // Info block
     autoTable(doc, {
-      startY: 98,
-      head: [
-        ['Sr.', 'Unit/Component Description', 'Dimensions', 'Material', 'Qty', 'Rate/Unit', 'Amount'],
+      startY: cursorY,
+      theme: 'grid',
+      styles: { font: 'helvetica', fontSize: 9, lineColor: PDF_THEME.border },
+      body: [
+        ['Quotation No:', quoteNo, '', '', 'Customer Name:', design.customer_name || 'Customer'],
+        ['Date:', quoteDate, '', '', 'Company:', design.customer_company || '-'],
+        ['Valid Till:', validDate, '', '', 'Address:', design.customer_address || '-'],
+        [
+          'Project ID:',
+          design.project_code || design.id,
+          '',
+          '',
+          'GSTIN:',
+          design.customer_gstin || '-',
+        ],
+        ['', '', '', '', 'Contact:', design.customer_contact || '-'],
+        ['', '', '', '', 'Email:', design.customer_email || '-'],
       ],
-      body: quoteRows.map((row) => [row[0], row[1], row[2], row[3], row[4], row[5], row[6]]),
-      theme: 'striped',
-      styles: { fontSize: 8, cellWidth: 'wrap' },
-      headStyles: { fillColor: [57, 37, 121] },
-      columnStyles: {
-        1: { cellWidth: 170 },
-      },
+      columnStyles: { 0: { fontStyle: 'bold' }, 4: { fontStyle: 'bold' } },
+      margin: { left: leftMargin, right: rightMargin },
     });
+    cursorY = ((doc as any).lastAutoTable?.finalY || cursorY) + 8;
 
-    const totalsY = (doc as any).lastAutoTable?.finalY ? (doc as any).lastAutoTable.finalY + 16 : 500;
     autoTable(doc, {
-      startY: totalsY,
+      startY: cursorY,
+      theme: 'grid',
+      styles: { font: 'helvetica', fontSize: 9, lineColor: PDF_THEME.border, fontStyle: 'bold' },
+      body: [[`PROJECT: ${design.project_type || 'Custom Furniture'} - ${design.design_name}`]],
+      margin: { left: leftMargin, right: rightMargin },
+    });
+    cursorY = ((doc as any).lastAutoTable?.finalY || cursorY) + 10;
+
+    // Item table
+    autoTable(doc, {
+      startY: cursorY,
+      head: [QUOTATION_HEADERS],
+      body: quoteRows.map((row) => row.slice(0, 9)),
+      theme: 'grid',
+      styles: { font: 'helvetica', fontSize: 8.8, cellPadding: 3, lineColor: PDF_THEME.border },
+      headStyles: {
+        fillColor: PDF_THEME.tableHeaderBg,
+        textColor: PDF_THEME.tableHeaderText,
+        halign: 'center',
+      },
+      alternateRowStyles: { fillColor: PDF_THEME.lightGray },
+      columnStyles: {
+        0: { cellWidth: 32, halign: 'center' },
+        1: { cellWidth: 145, halign: 'left' },
+        2: { cellWidth: 70, halign: 'center' },
+        3: { cellWidth: 60, halign: 'left' },
+        4: { cellWidth: 34, halign: 'center' },
+        5: { cellWidth: 55, halign: 'right' },
+        6: { cellWidth: 62, halign: 'right' },
+        7: { cellWidth: 34, halign: 'center' },
+        8: { cellWidth: 30, halign: 'center' },
+      },
+      margin: { left: leftMargin, right: rightMargin },
+    });
+    cursorY = ((doc as any).lastAutoTable?.finalY || cursorY) + 10;
+
+    // Totals
+    const roundedTotal = subTotal + cgst + sgst;
+    const roundOff = Math.round(roundedTotal) - roundedTotal;
+    autoTable(doc, {
+      startY: cursorY,
       head: [['Summary', 'Value']],
       body: [
         ['SUBTOTAL (Before GST)', formatCurrency(subTotal)],
         ['Add: CGST @ 9%', formatCurrency(cgst)],
         ['Add: SGST @ 9%', formatCurrency(sgst)],
+        ['Round Off', formatCurrency(roundOff)],
         ['GRAND TOTAL (Inclusive of all taxes)', formatCurrency(grandTotal)],
       ],
       theme: 'grid',
-      headStyles: { fillColor: [57, 37, 121] },
+      styles: { font: 'helvetica', fontSize: 9, lineColor: PDF_THEME.border },
+      headStyles: { fillColor: PDF_THEME.titleColor, textColor: PDF_THEME.tableHeaderText },
+      bodyStyles: { halign: 'right' },
+      columnStyles: { 0: { halign: 'left', fontStyle: 'bold' } },
+      margin: { left: leftMargin, right: rightMargin },
     });
-
-    const amountWordsY = (doc as any).lastAutoTable?.finalY
-      ? (doc as any).lastAutoTable.finalY + 20
-      : 650;
+    cursorY = ((doc as any).lastAutoTable?.finalY || cursorY) + 16;
     doc.setFontSize(10);
-    doc.text(`Amount in Words: ${numberToWords(grandTotal)}`, 40, amountWordsY);
+    doc.setFont('helvetica', 'bold');
+    ensureSpace(20, 40);
+    doc.text(`Amount in Words: ${numberToWords(grandTotal)}`, leftMargin, cursorY);
+    cursorY += 22;
 
-    doc.addPage();
-    doc.setFontSize(12);
-    doc.text('TERMS AND CONDITIONS', 40, 40);
+    // Terms section
+    ensureSpace(70, 40);
+    doc.setFontSize(11);
+    doc.setFont('helvetica', 'bold');
+    doc.text('TERMS AND CONDITIONS', leftMargin, cursorY);
+    cursorY += 18;
+    doc.setFont('helvetica', 'normal');
     doc.setFontSize(9);
-    const terms = [
-      '1. 40% advance, 30% during production, 20% after installation, 10% on handover.',
-      '2. Manufacturing: 15-20 working days from confirmation and advance.',
-      '3. 1 year workmanship warranty; hardware warranty as per OEM policy.',
-      '4. Design/material revisions after approval may attract additional charges.',
-      '5. Quotation validity: 30 days.',
-    ];
-    let y = 60;
+    const terms = getQuoteTerms();
     terms.forEach((line) => {
-      doc.text(line, 40, y);
-      y += 16;
+      const text = line === '' ? '' : line;
+      if (text === '') {
+        cursorY += 6;
+        return;
+      }
+      const wrapped = doc.splitTextToSize(text, contentWidth);
+      ensureSpace(wrapped.length * 12 + 2, 40);
+      const isHeading = /^[0-9]+\./.test(line);
+      if (isHeading) {
+        doc.setFont('helvetica', 'bold');
+      } else {
+        doc.setFont('helvetica', 'normal');
+      }
+      doc.text(wrapped, leftMargin, cursorY);
+      cursorY += wrapped.length * 12 + 2;
     });
 
-    y += 10;
+    // Banking section
+    cursorY += 8;
+    ensureSpace(130, 40);
+    doc.setFont('helvetica', 'bold');
     doc.setFontSize(11);
-    doc.text('Banking Details', 40, y);
-    y += 16;
+    doc.text('Banking Details', leftMargin, cursorY);
+    cursorY += 16;
+    doc.setFont('helvetica', 'normal');
     doc.setFontSize(9);
-    doc.text(`Bank Name: ${organizationDetails?.bank_name || 'HDFC Bank Ltd.'}`, 40, y);
-    y += 14;
-    doc.text(
+    const bankingLines = [
+      `Bank Name: ${organizationDetails?.bank_name || 'HDFC Bank Ltd.'}`,
       `Account Name: ${organizationDetails?.account_name || 'Bravento Furniture Solutions'}`,
-      40,
-      y
-    );
-    y += 14;
-    doc.text(`Account Number: ${organizationDetails?.account_number || '50200012345678'}`, 40, y);
-    y += 14;
-    doc.text(`IFSC Code: ${organizationDetails?.ifsc_code || 'HDFC0001234'}`, 40, y);
+      `Account Number: ${organizationDetails?.account_number || '50200012345678'}`,
+      `Account Type: ${organizationDetails?.account_type || 'Current Account'}`,
+      `IFSC Code: ${organizationDetails?.ifsc_code || 'HDFC0001234'}`,
+      `Branch: ${organizationDetails?.branch_name || 'S.G. Highway, Ahmedabad - 380015'}`,
+      `UPI ID: ${organizationDetails?.upi_id || 'bravento@hdfcbank'}`,
+    ];
+    bankingLines.forEach((line) => {
+      ensureSpace(14, 40);
+      doc.text(line, leftMargin, cursorY);
+      cursorY += 14;
+    });
+    cursorY += 10;
+
+    // Mandatory terminal footer block: NOTE + signature + thank-you
+    const signatureX = doc.internal.pageSize.getWidth() - 215;
+    const footerCompany = `For ${companyName}`;
+    const footerDate = `Date: ${quoteDate}`;
+    const thankYou =
+      'Thank you for considering Bravento Furniture Solutions. We look forward to transforming your space!';
+    const noteLine =
+      'NOTE: Please share your purchase order to confirm this quotation. Our team will contact you for final measurements and design approval.';
+    ensureSpace(110, 40);
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(10);
+    doc.text(noteLine, leftMargin, cursorY);
+    cursorY += 24;
+    doc.setFont('helvetica', 'bold');
+    doc.text(footerCompany, signatureX, cursorY);
+    cursorY += 34;
+    doc.setFont('helvetica', 'normal');
+    doc.text('____________________', signatureX, cursorY);
+    cursorY += 16;
+    doc.text('Authorized Signatory', signatureX, cursorY);
+    cursorY += 14;
+    doc.text(footerDate, signatureX, cursorY);
+    cursorY += 18;
+    doc.setFont('helvetica', 'italic');
+    doc.setFontSize(10.5);
+    doc.text(thankYou, 297, cursorY, { align: 'center' });
 
     doc.save(`Quotation_${design.design_name || 'Design'}.pdf`);
   };
@@ -888,39 +1235,10 @@ const Nesting = () => {
         console.warn('Material catalog data not available', e);
       }
 
-      const materialPriceMap: Record<string, number> = {};
-      allMaterials.forEach((m) => {
-        materialPriceMap[m.id] = parseFloat(m.properties?.sell_price || m.sell_price || 0);
-      });
+      const materialPriceMap = buildMaterialPriceMap(allMaterials);
 
       // 4. Merge Data (from BOM logic)
-      const partsList = (layoutData.length > 0 ? layoutData : data).map((p: any) => {
-        const layoutUniqueId = p['Unique ID'] || p.unique_id || p.ID;
-        const reduxPart = data.find(
-          (d: any) =>
-            d.id === p.id || d.id === p.ID || (d.unique_id && d.unique_id === layoutUniqueId)
-        );
-
-        let eBands = p.edgebands || [];
-        if (eBands.length === 0) {
-          const rEdge = reduxPart?.edgeBanding || reduxPart?.edgeband;
-          if (rEdge) {
-            eBands = [];
-            if (rEdge.left) eBands.push('LEFT');
-            if (rEdge.right) eBands.push('RIGHT');
-            if (rEdge.top) eBands.push('TOP');
-            if (rEdge.bottom) eBands.push('BOTTOM');
-            if (rEdge.front) eBands.push('LEFT');
-            if (rEdge.back) eBands.push('RIGHT');
-            eBands = [...new Set(eBands)];
-          }
-        }
-        return {
-          ...p,
-          unique_id: reduxPart?.unique_id || layoutUniqueId,
-          edgebands: eBands,
-        };
-      });
+      const partsList = buildMergedPartsList(layoutData, data);
 
       // 5. Group Parts by Assembly (Unit)
       const unitsMap: Record<string, any> = {};
@@ -1029,7 +1347,8 @@ const Nesting = () => {
 
       const formatCurrency = (num: number) => {
         return (
-          '₹' + num.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+          'Rs ' +
+          num.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
         );
       };
 
@@ -1366,17 +1685,7 @@ const Nesting = () => {
       pushR([]);
 
       // 3. Table Headers
-      pushR([
-        { v: 'Sr.', s: sTh },
-        { v: 'Unit/Component Description', s: sTh },
-        { v: 'Dimensions (L×W×H)', s: sTh },
-        { v: 'Material', s: sTh },
-        { v: 'Qty', s: sTh },
-        { v: 'Rate/Unit', s: sTh },
-        { v: 'Amount', s: sTh },
-        { v: 'HSN', s: sTh },
-        { v: 'GST%', s: sTh },
-      ]);
+      pushR(QUOTATION_HEADERS.map((header) => ({ v: header, s: sTh })));
 
       // 4. Table Rows
       const tblStart = qData.length; // Row index is 16 (0-indexed)
