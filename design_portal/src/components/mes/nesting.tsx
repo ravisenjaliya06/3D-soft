@@ -4,11 +4,15 @@ import Header from '@/components/header/header';
 import Sidebar from '@/components/sidebar/sidebar';
 import { API_ENDPOINT } from '@/services/ApiEndPoints';
 import CommonService from '@/services/CommonService';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 import { useRouter } from 'next/router';
 import { useEffect, useRef, useState } from 'react';
 import { useSelector } from 'react-redux';
 import * as XLSX from 'xlsx-js-style';
 import styles from '../mes/nesting.module.css';
+
+type ExportFormat = 'excel' | 'pdf';
 
 const Nesting = () => {
   const router = useRouter();
@@ -22,6 +26,7 @@ const Nesting = () => {
   const [isGeneratingBOM, setIsGeneratingBOM] = useState(false);
   const [isGeneratingQuote, setIsGeneratingQuote] = useState(false);
   const [isDownloadingXML, setIsDownloadingXML] = useState(false);
+  const [openDropdown, setOpenDropdown] = useState<'quotation' | 'bom' | null>(null);
   /** Synchronous guard — state updates are async, so rapid clicks could otherwise stack requests before re-render. */
   const xmlDownloadInFlightRef = useRef(false);
 
@@ -88,7 +93,116 @@ const Nesting = () => {
     return `${Math.round(value)} mm`;
   };
 
-  const handleGenerateBOM = async () => {
+  const downloadBOMPdf = (
+    design: any,
+    cuttingRows: any[],
+    panelRows: any[],
+    edgeRows: any[],
+    hardwareRows: any[],
+    totalMaterialCost: number,
+    totalEdgeCost: number
+  ) => {
+    const doc = new jsPDF({ orientation: 'landscape', unit: 'pt', format: 'a4' });
+    const totalLaborCost = Math.round(totalMaterialCost * 0.2);
+    const estimatedCost = totalMaterialCost + totalEdgeCost + totalLaborCost;
+    const finalPrice = Math.round(estimatedCost * 1.5);
+
+    doc.setFontSize(14);
+    doc.text('BRAVENTO - Bill of Materials', 40, 36);
+    doc.setFontSize(10);
+    doc.text(`Project: ${design.design_name || '-'}`, 40, 54);
+    doc.text(`Project Code: ${design.project_code || design.id || '-'}`, 40, 68);
+    doc.text(`Customer: ${design.customer_name || '-'}`, 40, 82);
+
+    autoTable(doc, {
+      startY: 100,
+      head: [['Cost Summary', 'Amount']],
+      body: [
+        ['Total Material Cost', `${Math.round(totalMaterialCost)} Rs`],
+        ['Total Edge Band Cost', `${totalEdgeCost.toFixed(2)} Rs`],
+        ['Total Labor Cost', `${totalLaborCost} Rs`],
+        ['Estimated Cost', `${Math.round(estimatedCost)} Rs`],
+        ['Final Selling Price', `${finalPrice} Rs`],
+      ],
+      theme: 'grid',
+      headStyles: { fillColor: [57, 37, 121] },
+    });
+
+    doc.addPage();
+    doc.setFontSize(13);
+    doc.text('Cutting List', 40, 32);
+    autoTable(doc, {
+      startY: 48,
+      head: [
+        [
+          'Part ID',
+          'Part Name',
+          'Cabinet/Assembly',
+          'Material',
+          'Thickness',
+          'Length',
+          'Width',
+          'Qty',
+          'Area (sqm)',
+        ],
+      ],
+      body: cuttingRows.map((row) => row.slice(0, 9)),
+      theme: 'striped',
+      styles: { fontSize: 8 },
+      headStyles: { fillColor: [57, 37, 121] },
+    });
+
+    doc.addPage();
+    doc.setFontSize(13);
+    doc.text('Panel Details', 40, 32);
+    autoTable(doc, {
+      startY: 48,
+      head: [
+        [
+          'Material Type',
+          'Thickness',
+          'Sheet Size',
+          'Sheets Required',
+          'Sheet Cost',
+          'Wastage %',
+          'Total Material Cost',
+          'Total Labor Cost',
+        ],
+      ],
+      body: panelRows,
+      theme: 'striped',
+      styles: { fontSize: 8 },
+      headStyles: { fillColor: [57, 37, 121] },
+    });
+
+    doc.addPage();
+    doc.setFontSize(13);
+    doc.text('Edge Banding', 40, 32);
+    autoTable(doc, {
+      startY: 48,
+      head: [['Part ID', 'Part Name', 'Edge Type', 'Thickness', 'Total Length (m)', 'Total Cost']],
+      body: edgeRows.map((row) => [row[0], row[1], row[2], row[3], row[4], row[6]]),
+      theme: 'striped',
+      styles: { fontSize: 8 },
+      headStyles: { fillColor: [57, 37, 121] },
+    });
+
+    doc.addPage();
+    doc.setFontSize(13);
+    doc.text('Hardware List', 40, 32);
+    autoTable(doc, {
+      startY: 48,
+      head: [['Hardware ID', 'Item Name', 'Specification', 'Brand', 'Qty', 'Installation']],
+      body: hardwareRows.map((row) => [row[0], row[1], row[2], row[3], row[4], row[6]]),
+      theme: 'striped',
+      styles: { fontSize: 8 },
+      headStyles: { fillColor: [57, 37, 121] },
+    });
+
+    doc.save(`BOM_${design.design_name || 'Design'}.pdf`);
+  };
+
+  const handleGenerateBOM = async (format: ExportFormat = 'excel') => {
     if (isGeneratingBOM) return;
     setIsGeneratingBOM(true);
     showFullScreenLoader('Generating BOM data...');
@@ -612,7 +726,19 @@ const Nesting = () => {
       const sheetName = wb.SheetNames.pop()!;
       wb.SheetNames.unshift(sheetName);
 
-      XLSX.writeFile(wb, `BOM_${design.design_name || 'Design'}.xlsx`);
+      if (format === 'excel') {
+        XLSX.writeFile(wb, `BOM_${design.design_name || 'Design'}.xlsx`);
+      } else {
+        downloadBOMPdf(
+          design,
+          cuttingRows,
+          panelRows,
+          edgeRows,
+          hardwareRows,
+          totalMaterialCost,
+          totalEdgeCost
+        );
+      }
     } catch (err) {
       console.error(err);
       alert('Failed to generate BOM Data.');
@@ -622,7 +748,100 @@ const Nesting = () => {
     }
   };
 
-  const handleGenerateQuotation = async () => {
+  const downloadQuotationPdf = (
+    design: any,
+    organizationDetails: any,
+    quoteRows: any[],
+    subTotal: number,
+    cgst: number,
+    sgst: number,
+    grandTotal: number,
+    numberToWords: (num: number) => string
+  ) => {
+    const doc = new jsPDF({ unit: 'pt', format: 'a4' });
+    const formatCurrency = (num: number) =>
+      '₹' + num.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+    const companyName = organizationDetails?.company_name || 'BRAVENTO FURNITURE SOLUTIONS';
+    doc.setFontSize(14);
+    doc.text(companyName, 40, 36);
+    doc.setFontSize(10);
+    doc.text('QUOTATION', 40, 54);
+    doc.text(`Project: ${design.design_name || '-'}`, 40, 70);
+    doc.text(`Customer: ${design.customer_name || '-'}`, 40, 84);
+
+    autoTable(doc, {
+      startY: 98,
+      head: [
+        ['Sr.', 'Unit/Component Description', 'Dimensions', 'Material', 'Qty', 'Rate/Unit', 'Amount'],
+      ],
+      body: quoteRows.map((row) => [row[0], row[1], row[2], row[3], row[4], row[5], row[6]]),
+      theme: 'striped',
+      styles: { fontSize: 8, cellWidth: 'wrap' },
+      headStyles: { fillColor: [57, 37, 121] },
+      columnStyles: {
+        1: { cellWidth: 170 },
+      },
+    });
+
+    const totalsY = (doc as any).lastAutoTable?.finalY ? (doc as any).lastAutoTable.finalY + 16 : 500;
+    autoTable(doc, {
+      startY: totalsY,
+      head: [['Summary', 'Value']],
+      body: [
+        ['SUBTOTAL (Before GST)', formatCurrency(subTotal)],
+        ['Add: CGST @ 9%', formatCurrency(cgst)],
+        ['Add: SGST @ 9%', formatCurrency(sgst)],
+        ['GRAND TOTAL (Inclusive of all taxes)', formatCurrency(grandTotal)],
+      ],
+      theme: 'grid',
+      headStyles: { fillColor: [57, 37, 121] },
+    });
+
+    const amountWordsY = (doc as any).lastAutoTable?.finalY
+      ? (doc as any).lastAutoTable.finalY + 20
+      : 650;
+    doc.setFontSize(10);
+    doc.text(`Amount in Words: ${numberToWords(grandTotal)}`, 40, amountWordsY);
+
+    doc.addPage();
+    doc.setFontSize(12);
+    doc.text('TERMS AND CONDITIONS', 40, 40);
+    doc.setFontSize(9);
+    const terms = [
+      '1. 40% advance, 30% during production, 20% after installation, 10% on handover.',
+      '2. Manufacturing: 15-20 working days from confirmation and advance.',
+      '3. 1 year workmanship warranty; hardware warranty as per OEM policy.',
+      '4. Design/material revisions after approval may attract additional charges.',
+      '5. Quotation validity: 30 days.',
+    ];
+    let y = 60;
+    terms.forEach((line) => {
+      doc.text(line, 40, y);
+      y += 16;
+    });
+
+    y += 10;
+    doc.setFontSize(11);
+    doc.text('Banking Details', 40, y);
+    y += 16;
+    doc.setFontSize(9);
+    doc.text(`Bank Name: ${organizationDetails?.bank_name || 'HDFC Bank Ltd.'}`, 40, y);
+    y += 14;
+    doc.text(
+      `Account Name: ${organizationDetails?.account_name || 'Bravento Furniture Solutions'}`,
+      40,
+      y
+    );
+    y += 14;
+    doc.text(`Account Number: ${organizationDetails?.account_number || '50200012345678'}`, 40, y);
+    y += 14;
+    doc.text(`IFSC Code: ${organizationDetails?.ifsc_code || 'HDFC0001234'}`, 40, y);
+
+    doc.save(`Quotation_${design.design_name || 'Design'}.pdf`);
+  };
+
+  const handleGenerateQuotation = async (format: ExportFormat = 'excel') => {
     if (isGeneratingQuote) return;
     setIsGeneratingQuote(true);
     showFullScreenLoader('Generating quotation...');
@@ -1510,7 +1729,20 @@ const Nesting = () => {
       for (let i = 0; i < quoteRows.length; i++) ws['!rows'][tblStart + i] = { hpx: 45 }; // multi-line cells
 
       XLSX.utils.book_append_sheet(wb, ws, 'Quotation');
-      XLSX.writeFile(wb, `Quotation_${design.design_name || 'Design'}.xlsx`);
+      if (format === 'excel') {
+        XLSX.writeFile(wb, `Quotation_${design.design_name || 'Design'}.xlsx`);
+      } else {
+        downloadQuotationPdf(
+          design,
+          organizationDetails,
+          quoteRows,
+          subTotal,
+          cgst,
+          sgst,
+          grandTotal,
+          numberToWords
+        );
+      }
     } catch (err) {
       console.error(err);
       alert('Failed to generate Quotation Data.');
@@ -1534,24 +1766,72 @@ const Nesting = () => {
                 <h2>Design Data</h2>
 
                 <div className={styles.toolbarmenu}>
-                  {/* ✅ Quotation Button */}
-                  <button
-                    onClick={handleGenerateQuotation}
-                    disabled={isGeneratingQuote || displayData.length === 0}
-                    className={styles.viewDetailsButton}
-                    style={{ marginRight: '1rem', backgroundColor: '#392579', color: 'white' }}
-                  >
-                    Quotation
-                  </button>
-                  {/* ✅ BOM Data Button */}
-                  <button
-                    onClick={handleGenerateBOM}
-                    disabled={isGeneratingBOM || displayData.length === 0}
-                    className={styles.viewDetailsButton}
-                    style={{ marginRight: '1rem', backgroundColor: '#392579', color: 'white' }}
-                  >
-                    BOM Data
-                  </button>
+                  <div className={styles.exportDropdown}>
+                    <button
+                      onClick={() =>
+                        setOpenDropdown((prev) => (prev === 'quotation' ? null : 'quotation'))
+                      }
+                      disabled={isGeneratingQuote || displayData.length === 0}
+                      className={styles.viewDetailsButton}
+                      style={{ marginRight: '1rem', backgroundColor: '#392579', color: 'white' }}
+                    >
+                      Quotation ▾
+                    </button>
+                    {openDropdown === 'quotation' && (
+                      <div className={styles.dropdownMenu}>
+                        <button
+                          className={styles.dropdownItem}
+                          onClick={() => {
+                            setOpenDropdown(null);
+                            handleGenerateQuotation('excel');
+                          }}
+                        >
+                          Excel
+                        </button>
+                        <button
+                          className={styles.dropdownItem}
+                          onClick={() => {
+                            setOpenDropdown(null);
+                            handleGenerateQuotation('pdf');
+                          }}
+                        >
+                          PDF
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                  <div className={styles.exportDropdown}>
+                    <button
+                      onClick={() => setOpenDropdown((prev) => (prev === 'bom' ? null : 'bom'))}
+                      disabled={isGeneratingBOM || displayData.length === 0}
+                      className={styles.viewDetailsButton}
+                      style={{ marginRight: '1rem', backgroundColor: '#392579', color: 'white' }}
+                    >
+                      BOM Data ▾
+                    </button>
+                    {openDropdown === 'bom' && (
+                      <div className={styles.dropdownMenu}>
+                        <button
+                          className={styles.dropdownItem}
+                          onClick={() => {
+                            setOpenDropdown(null);
+                            handleGenerateBOM('excel');
+                          }}
+                        >
+                          Excel
+                        </button>
+                        <button
+                          className={styles.dropdownItem}
+                          onClick={() => {
+                            setOpenDropdown(null);
+                            handleGenerateBOM('pdf');
+                          }}
+                        >
+                          PDF
+                        </button>
+                      </div>
+                    )}
+                  </div>
                   <button
                     onClick={async () => {
                       if (xmlDownloadInFlightRef.current) return;
