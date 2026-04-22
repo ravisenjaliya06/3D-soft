@@ -312,23 +312,27 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
       thumbnailBase64 = previewRendererRef.current.domElement.toDataURL('image/png');
     }
 
+    const metadata = {
+      name: itemPayload.name,
+      type: itemPayload.type,
+      is_main: itemPayload.is_main,
+      dimensions: itemPayload.dimensions,
+      position: itemPayload.position,
+      rotation: itemPayload.rotation,
+      scale: itemPayload.scale,
+      data: itemPayload.data,
+      material: itemPayload.material,
+    };
+
     formData.append('design_id', designId);
-    formData.append('items[0]name', itemPayload.name);
-    formData.append('items[0]type', itemPayload.type);
-    formData.append('items[0]is_main', 'true');
-    formData.append('items[0]dimensions', JSON.stringify(itemPayload.dimensions));
-    formData.append('items[0]position', JSON.stringify(itemPayload.position));
-    formData.append('items[0]rotation', JSON.stringify(itemPayload.rotation));
-    formData.append('items[0]scale', JSON.stringify(itemPayload.scale));
-    formData.append('items[0]data', JSON.stringify(itemPayload.data));
+    formData.append('metadata', JSON.stringify(metadata));
 
     if (thumbnailBase64) {
-      // Convert base64 to blob for better backend compatibility
       const blob = await (await fetch(thumbnailBase64)).blob();
-      formData.append('items[0]image', blob, `${uploadData.name}_thumbnail.png`);
+      formData.append('image', blob, `${uploadData.name}_thumbnail.png`);
     }
 
-    formData.append('items[0]model_file', uploadData.file);
+    formData.append('model_file', uploadData.file);
 
     try {
       const response = await commonService.post(
@@ -461,69 +465,34 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
           }
         }
 
-        // Determine category and set appropriate realistic dimensions
-        if (
-          item.path.includes('/sofa/') ||
-          (item.data &&
-            (typeof item.data === 'string' ? item.data : JSON.stringify(item.data)).includes(
-              'Sofa'
-            ))
-        ) {
-          targetSize = { width: 2.0, height: 0.8, depth: 0.9 };
-        } else if (
-          item.path.includes('/fridge/') ||
-          (item.data &&
-            (typeof item.data === 'string' ? item.data : JSON.stringify(item.data)).includes(
-              'Fridge'
-            ))
-        ) {
-          targetSize = { width: 0.8, height: 1.7, depth: 0.7 };
-        } else if (
-          item.path.includes('/stove/') ||
-          (item.data &&
-            (typeof item.data === 'string' ? item.data : JSON.stringify(item.data)).includes(
-              'Stove'
-            ))
-        ) {
-          targetSize = { width: 0.6, height: 0.9, depth: 0.6 };
-        } else if (
-          item.path.includes('/tv/') ||
-          (item.data &&
-            (typeof item.data === 'string' ? item.data : JSON.stringify(item.data)).includes('TV'))
-        ) {
-          targetSize = { width: 1.2, height: 0.7, depth: 0.1 };
-        } else if (
-          item.path.includes('/dinnertable/') ||
-          (item.data &&
-            (typeof item.data === 'string' ? item.data : JSON.stringify(item.data)).includes(
-              'Dinner Table'
-            ))
-        ) {
-          targetSize = { width: 1.5, height: 0.75, depth: 0.9 };
-        } else if (
-          item.path.includes('/flower/') ||
-          (item.data &&
-            (typeof item.data === 'string' ? item.data : JSON.stringify(item.data)).includes(
-              'Flower'
-            ))
-        ) {
-          targetSize = { width: 0.3, height: 0.4, depth: 0.3 };
-        } else if (
-          item.path.includes('/microwave/') ||
-          (item.data &&
-            (typeof item.data === 'string' ? item.data : JSON.stringify(item.data)).includes(
-              'Microwave'
-            ))
-        ) {
-          targetSize = { width: 0.5, height: 0.3, depth: 0.4 };
-        } else if (
-          item.path.includes('/table/') ||
-          (item.data &&
-            (typeof item.data === 'string' ? item.data : JSON.stringify(item.data)).includes(
-              'Study Table'
-            ))
-        ) {
-          targetSize = { width: 1.2, height: 0.75, depth: 0.6 };
+        // Configuration for realistic dimensions based on item keywords
+        const REALISTIC_DIMENSIONS: Record<
+          string,
+          { width: number; height: number; depth: number }
+        > = {
+          sofa: { width: 2.0, height: 0.8, depth: 0.9 },
+          fridge: { width: 0.8, height: 1.7, depth: 0.7 },
+          stove: { width: 0.6, height: 0.9, depth: 0.6 },
+          tv: { width: 1.2, height: 0.7, depth: 0.1 },
+          'dinner table': { width: 1.5, height: 0.75, depth: 0.9 },
+          flower: { width: 0.3, height: 0.4, depth: 0.3 },
+          microwave: { width: 0.5, height: 0.3, depth: 0.4 },
+          'study table': { width: 1.2, height: 0.75, depth: 0.6 },
+          table: { width: 1.2, height: 0.75, depth: 0.6 },
+        };
+
+        const itemPath = item.path.toLowerCase();
+        const itemDataStr = (
+          item.data ? (typeof item.data === 'string' ? item.data : JSON.stringify(item.data)) : ''
+        ).toLowerCase();
+
+        // Find matching category
+        const categoryKey = Object.keys(REALISTIC_DIMENSIONS).find(
+          (key) => itemPath.includes(key.replace(' ', '')) || itemDataStr.includes(key)
+        );
+
+        if (categoryKey) {
+          targetSize = REALISTIC_DIMENSIONS[categoryKey];
         } else {
           // Check for dynamic models with dimensions in data
           try {

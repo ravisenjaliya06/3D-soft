@@ -1,5 +1,6 @@
 # Python imports
 import base64
+import json
 import re
 from typing import Any, Dict
 from urllib.request import Request
@@ -292,6 +293,98 @@ class ScenePayloadSerializer(serializers.Serializer):
     design_id = serializers.UUIDField()
     items = serializers.ListField(required=False)
 
+    def to_internal_value(self: "ScenePayloadSerializer", data: dict) -> dict:
+        """
+        Optimized single-pass parsing for structured/flattened multipart data.
+        Supports:
+        - metadata (JSON string) + top-level files
+        - items[0]name, items[0]dimensions
+        - root level name, type, etc.
+        """
+        # Standard JSON check
+        if "items" in data and isinstance(data["items"], list):
+            return super().to_internal_value(data)
+
+        # Optimized grouping
+        temp_items = {}  # index -> dict
+        root_item = {}
+        has_root_metadata = "metadata" in data
+        has_root_item = "name" in data and "type" in data
+
+        # Determine if we need to modify the data (QueryDicts are immutable)
+        needs_copy = hasattr(data, "setlist") or hasattr(data, "copy")
+        if needs_copy and hasattr(data, "copy"):
+            data = data.copy()
+
+        # Handle metadata JSON if present
+        if has_root_metadata:
+            try:
+                raw_metadata = data["metadata"]
+                root_item = (
+                    json.loads(raw_metadata)
+                    if isinstance(raw_metadata, str)
+                    else raw_metadata
+                )
+                if not isinstance(root_item, dict):
+                    root_item = {}
+            except (ValueError, TypeError):
+                root_item = {}
+
+        for key, value in data.items():
+            # Handle indexed items: items[0]name or items[0].name
+            match = re.match(r"items\[(\d+)\]\.?(.*)", key)
+            if match:
+                idx = int(match.group(1))
+                field = match.group(2).strip("[]")
+                if not field:
+                    continue
+
+                if idx not in temp_items:
+                    temp_items[idx] = {}
+                temp_items[idx][field] = self._maybe_json(value)
+                continue
+
+            # Handle root fields and top-level files for metadata/direct upload
+            if has_root_metadata or has_root_item:
+                root_item_fields = {
+                    "name",
+                    "type",
+                    "is_main",
+                    "dimensions",
+                    "position",
+                    "rotation",
+                    "scale",
+                    "data",
+                    "material",
+                    "image",
+                    "model_file",
+                    "parent",
+                }
+                if key in root_item_fields:
+                    root_item[key] = self._maybe_json(value)
+
+        # Build final items list
+        items = [temp_items[i] for i in sorted(temp_items.keys())]
+        if root_item:
+            items.append(root_item)
+
+        if items:
+            if hasattr(data, "setlist"):
+                data.setlist("items", items)
+            else:
+                data["items"] = items
+
+        return super().to_internal_value(data)
+
+    def _maybe_json(self: "ScenePayloadSerializer", value: object) -> object:
+        """Helper to parse JSON strings if applicable."""
+        if isinstance(value, str) and value.strip().startswith(("{", "[")):
+            try:
+                return json.loads(value)
+            except (ValueError, TypeError):
+                return value
+        return value
+
     def _get_design(
         self: "ScenePayloadSerializer", design_id: str, organization: Organization
     ) -> Design:
@@ -343,17 +436,11 @@ class ScenePayloadSerializer(serializers.Serializer):
             )
 
             for i in indices:
-                m_payload = {
+                mat_item = {
                     "name": item.get(f"material[{i}]name"),
                     "type": item.get(f"material[{i}]type"),
-                    "properties": {},
                 }
-                model_file = item.get(f"material[{i}]properties[model_file]")
-                if model_file:
-                    m_payload["properties"]["model_file"] = model_file
-
-                if m_payload["name"]:
-                    material_data.append(m_payload)
+                material_data.append(mat_item)
 
         if not material_data:
             return
@@ -365,8 +452,7 @@ class ScenePayloadSerializer(serializers.Serializer):
 
     def _clean_data(self: "ScenePayloadSerializer", data: object) -> object:
         """
-        Recursively remove non-JSON serializable objects (like files)
-        from a dictionary or list.
+        Recursively remove File objects from dictionary/list so they can be JSON-saved.
         """
         if isinstance(data, dict):
             return {
@@ -390,6 +476,13 @@ class ScenePayloadSerializer(serializers.Serializer):
 
         organization = request.user.selected_organization
         for item in items:
+            # Safety check: if item is a list (due to QueryDict setlist issues), take first
+            if isinstance(item, list) and len(item) > 0:
+                item = item[0]
+
+            if not isinstance(item, dict):
+                continue
+
             name = item.get("name")
             if not name:
                 continue
@@ -406,7 +499,7 @@ class ScenePayloadSerializer(serializers.Serializer):
     def create(self: "ScenePayloadSerializer", validated_data: Dict[str, Any]) -> dict:
         request = self.context["request"]
         organization = request.user.selected_organization
-        items = validated_data["items"]
+        items = validated_data.get("items")
         is_library = request.query_params.get("is_library", "false").lower() == "true"
 
         design = self._get_design(validated_data["design_id"], organization)
@@ -414,8 +507,12 @@ class ScenePayloadSerializer(serializers.Serializer):
         if not is_library:
             version = DesignVersion.objects.create(design=design)
 
-        if items is None:
-            return {}
+        if not items:
+            return {
+                "message": "No items to save",
+                "version_id": version.id if version else None,
+                "catalog_ids": [],
+            }
 
         with transaction.atomic():
 
