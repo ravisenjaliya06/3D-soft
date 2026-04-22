@@ -92,35 +92,32 @@ export default function PlannerGrid() {
   if (preview && preview.length > 0.5) {
     const t = preview.thickness ?? 30;
     const isCentered = preview.offsetSign == null;
+    const getCenteredFootprint = () => {
+      const dx = preview.effectiveEnd.x - preview.start.x;
+      const dy = preview.effectiveEnd.y - preview.start.y;
+      const len = Math.hypot(dx, dy);
+      if (len < 1e-6) {
+        return [preview.start, preview.effectiveEnd, preview.effectiveEnd, preview.start] as const;
+      }
+      const ux = dx / len;
+      const uy = dy / len;
+      const pl = perpLeft2D(ux, uy);
+      const half = t / 2;
+      const startRef = { x: preview.start.x - pl.x * half, y: preview.start.y - pl.y * half };
+      const endRef = {
+        x: preview.effectiveEnd.x - pl.x * half,
+        y: preview.effectiveEnd.y - pl.y * half,
+      };
+      const endOpp = {
+        x: preview.effectiveEnd.x + pl.x * half,
+        y: preview.effectiveEnd.y + pl.y * half,
+      };
+      const startOpp = { x: preview.start.x + pl.x * half, y: preview.start.y + pl.y * half };
+      return [startRef, endRef, endOpp, startOpp] as const;
+    };
+
     const [rs, re, oppRe, oppRs] = isCentered
-      ? (() => {
-          const dx = preview.effectiveEnd.x - preview.start.x;
-          const dy = preview.effectiveEnd.y - preview.start.y;
-          const len = Math.hypot(dx, dy);
-          if (len < 1e-6) {
-            return [
-              preview.start,
-              preview.effectiveEnd,
-              preview.effectiveEnd,
-              preview.start,
-            ] as const;
-          }
-          const ux = dx / len;
-          const uy = dy / len;
-          const pl = perpLeft2D(ux, uy);
-          const half = t / 2;
-          const a = { x: preview.start.x - pl.x * half, y: preview.start.y - pl.y * half };
-          const b = {
-            x: preview.effectiveEnd.x - pl.x * half,
-            y: preview.effectiveEnd.y - pl.y * half,
-          };
-          const c = {
-            x: preview.effectiveEnd.x + pl.x * half,
-            y: preview.effectiveEnd.y + pl.y * half,
-          };
-          const d = { x: preview.start.x + pl.x * half, y: preview.start.y + pl.y * half };
-          return [a, b, c, d] as const;
-        })()
+      ? getCenteredFootprint()
       : getFootprintQuadFromReferenceEdge(
           preview.start,
           preview.effectiveEnd,

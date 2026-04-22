@@ -5,42 +5,49 @@ import { WallPoint } from '../interface';
 
 export function getFloorPolygon(walls: MeshObjectData[]): WallPoint[] {
   if (walls.length < MAXIMUM_WALL_OBJECT) return [];
+  const MIN_POLYGON_AREA = 1e-3;
 
   const pointKey = (p: WallPoint) =>
     `${Math.round(p.x / FLOOR_POINT_SNAP)}:${Math.round(p.y / FLOOR_POINT_SNAP)}`;
 
-  const distance = (a: WallPoint, b: WallPoint) => Math.hypot(a.x - b.x, a.y - b.y);
-  const polygonArea = (pts: WallPoint[]) => {
+  const pointDistance = (pointA: WallPoint, pointB: WallPoint) =>
+    Math.hypot(pointA.x - pointB.x, pointA.y - pointB.y);
+  const getSignedPolygonArea = (polygonPoints: WallPoint[]) => {
     let area = 0;
-    for (let i = 0; i < pts.length; i += 1) {
-      const a = pts[i];
-      const b = pts[(i + 1) % pts.length];
-      area += a.x * b.y - b.x * a.y;
+    for (let i = 0; i < polygonPoints.length; i += 1) {
+      const current = polygonPoints[i];
+      const next = polygonPoints[(i + 1) % polygonPoints.length];
+      area += current.x * next.y - next.x * current.y;
     }
     return area;
   };
+  const getPointsCenter = (polygonPoints: WallPoint[]) => ({
+    x: polygonPoints.reduce((sum, point) => sum + point.x, 0) / polygonPoints.length,
+    y: polygonPoints.reduce((sum, point) => sum + point.y, 0) / polygonPoints.length,
+  });
+  const sortPointsAroundCenter = (polygonPoints: WallPoint[]) => {
+    const center = getPointsCenter(polygonPoints);
+    polygonPoints.sort((pointA, pointB) => {
+      const angleA = Math.atan2(pointA.y - center.y, pointA.x - center.x);
+      const angleB = Math.atan2(pointB.y - center.y, pointB.x - center.x);
+      return angleA - angleB;
+    });
+  };
 
   const fallbackFromReferenceEndpoints = (): WallPoint[] => {
-    const unique = new Map<string, WallPoint>();
+    const uniquePointsByKey = new Map<string, WallPoint>();
     walls.forEach((wall) => {
       const { startPoint, endPoint } = getWallReferenceEdgePoints(wall);
-      unique.set(pointKey(startPoint), { x: startPoint.x, y: startPoint.y });
-      unique.set(pointKey(endPoint), { x: endPoint.x, y: endPoint.y });
+      uniquePointsByKey.set(pointKey(startPoint), { x: startPoint.x, y: startPoint.y });
+      uniquePointsByKey.set(pointKey(endPoint), { x: endPoint.x, y: endPoint.y });
     });
-    const points = Array.from(unique.values());
+    const points = Array.from(uniquePointsByKey.values());
     if (points.length < MAXIMUM_WALL_OBJECT) return [];
-    const center = {
-      x: points.reduce((sum, p) => sum + p.x, 0) / points.length,
-      y: points.reduce((sum, p) => sum + p.y, 0) / points.length,
-    };
-    points.sort((a, b) => {
-      const aa = Math.atan2(a.y - center.y, a.x - center.x);
-      const bb = Math.atan2(b.y - center.y, b.x - center.x);
-      return aa - bb;
-    });
-    const area = polygonArea(points);
-    if (Math.abs(area) < 1e-3) return [];
-    return area < 0 ? [...points].reverse() : points;
+
+    sortPointsAroundCenter(points);
+    const signedArea = getSignedPolygonArea(points);
+    if (Math.abs(signedArea) < MIN_POLYGON_AREA) return [];
+    return signedArea < 0 ? [...points].reverse() : points;
   };
 
   type CandidateSegment = {
@@ -55,8 +62,8 @@ export function getFloorPolygon(walls: MeshObjectData[]): WallPoint[] {
   });
 
   const normalizeCandidate = (p1: WallPoint, p2: WallPoint, rs: WallPoint, re: WallPoint) => {
-    const p1Score = distance(p1, rs) + distance(p2, re);
-    const p2Score = distance(p2, rs) + distance(p1, re);
+    const p1Score = pointDistance(p1, rs) + pointDistance(p2, re);
+    const p2Score = pointDistance(p2, rs) + pointDistance(p1, re);
     const useDirect = p1Score <= p2Score;
     const start = useDirect ? p1 : p2;
     const end = useDirect ? p2 : p1;
@@ -89,14 +96,19 @@ export function getFloorPolygon(walls: MeshObjectData[]): WallPoint[] {
     x: seedCenterPoints.reduce((sum, point) => sum + point.x, 0) / seedCenterPoints.length,
     y: seedCenterPoints.reduce((sum, point) => sum + point.y, 0) / seedCenterPoints.length,
   };
+  const getCandidate = (wallId: string, candidateIndex: number) => {
+    const candidates = candidatesByWall.get(wallId);
+    if (!candidates || candidates.length !== 2) return null;
+    return candidates[candidateIndex];
+  };
 
   const chosenIndex = new Map<string, number>();
   const queue: string[] = [];
   const seedWall = walls[0];
   const seedCandidates = candidatesByWall.get(seedWall.id);
   if (!seedCandidates || seedCandidates.length !== 2) return fallbackFromReferenceEndpoints();
-  const d0 = distance(seedCandidates[0].mid, center);
-  const d1 = distance(seedCandidates[1].mid, center);
+  const d0 = pointDistance(seedCandidates[0].mid, center);
+  const d1 = pointDistance(seedCandidates[1].mid, center);
   chosenIndex.set(seedWall.id, d0 <= d1 ? 0 : 1);
   queue.push(seedWall.id);
 
@@ -115,21 +127,19 @@ export function getFloorPolygon(walls: MeshObjectData[]): WallPoint[] {
       connected.forEach((neighborId) => {
         if (neighborId === currentWallId || chosenIndex.has(neighborId)) return;
         const neighborRef = refByWall.get(neighborId);
-        const neighborCandidates = candidatesByWall.get(neighborId);
-        if (!neighborRef || !neighborCandidates || neighborCandidates.length !== 2) return;
+        const candidate0 = getCandidate(neighborId, 0);
+        const candidate1 = getCandidate(neighborId, 1);
+        if (!neighborRef || !candidate0 || !candidate1) return;
 
         const currentSharedPoint = epIdx === 0 ? currentSegment.start : currentSegment.end;
         const neighborSharesAtStart = pointKey(neighborRef.startPoint) === epKey;
 
-        const cand0Point = neighborSharesAtStart
-          ? neighborCandidates[0].start
-          : neighborCandidates[0].end;
-        const cand1Point = neighborSharesAtStart
-          ? neighborCandidates[1].start
-          : neighborCandidates[1].end;
+        const cand0Point = neighborSharesAtStart ? candidate0.start : candidate0.end;
+        const cand1Point = neighborSharesAtStart ? candidate1.start : candidate1.end;
 
         const pick =
-          distance(currentSharedPoint, cand0Point) <= distance(currentSharedPoint, cand1Point)
+          pointDistance(currentSharedPoint, cand0Point) <=
+          pointDistance(currentSharedPoint, cand1Point)
             ? 0
             : 1;
         chosenIndex.set(neighborId, pick);
@@ -142,7 +152,8 @@ export function getFloorPolygon(walls: MeshObjectData[]): WallPoint[] {
     if (!chosenIndex.has(wall.id)) {
       const cands = candidatesByWall.get(wall.id);
       if (!cands) return;
-      const pick = distance(cands[0].mid, center) <= distance(cands[1].mid, center) ? 0 : 1;
+      const pick =
+        pointDistance(cands[0].mid, center) <= pointDistance(cands[1].mid, center) ? 0 : 1;
       chosenIndex.set(wall.id, pick);
     }
   });
@@ -181,6 +192,7 @@ export function getFloorPolygon(walls: MeshObjectData[]): WallPoint[] {
 
   chosenSegments.forEach((seg) => addEdge(seg.start, seg.end));
 
+  const getNeighborKeys = (nodeKey: string) => Array.from(neighbors.get(nodeKey) || []);
   const degree1Nodes = Array.from(neighbors.entries())
     .filter(([, set]) => set.size === 1)
     .map(([k]) => k);
@@ -201,43 +213,48 @@ export function getFloorPolygon(walls: MeshObjectData[]): WallPoint[] {
   let prevKey: string | null = null;
   let currentKey: string = startKey;
   const guard = neighbors.size + 5;
+  const getBestNextKey = (
+    candidateKeys: string[],
+    previousKey: string | null,
+    currentNodeKey: string
+  ) => {
+    if (candidateKeys.length === 1) return candidateKeys[0];
+
+    const currentPoint = nodeByKey.get(currentNodeKey)!;
+    if (!previousKey) {
+      return candidateKeys.sort((keyA, keyB) => {
+        const pointA = nodeByKey.get(keyA)!;
+        const pointB = nodeByKey.get(keyB)!;
+        const angleA = Math.atan2(pointA.y - currentPoint.y, pointA.x - currentPoint.x);
+        const angleB = Math.atan2(pointB.y - currentPoint.y, pointB.x - currentPoint.x);
+        return angleA - angleB;
+      })[0];
+    }
+
+    const previousPoint = nodeByKey.get(previousKey)!;
+    const inX = currentPoint.x - previousPoint.x;
+    const inY = currentPoint.y - previousPoint.y;
+    let bestKey = candidateKeys[0];
+    let bestTurn = Infinity;
+    candidateKeys.forEach((candidateKey) => {
+      const nextPoint = nodeByKey.get(candidateKey)!;
+      const outX = nextPoint.x - currentPoint.x;
+      const outY = nextPoint.y - currentPoint.y;
+      const turn = Math.atan2(inX * outY - inY * outX, inX * outX + inY * outY);
+      const normalizedTurn = turn < 0 ? turn + Math.PI * 2 : turn;
+      if (normalizedTurn < bestTurn) {
+        bestTurn = normalizedTurn;
+        bestKey = candidateKey;
+      }
+    });
+    return bestKey;
+  };
 
   for (let i = 0; i < guard; i += 1) {
-    const nextCandidates = Array.from(neighbors.get(currentKey) || []).filter((k) => k !== prevKey);
+    const nextCandidates = getNeighborKeys(currentKey).filter((k) => k !== prevKey);
     if (nextCandidates.length === 0) break;
 
-    const nextKey =
-      nextCandidates.length === 1
-        ? nextCandidates[0]
-        : (() => {
-            const prevPoint = prevKey ? nodeByKey.get(prevKey)! : null;
-            const currentPoint = nodeByKey.get(currentKey)!;
-            if (!prevPoint) {
-              return nextCandidates.sort((a, b) => {
-                const pa = nodeByKey.get(a)!;
-                const pb = nodeByKey.get(b)!;
-                const aa = Math.atan2(pa.y - currentPoint.y, pa.x - currentPoint.x);
-                const ab = Math.atan2(pb.y - currentPoint.y, pb.x - currentPoint.x);
-                return aa - ab;
-              })[0];
-            }
-            const inX = currentPoint.x - prevPoint.x;
-            const inY = currentPoint.y - prevPoint.y;
-            let best = nextCandidates[0];
-            let bestTurn = Infinity;
-            nextCandidates.forEach((candidateKey) => {
-              const nextPoint = nodeByKey.get(candidateKey)!;
-              const outX = nextPoint.x - currentPoint.x;
-              const outY = nextPoint.y - currentPoint.y;
-              const turn = Math.atan2(inX * outY - inY * outX, inX * outX + inY * outY);
-              const normalizedTurn = turn < 0 ? turn + Math.PI * 2 : turn;
-              if (normalizedTurn < bestTurn) {
-                bestTurn = normalizedTurn;
-                best = candidateKey;
-              }
-            });
-            return best;
-          })();
+    const nextKey = getBestNextKey(nextCandidates, prevKey, currentKey);
 
     if (nextKey === startKey) break;
 
@@ -256,21 +273,21 @@ export function getFloorPolygon(walls: MeshObjectData[]): WallPoint[] {
   const deduped: WallPoint[] = [];
   for (const p of points) {
     const last = deduped[deduped.length - 1];
-    if (!last || Math.hypot(last.x - p.x, last.y - p.y) > FLOOR_POINT_MERGE_TOLERANCE) {
+    if (!last || pointDistance(last, p) > FLOOR_POINT_MERGE_TOLERANCE) {
       deduped.push(p);
     }
   }
   if (deduped.length >= 2) {
     const first = deduped[0];
     const last = deduped[deduped.length - 1];
-    if (Math.hypot(first.x - last.x, first.y - last.y) < FLOOR_POINT_MERGE_TOLERANCE) {
+    if (pointDistance(first, last) < FLOOR_POINT_MERGE_TOLERANCE) {
       deduped.pop();
     }
   }
   if (deduped.length < MAXIMUM_WALL_OBJECT) return fallbackFromReferenceEndpoints();
 
-  const signedArea = polygonArea(deduped);
-  if (Math.abs(signedArea) < 1e-3) return fallbackFromReferenceEndpoints();
+  const signedArea = getSignedPolygonArea(deduped);
+  if (Math.abs(signedArea) < MIN_POLYGON_AREA) return fallbackFromReferenceEndpoints();
 
   return signedArea < 0 ? [...deduped].reverse() : deduped;
 }
