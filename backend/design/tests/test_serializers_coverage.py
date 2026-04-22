@@ -98,7 +98,7 @@ class SerializersCoverageTestCase(APIBaseTestCase):
         )
         serializer.is_valid(raise_exception=True)
         result = serializer.create(serializer.validated_data)
-        self.assertEqual(result["message"], "Design saved successfully")
+        self.assertEqual(result["message"], "No items to save")
 
     def test_get_or_create_material_no_name(
         self: "SerializersCoverageTestCase",

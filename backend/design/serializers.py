@@ -507,6 +507,9 @@ class ScenePayloadSerializer(serializers.Serializer):
         if not is_library:
             version = DesignVersion.objects.create(design=design)
 
+        if items is None:
+            return {}
+
         if not items:
             return {
                 "message": "No items to save",
