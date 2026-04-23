@@ -294,66 +294,61 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
     }
 
     setIsUploading(true);
-    const formData = new FormData();
-
-    const itemPayload = {
-      name: uploadData.name,
-      type: 'model',
-      is_main: true,
-      dimensions: {
-        width: Number(uploadData.width) / 1000, // Convert MM to Meters
-        height: Number(uploadData.height) / 1000,
-        depth: Number(uploadData.depth) / 1000,
-      },
-      position: { x: 0, y: 1, z: 0 },
-      rotation: { x: 0, y: 0, z: 0 },
-      scale: { x: 1, y: 1, z: 1 },
-      data: {
-        category: selectedFurnitureCategory,
-      },
-      material: [
-        {
-          name: `${uploadData.name} Material`,
-          type: 'Miscellaneous',
-          properties: {
-            model_file: null,
-          },
-        },
-      ],
-    };
-
-    let thumbnailBase64 = '';
-    if (previewRendererRef.current) {
-      thumbnailBase64 = previewRendererRef.current.domElement.toDataURL('image/png');
-    }
-
-    const metadata = {
-      name: itemPayload.name,
-      type: itemPayload.type,
-      is_main: itemPayload.is_main,
-      dimensions: itemPayload.dimensions,
-      position: itemPayload.position,
-      rotation: itemPayload.rotation,
-      scale: itemPayload.scale,
-      data: itemPayload.data,
-      material: itemPayload.material,
-    };
-
-    formData.append('design_id', designId);
-    formData.append('metadata', JSON.stringify(metadata));
-
-    if (thumbnailBase64) {
-      const blob = await (await fetch(thumbnailBase64)).blob();
-      formData.append('image', blob, `${uploadData.name}_thumbnail.png`);
-    }
-
-    formData.append('model_file', uploadData.file);
 
     try {
+      const formData = new FormData();
+      const metadata = {
+        name: uploadData.name,
+        type: 'model',
+        is_main: true,
+        dimensions: {
+          width: Number(uploadData.width) / 1000,
+          height: Number(uploadData.height) / 1000,
+          depth: Number(uploadData.depth) / 1000,
+        },
+        position: { x: 0, y: 1, z: 0 },
+        rotation: { x: 0, y: 0, z: 0 },
+        scale: { x: 1, y: 1, z: 1 },
+        data: {
+          category: selectedFurnitureCategory,
+        },
+        material: [
+          {
+            name: `${uploadData.name} Material`,
+            type: 'Miscellaneous',
+            properties: {
+              model_file: null,
+            },
+          },
+        ],
+      };
+
+      const payload: Record<string, any> = {
+        design_id: designId,
+        metadata: JSON.stringify(metadata),
+        model_file: uploadData.file,
+      };
+
+      if (previewRendererRef.current) {
+        const thumbnailBase64 = previewRendererRef.current.domElement.toDataURL('image/png');
+        payload.image = await (await fetch(thumbnailBase64)).blob();
+      }
+
+      Object.entries(payload).forEach(([key, value]) => {
+        if (value) {
+          if (key === 'image') {
+            formData.append(key, value, `${uploadData.name}_thumbnail.png`);
+          } else {
+            formData.append(key, value);
+          }
+        }
+      });
+
       const response = await commonService.post(
         API_ENDPOINT.CREATE_LIBRARY_CATALOGS(true),
         formData
       );
+
       if (response.status === 201) {
         toast.success('Model uploaded successfully');
         closePopup();
