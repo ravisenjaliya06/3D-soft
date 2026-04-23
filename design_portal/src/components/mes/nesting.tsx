@@ -11,127 +11,23 @@ import { useEffect, useRef, useState } from 'react';
 import { useSelector } from 'react-redux';
 import * as XLSX from 'xlsx-js-style';
 import styles from '../mes/nesting.module.css';
+import {
+  BOM_CUTTING_HEADERS,
+  BOM_EDGE_HEADERS,
+  BOM_HARDWARE_HEADERS,
+  BOM_PANEL_HEADERS,
+  EDGE_FACE_BOTTOM,
+  EDGE_FACE_LEFT,
+  EDGE_FACE_RIGHT,
+  EDGE_FACE_TOP,
+  getQuoteTerms,
+  PDF_THEME,
+  PRICING,
+  QUOTATION_HEADERS,
+  QUOTE_VALIDITY_DAYS,
+} from './constants';
 
 type ExportFormat = 'excel' | 'pdf';
-
-const BOM_CUTTING_HEADERS = [
-  'Part ID',
-  'Part Name',
-  'Cabinet/Assembly',
-  'Material',
-  'Thickness',
-  'Length',
-  'Width',
-  'Qty',
-  'Area (sqm)',
-  'Grain Dir',
-  'Edge L1',
-  'Edge L2',
-  'Edge W1',
-  'Edge W2',
-];
-
-const BOM_PANEL_HEADERS = [
-  'Material Type',
-  'Thickness',
-  'Sheet Size',
-  'Sheets Required',
-  'Sheet Cost',
-  'Wastage %',
-  'Total Material Cost',
-  'Total Labor Cost',
-];
-
-const BOM_EDGE_HEADERS = [
-  'Part ID',
-  'Part Name',
-  'Edge Type',
-  'Thickness',
-  'Total Length (m)',
-  'Rate/m',
-  'Total Cost',
-  'Remarks',
-];
-
-const BOM_HARDWARE_HEADERS = [
-  'Hardware ID',
-  'Item Name',
-  'Specification',
-  'Brand',
-  'Qty',
-  'Unit Price',
-  'Installation',
-  'Total Cost',
-  'Supplier',
-];
-
-const QUOTATION_HEADERS = [
-  'Sr.',
-  'Unit/Component Description',
-  'Dimensions (L×W×H)',
-  'Material',
-  'Qty',
-  'Rate/Unit',
-  'Amount',
-  'HSN',
-  'GST%',
-];
-
-const PDF_THEME = {
-  titleColor: [57, 37, 121] as [number, number, number],
-  lightGray: [242, 242, 242] as [number, number, number],
-  tableHeaderBg: [0, 0, 0] as [number, number, number],
-  tableHeaderText: [255, 255, 255] as [number, number, number],
-  border: [180, 180, 180] as [number, number, number],
-};
-
-const getQuoteTerms = () => [
-  '1. PAYMENT TERMS:',
-  '   - 40% advance payment with purchase order confirmation',
-  '   - 30% payment upon material delivery and start of manufacturing',
-  '   - 20% payment upon installation completion',
-  '   - 10% final payment after client sign-off and handover',
-  '',
-  '2. DELIVERY & INSTALLATION:',
-  '   - Manufacturing time: 15-20 working days from order confirmation and advance payment',
-  '   - Installation time: 3-4 working days (subject to site readiness)',
-  '   - Site should be ready with completed flooring, painting, electrical points, and civil work',
-  '   - Customer to provide permissions for material delivery and installation access',
-  '',
-  '3. WARRANTY:',
-  '   - 1 year comprehensive warranty on manufacturing defects and workmanship',
-  '   - 5 years warranty on branded hardware (Blum/Hettich/Hafele/Ebco) as per manufacturer terms',
-  '   - Warranty does not cover misuse, mishandling, accidents, or natural wear and tear',
-  '   - Annual maintenance contract available separately after warranty period',
-  '',
-  '4. INCLUSIONS:',
-  '   - All materials as per detailed specifications mentioned above',
-  '   - Complete manufacturing with CNC cutting, drilling, edge banding, and finishing',
-  '   - Transportation to site within Ahmedabad city limits (25 km radius)',
-  '   - Complete on-site installation, assembly, fitting, and alignment',
-  '   - Final cleaning and handover with care & maintenance instructions',
-  '',
-  '5. EXCLUSIONS:',
-  '   - Any civil work, masonry work, electrical work, plumbing, or painting work',
-  '   - Structural modifications or wall preparation work',
-  '   - Loading/unloading charges at site (if elevator not available above 2nd floor)',
-  '   - Transportation beyond 25 km from our factory (extra charges applicable)',
-  '   - Any items not specifically mentioned in this quotation',
-  '',
-  '6. DESIGN & CHANGES:',
-  '   - Design approval to be taken before manufacturing starts',
-  '   - Any design changes after approval will attract additional charges (minimum 15% of changed items)',
-  '   - Material/hardware changes subject to availability and price revision',
-  '   - Final measurements to be taken at site before manufacturing',
-  '',
-  '7. GENERAL TERMS:',
-  '   - Quotation validity: 30 days from issue date',
-  '   - GST charged as per prevailing rates at billing time',
-  '   - All disputes subject to Ahmedabad jurisdiction only',
-  '   - Material specifications are subject to availability; equivalent quality alternatives may be provided with customer consent',
-  "   - Payment should be made via cheque/NEFT/RTGS in favor of 'Bravento Furniture Solutions'",
-  '   - Any additional work during installation is chargeable',
-];
 
 const Nesting = () => {
   const router = useRouter();
@@ -222,6 +118,104 @@ const Nesting = () => {
     return priceMap;
   };
 
+  const formatCurrency = (num: number) =>
+    `Rs ${num.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
+  const fetchDesignDetails = async () => {
+    const response: any = await CommonService.get(API_ENDPOINT.GET_DESIGN_DETAILS(design_id));
+    return response.data;
+  };
+
+  const fetchNestingLayoutData = async () => {
+    try {
+      const response: any = await CommonService.put(
+        API_ENDPOINT.DOWNLOAD_NESTING_PDF(design_id) + `?version_id=${version_id}`,
+        { format: 'json' }
+      );
+      if (response?.data && !response.data.error) {
+        return response.data;
+      }
+    } catch (error) {
+      console.warn('Nesting layout data not available', error);
+    }
+    return [];
+  };
+
+  const fetchMaterialCatalog = async () => {
+    try {
+      const response: any = await CommonService.get(API_ENDPOINT.GET_MATERIAL);
+      if (response?.data?.results) {
+        return response.data.results;
+      }
+      if (Array.isArray(response?.data)) {
+        return response.data;
+      }
+    } catch (error) {
+      console.warn('Material catalog data not available', error);
+    }
+    return [];
+  };
+
+  const fetchOrganizationDetails = async () => {
+    try {
+      const response: any = await CommonService.get(API_ENDPOINT.GET_ORGANIZATION_DETAILS);
+      if (response.status === 200) {
+        return response.data;
+      }
+    } catch (error) {
+      console.warn('Failed to fetch organization details for quotation styling', error);
+    }
+    return null;
+  };
+
+  const normalizeEdgeFace = (edge: any) =>
+    typeof edge === 'object' && edge?.face
+      ? String(edge.face).toUpperCase()
+      : String(edge).toUpperCase();
+
+  const getQuoteMeta = () => {
+    const quoteNo = `QT/${new Date().getFullYear()}/${design_id.substring(0, 4).toUpperCase()}`;
+    const quoteDate = new Date()
+      .toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
+      .replace(/ /g, '-');
+    const validDate = new Date(Date.now() + QUOTE_VALIDITY_DAYS * 24 * 60 * 60 * 1000)
+      .toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
+      .replace(/ /g, '-');
+    return { quoteNo, quoteDate, validDate };
+  };
+
+  const getOrganizationDisplayData = (organizationDetails: any) => {
+    const companyName = organizationDetails?.company_name || 'BRAVENTO FURNITURE SOLUTIONS';
+    const companyAddress =
+      organizationDetails?.company_address ||
+      'Address: 123, Furniture Complex, S.G. Highway, Ahmedabad - 380015, Gujarat, India';
+    const contactLine = `Phone: ${organizationDetails?.company_phone || '+91 79 1234 5678'} | Email: ${
+      organizationDetails?.company_email || 'sales@bravento.com'
+    } | Website: ${organizationDetails?.company_website || 'www.bravento.com'}`;
+    const taxLine = `GSTIN: ${
+      organizationDetails?.company_gstin || '24XXXXX1234X1Z5'
+    } | PAN: ${organizationDetails?.company_pan || 'XXXXX1234X'}`;
+    return { companyName, companyAddress, contactLine, taxLine };
+  };
+
+  const countHardware = (partsList: any[]) => {
+    let minifixCamCount = 0;
+    let minifixDowelCount = 0;
+    let hingeCount = 0;
+
+    partsList.forEach((part: any) => {
+      if (!part.minifix_holes || part.minifix_holes.length === 0) return;
+      part.minifix_holes.forEach((hole: any) => {
+        const holeType = (hole.type || '').toUpperCase();
+        if (holeType === 'CAM') minifixCamCount++;
+        if (holeType === 'DOWEL' || holeType === 'MINIFIX DOWEL') minifixDowelCount++;
+        if (holeType === 'HINGE') hingeCount++;
+      });
+    });
+
+    return { minifixCamCount, minifixDowelCount, hingeCount };
+  };
+
   const buildMergedPartsList = (layoutData: any[], sourceData: any[]) =>
     (layoutData.length > 0 ? layoutData : sourceData).map((p: any) => {
       const layoutUniqueId = p['Unique ID'] || p.unique_id || p.ID;
@@ -261,9 +255,9 @@ const Nesting = () => {
     totalEdgeCost: number
   ) => {
     const doc = new jsPDF({ orientation: 'landscape', unit: 'pt', format: 'a4' });
-    const totalLaborCost = Math.round(totalMaterialCost * 0.2);
+    const totalLaborCost = Math.round(totalMaterialCost * PRICING.laborRate);
     const estimatedCost = totalMaterialCost + totalEdgeCost + totalLaborCost;
-    const finalPrice = Math.round(estimatedCost * 1.5);
+    const finalPrice = Math.round(estimatedCost * PRICING.markupMultiplier);
     const leftMargin = 40;
     const pageWidth = doc.internal.pageSize.getWidth();
     const printableWidth = pageWidth - leftMargin * 2;
@@ -479,38 +473,9 @@ const Nesting = () => {
     setIsGeneratingBOM(true);
     showFullScreenLoader('Generating BOM data...');
     try {
-      // 1. Fetch Design Details
-      const designResponse: any = await CommonService.get(
-        API_ENDPOINT.GET_DESIGN_DETAILS(design_id)
-      );
-      const design = designResponse.data;
-
-      // 2. Fetch Nesting Data (Layout with holes/grooves/edgebands)
-      let layoutData: any[] = [];
-      try {
-        const layoutResponse: any = await CommonService.put(
-          API_ENDPOINT.DOWNLOAD_NESTING_PDF(design_id) + `?version_id=${version_id}`,
-          { format: 'json' }
-        );
-        if (layoutResponse?.data && !layoutResponse.data.error) {
-          layoutData = layoutResponse.data;
-        }
-      } catch (e) {
-        console.warn('Nesting layout data not available', e);
-      }
-
-      // 3. Fetch Materials for Costing
-      let allMaterials: any[] = [];
-      try {
-        const materialResponse: any = await CommonService.get(API_ENDPOINT.GET_MATERIAL);
-        if (materialResponse?.data?.results) {
-          allMaterials = materialResponse.data.results;
-        } else if (Array.isArray(materialResponse?.data)) {
-          allMaterials = materialResponse.data;
-        }
-      } catch (e) {
-        console.warn('Material catalog data not available', e);
-      }
+      const design = await fetchDesignDetails();
+      const layoutData = await fetchNestingLayoutData();
+      const allMaterials = await fetchMaterialCatalog();
 
       const materialPriceMap = buildMaterialPriceMap(allMaterials);
 
@@ -539,11 +504,6 @@ const Nesting = () => {
       const boldStyle = { font: { bold: true } };
 
       // (Summary sheet will be generated at the end to include total costs)      // --- Sheet 2: Cutting List ---
-      // Build a map of id -> name for parent cabinet lookup
-      const parentNameMap: Record<string, string> = {};
-      data.forEach((obj: any) => {
-        parentNameMap[obj.id] = obj.name || obj.type || obj.id;
-      });
 
       const cuttingRows = partsList.map((part: any) => {
         const h = parseFloat(part.height || part?.dimensions?.height || 0);
@@ -561,18 +521,11 @@ const Nesting = () => {
         if (part.edgebands && part.edgebands.length > 0) {
           part.edgebands.forEach((e: any) => {
             // Handle both object and string formats
-            let eStr =
-              typeof e === 'object' && e?.face
-                ? String(e.face).toUpperCase()
-                : String(e).toUpperCase();
-            if (eStr === 'LEFT' || eStr === 'L' || eStr === '5' || eStr === 'FRONT')
-              edgeL1 = 'PVC 1mm';
-            else if (eStr === 'RIGHT' || eStr === 'R' || eStr === '3' || eStr === 'BACK')
-              edgeL2 = 'PVC 1mm';
-            else if (eStr === 'TOP' || eStr === 'T' || eStr === '4' || eStr === '1')
-              edgeW1 = 'PVC 1mm';
-            else if (eStr === 'BOTTOM' || eStr === 'B' || eStr === '2' || eStr === '6')
-              edgeW2 = 'PVC 1mm';
+            const edgeFace = normalizeEdgeFace(e);
+            if (EDGE_FACE_LEFT.includes(edgeFace)) edgeL1 = 'PVC 1mm';
+            else if (EDGE_FACE_RIGHT.includes(edgeFace)) edgeL2 = 'PVC 1mm';
+            else if (EDGE_FACE_TOP.includes(edgeFace)) edgeW1 = 'PVC 1mm';
+            else if (EDGE_FACE_BOTTOM.includes(edgeFace)) edgeW2 = 'PVC 1mm';
           });
         }
         return [
@@ -647,8 +600,8 @@ const Nesting = () => {
       });
       let totalMaterialCost = 0;
       const panelRows = Object.keys(thicknessMap).map((t) => {
-        const sheetsReq = Math.ceil(thicknessMap[t].area / (2.44 * 1.22));
-        const sheetCost = thicknessMap[t].costPerSheet || 1500; // default 1500 if 0
+        const sheetsReq = Math.ceil(thicknessMap[t].area / PRICING.sheetAreaSqm);
+        const sheetCost = thicknessMap[t].costPerSheet || PRICING.defaultSheetCost; // default if 0
         const totalCost = sheetsReq * sheetCost;
         totalMaterialCost += totalCost;
         return [
@@ -659,7 +612,7 @@ const Nesting = () => {
           sheetCost,
           '10%',
           totalCost,
-          Math.round(totalCost * 0.2),
+          Math.round(totalCost * PRICING.laborRate),
         ]; // 20% labor guess
       });
       const panelSheetData = [
@@ -696,7 +649,7 @@ const Nesting = () => {
         if (row[13] !== 'None') len += w;
 
         if (len > 0) {
-          const edgeCost = len * 25; // assumed 25 per meter
+          const edgeCost = len * PRICING.edgeRatePerMeter;
           totalEdgeCost += edgeCost;
           edgeRows.push([
             row[0],
@@ -704,7 +657,7 @@ const Nesting = () => {
             'PVC 1mm',
             1,
             len.toFixed(2),
-            '25',
+            String(PRICING.edgeRatePerMeter),
             edgeCost.toFixed(2),
             '-',
           ]);
@@ -735,20 +688,7 @@ const Nesting = () => {
       XLSX.utils.book_append_sheet(wb, wsEdge, 'Edge Banding');
 
       // --- Sheet 5: Hardware List ---
-      let minifixCamCount = 0;
-      let minifixDowelCount = 0;
-      let hingeCount = 0;
-
-      partsList.forEach((part: any) => {
-        if (part.minifix_holes && part.minifix_holes.length > 0) {
-          part.minifix_holes.forEach((h: any) => {
-            const type = (h.type || '').toUpperCase();
-            if (type === 'CAM') minifixCamCount++;
-            if (type === 'DOWEL' || type === 'MINIFIX DOWEL') minifixDowelCount++;
-            if (type === 'HINGE') hingeCount++;
-          });
-        }
-      });
+      const { minifixCamCount, minifixDowelCount, hingeCount } = countHardware(partsList);
       const hardwareRows = [
         [
           'HW-001',
@@ -807,9 +747,9 @@ const Nesting = () => {
       XLSX.utils.book_append_sheet(wb, wsHardware, 'Hardware List');
 
       // --- Sheet 1: Project Summary (Generated last to use totals) ---
-      const totalLaborCost = Math.round(totalMaterialCost * 0.2); // 20% labor guess
+      const totalLaborCost = Math.round(totalMaterialCost * PRICING.laborRate); // 20% labor guess
       const estCost = totalMaterialCost + totalEdgeCost + totalLaborCost;
-      const finalPrice = Math.round(estCost * 1.5); // 50% margin guess
+      const finalPrice = Math.round(estCost * PRICING.markupMultiplier); // 50% margin guess
 
       const summaryData: any[] = [
         [{ v: 'BRAVENTO - Bill of Materials', t: 's', s: titleStyle }, '', '', '', '', '', '', ''],
@@ -953,8 +893,6 @@ const Nesting = () => {
     numberToWords: (num: number) => string
   ) => {
     const doc = new jsPDF({ unit: 'pt', format: 'a4' });
-    const formatCurrency = (num: number) =>
-      `Rs ${num.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
     const pageHeight = doc.internal.pageSize.getHeight();
     const leftMargin = 40;
     const rightMargin = 40;
@@ -969,24 +907,9 @@ const Nesting = () => {
       }
     };
 
-    const companyName = organizationDetails?.company_name || 'BRAVENTO FURNITURE SOLUTIONS';
-    const companyAddress =
-      organizationDetails?.company_address ||
-      'Address: 123, Furniture Complex, S.G. Highway, Ahmedabad - 380015, Gujarat, India';
-    const contactLine = `Phone: ${organizationDetails?.company_phone || '+91 79 1234 5678'} | Email: ${
-      organizationDetails?.company_email || 'sales@bravento.com'
-    } | Website: ${organizationDetails?.company_website || 'www.bravento.com'}`;
-    const taxLine = `GSTIN: ${
-      organizationDetails?.company_gstin || '24XXXXX1234X1Z5'
-    } | PAN: ${organizationDetails?.company_pan || 'XXXXX1234X'}`;
-
-    const quoteNo = `QT/${new Date().getFullYear()}/${design_id.substring(0, 4).toUpperCase()}`;
-    const quoteDate = new Date()
-      .toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
-      .replace(/ /g, '-');
-    const validDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
-      .toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
-      .replace(/ /g, '-');
+    const { companyName, companyAddress, contactLine, taxLine } =
+      getOrganizationDisplayData(organizationDetails);
+    const { quoteNo, quoteDate, validDate } = getQuoteMeta();
 
     // Header block
     doc.setFont('helvetica', 'bold');
@@ -1193,47 +1116,10 @@ const Nesting = () => {
     setIsGeneratingQuote(true);
     showFullScreenLoader('Generating quotation...');
     try {
-      // 0. Fetch Organization Details for Company/Banking Info
-      let organizationDetails: any = null;
-      try {
-        const orgResp: any = await CommonService.get(API_ENDPOINT.GET_ORGANIZATION_DETAILS);
-        if (orgResp.status === 200) organizationDetails = orgResp.data;
-      } catch (e) {
-        console.warn('Failed to fetch organization details for quotation styling', e);
-      }
-
-      // 1. Fetch Design Details
-      const designResponse: any = await CommonService.get(
-        API_ENDPOINT.GET_DESIGN_DETAILS(design_id)
-      );
-      const design = designResponse.data;
-
-      // 2. Fetch Nesting Data
-      let layoutData: any[] = [];
-      try {
-        const layoutResponse: any = await CommonService.put(
-          API_ENDPOINT.DOWNLOAD_NESTING_PDF(design_id) + `?version_id=${version_id}`,
-          { format: 'json' }
-        );
-        if (layoutResponse?.data && !layoutResponse.data.error) {
-          layoutData = layoutResponse.data;
-        }
-      } catch (e) {
-        console.warn('Nesting layout data not available', e);
-      }
-
-      // 3. Fetch Materials
-      let allMaterials: any[] = [];
-      try {
-        const materialResponse: any = await CommonService.get(API_ENDPOINT.GET_MATERIAL);
-        if (materialResponse?.data?.results) {
-          allMaterials = materialResponse.data.results;
-        } else if (Array.isArray(materialResponse?.data)) {
-          allMaterials = materialResponse.data;
-        }
-      } catch (e) {
-        console.warn('Material catalog data not available', e);
-      }
+      const organizationDetails = await fetchOrganizationDetails();
+      const design = await fetchDesignDetails();
+      const layoutData = await fetchNestingLayoutData();
+      const allMaterials = await fetchMaterialCatalog();
 
       const materialPriceMap = buildMaterialPriceMap(allMaterials);
 
@@ -1302,11 +1188,11 @@ const Nesting = () => {
         const mat =
           rPart.material && Array.isArray(rPart.material) ? rPart.material[0] : rPart.material;
         const matId = mat?.id || mat;
-        const sheetCost = materialPriceMap[matId] || 1500;
+        const sheetCost = materialPriceMap[matId] || PRICING.defaultSheetCost;
 
         const areaReq = (h * w) / 1000000;
         // approx cost per sqm = sheetCost / (2.44*1.22)
-        const costPerSqm = sheetCost / 2.9768;
+        const costPerSqm = sheetCost / PRICING.sheetAreaSqm;
         unit.totalMaterialCost += areaReq * costPerSqm * (part.quantity || 1);
 
         // Edgebanding cost
@@ -1315,17 +1201,14 @@ const Nesting = () => {
         const eW = w / 1000;
         if (part.edgebands && part.edgebands.length > 0) {
           part.edgebands.forEach((e: any) => {
-            let eStr =
-              typeof e === 'object' && e?.face
-                ? String(e.face).toUpperCase()
-                : String(e).toUpperCase();
-            if (['LEFT', 'L', '5', 'FRONT'].includes(eStr)) len += eH;
-            if (['RIGHT', 'R', '3', 'BACK'].includes(eStr)) len += eH;
-            if (['TOP', 'T', '4', '1'].includes(eStr)) len += eW;
-            if (['BOTTOM', 'B', '2', '6'].includes(eStr)) len += eW;
+            const edgeFace = normalizeEdgeFace(e);
+            if (EDGE_FACE_LEFT.includes(edgeFace)) len += eH;
+            if (EDGE_FACE_RIGHT.includes(edgeFace)) len += eH;
+            if (EDGE_FACE_TOP.includes(edgeFace)) len += eW;
+            if (EDGE_FACE_BOTTOM.includes(edgeFace)) len += eW;
           });
         }
-        unit.totalEdgeCost += len * 25; // 25 rs per meter
+        unit.totalEdgeCost += len * PRICING.edgeRatePerMeter;
 
         // Hardware
         if (part.minifix_holes && part.minifix_holes.length > 0) {
@@ -1345,22 +1228,15 @@ const Nesting = () => {
       let srNo = 1;
       let subTotal = 0;
 
-      const formatCurrency = (num: number) => {
-        return (
-          'Rs ' +
-          num.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
-        );
-      };
-
       Object.values(unitsMap).forEach((u) => {
         // Add hardware cost
         const hwCost = u.hingeCount * 150 + u.camCount * 20 + u.dowelCount * 10;
         const rawCost = u.totalMaterialCost + u.totalEdgeCost + hwCost;
-        const laborCost = rawCost * 0.2; // 20% labor
+        const laborCost = rawCost * PRICING.laborRate;
         const estCost = rawCost + laborCost;
 
-        let ratePerUnit = Math.round(estCost * 1.5); // 50% markup
-        if (ratePerUnit < 1000) ratePerUnit = 1500; // minimum boundary
+        let ratePerUnit = Math.round(estCost * PRICING.markupMultiplier);
+        if (ratePerUnit < PRICING.minRateThreshold) ratePerUnit = PRICING.minRateValue;
 
         const amount = ratePerUnit * u.qty;
         subTotal += amount;
@@ -1392,7 +1268,7 @@ const Nesting = () => {
       });
 
       // Add standard items like installation
-      const installationCost = Math.round(subTotal * 0.05); // 5% installation
+      const installationCost = Math.round(subTotal * PRICING.installationRate);
       quoteRows.push([
         srNo++,
         'Installation & Fitting Charges\n(On-site assembly, alignment, testing)',
@@ -1406,8 +1282,8 @@ const Nesting = () => {
       ]);
       subTotal += installationCost;
 
-      const cgst = subTotal * 0.09;
-      const sgst = subTotal * 0.09;
+      const cgst = subTotal * PRICING.gstRate;
+      const sgst = subTotal * PRICING.gstRate;
       const grandTotal = Math.round(subTotal + cgst + sgst);
 
       const numberToWords = (num: number) => {
@@ -1582,31 +1458,8 @@ const Nesting = () => {
         alignment: { horizontal: 'center', vertical: 'center', wrapText: true },
       };
 
-      const companyName = organizationDetails?.company_name || 'BRAVENTO FURNITURE SOLUTIONS';
-      const companyAddress =
-        organizationDetails?.company_address ||
-        'Address: 123, Furniture Complex, S.G. Highway, Ahmedabad - 380015, Gujarat, India';
-
-      let contactLine = '';
-      if (organizationDetails?.company_phone)
-        contactLine += `Phone: ${organizationDetails.company_phone} | `;
-      else contactLine += `Phone: +91 79 1234 5678 | `;
-
-      if (organizationDetails?.company_email)
-        contactLine += `Email: ${organizationDetails.company_email} | `;
-      else contactLine += `Email: sales@bravento.com | `;
-
-      if (organizationDetails?.company_website)
-        contactLine += `Website: ${organizationDetails.company_website}`;
-      else contactLine += `Website: www.bravento.com`;
-
-      let taxLine = '';
-      if (organizationDetails?.company_gstin)
-        taxLine += `GSTIN: ${organizationDetails.company_gstin} | `;
-      else taxLine += `GSTIN: 24XXXXX1234X1Z5 | `;
-
-      if (organizationDetails?.company_pan) taxLine += `PAN: ${organizationDetails.company_pan}`;
-      else taxLine += `PAN: XXXXX1234X`;
+      const { companyName, companyAddress, contactLine, taxLine } =
+        getOrganizationDisplayData(organizationDetails);
 
       pushR([{ v: companyName, s: sH1C }]);
       pushR([{ v: 'Custom Furniture Design & Manufacturing', s: sH2C }]);
@@ -1618,13 +1471,7 @@ const Nesting = () => {
       pushR([]);
 
       // 2. Info Block
-      const quoteNo = `QT/${new Date().getFullYear()}/${design_id.substring(0, 4).toUpperCase()}`;
-      const quoteDate = new Date()
-        .toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
-        .replace(/ /g, '-');
-      const validDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
-        .toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
-        .replace(/ /g, '-');
+      const { quoteNo, quoteDate, validDate } = getQuoteMeta();
 
       pushR([
         { v: 'Quotation No:', s: sKey },
