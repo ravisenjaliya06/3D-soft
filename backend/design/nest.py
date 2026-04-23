@@ -893,15 +893,6 @@ class NestingService:
             # EdgeGroup
             edge_group = ET.SubElement(panel, "EdgeGroup")
 
-            # Map our edge names to face IDs for XML
-            # XML expects faces 1, 2, 3, 4 for edges.
-            # Based on Cutting List logic: L1, L2, W1, W2.
-            # Let's map: 1=Bottom, 2=Top, 3=Left, 4=Right (common convention)
-            # Actually, I'll check if there's a convention in the codebase.
-            # In generate_xmls (old code):
-            # for f in ["1", "2", "3", "4"]:
-            #     ET.SubElement(edge_group, "Edge", Face=f, Thickness="0.000000")
-
             edge_map = {
                 "1": edge_bottom,
                 "2": edge_top,
@@ -910,10 +901,9 @@ class NestingService:
             }
 
             for f_id, material in edge_map.items():
-                thickness = "1.000000" if material else "0.000000"
                 edge_attrs = {
                     "Face": f_id,
-                    "Thickness": thickness,
+                    "Thickness": "0.000000",
                 }
                 if material:
                     edge_attrs["Material"] = material
