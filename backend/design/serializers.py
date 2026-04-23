@@ -422,26 +422,6 @@ class ScenePayloadSerializer(serializers.Serializer):
         """
         material_data = item.get("material") or []
 
-        # Parse flattened indices if structured list is missing
-        if not material_data:
-
-            indices = sorted(
-                list(
-                    {
-                        int(re.match(r"material\[(\d+)\]", k).group(1))
-                        for k in item
-                        if re.match(r"material\[(\d+)\]", k)
-                    }
-                )
-            )
-
-            for i in indices:
-                mat_item = {
-                    "name": item.get(f"material[{i}]name"),
-                    "type": item.get(f"material[{i}]type"),
-                }
-                material_data.append(mat_item)
-
         if not material_data:
             return
 
