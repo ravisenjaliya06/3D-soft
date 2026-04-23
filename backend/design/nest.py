@@ -666,9 +666,12 @@ class NestingService:
             edge_top = self.get_banding_display_name(edge_top_raw)
             edge_bottom = self.get_banding_display_name(edge_bottom_raw)
 
-            # Sheet 1: Cutting List Extraction
-            width_val = self._safe_float(item.get(KEY_WIDTH))
-            length_val = self._safe_float(item.get(KEY_HEIGHT))
+            # Sheet 1 / XML panel dimensions:
+            # keep machine-compatible orientation where Length is always larger side.
+            raw_width = self._safe_float(item.get(KEY_WIDTH))
+            raw_length = self._safe_float(item.get(KEY_HEIGHT))
+            length_val = max(raw_width, raw_length)
+            width_val = min(raw_width, raw_length)
             thval = self._safe_float(item.get("depth", 17.0))
 
             # Texture grain is already normalized in optimize() via texture_grain_code
@@ -760,66 +763,15 @@ class NestingService:
                     raw_depth = self._safe_float(
                         hole.get("length") or hole.get("depth") or 0
                     )
-
-                    panel_l_val = self._safe_float(item.get(KEY_HEIGHT))
-
-                    final_x = 0.0
-                    final_y = 0.0
+                    # Frontend now provides final machining coordinates.
+                    final_x = self._safe_float(
+                        hole.get("x", pos.get("x", 0))
+                    )
+                    final_y = self._safe_float(
+                        hole.get("y", pos.get("y", 0))
+                    )
                     final_depth = raw_depth
                     final_diameter = raw_diameter
-
-                    # ----------------------------------------
-                    # COORDINATE LOGIC
-                    # ----------------------------------------
-                    if (
-                        xml_type == "2"
-                        and hole_type in ["SCREW", "DOWEL"]
-                        and face_id not in ["1", "6"]
-                        or xml_type == "2"
-                        and hole_type in ["CAM"]
-                        and face_id in ["6"]
-                    ):
-                        final_x = self._safe_float(pos.get("y", 0))
-                        final_y = self._safe_float(pos.get("x", 0))
-                    elif (
-                        xml_type == "2"
-                        and hole_type in ["CAM"]
-                        or xml_type == "2"
-                        and hole_type in ["SCREW", "DOWEL"]
-                        and face_id in ["1", "6"]
-                    ):
-                        final_x = self._safe_float(pos.get("x", 0))
-                        final_y = self._safe_float(pos.get("y", 0))
-                    else:
-                        if face_id == "5":
-                            final_x = 0.0
-                            final_y = self._safe_float(pos.get("x", 0))
-                        elif face_id == "3":
-                            final_x = panel_l_val
-                            final_y = self._safe_float(pos.get("x", 0))
-                        elif face_id == "4":
-                            final_x = self._safe_float(pos.get("x", 0))
-                            final_y = 0.0
-                        elif face_id == "2":
-                            final_x = self._safe_float(pos.get("x", 0))
-                            final_y = panel_l_val
-                        elif face_id == "1":
-                            final_x = self._safe_float(pos.get("x", 0))
-                            final_y = 0.0
-                        elif face_id == "6":
-                            final_x = self._safe_float(pos.get("x", 0))
-                            final_y = panel_l_val
-                        else:
-                            final_x = self._safe_float(pos.get("x", 0))
-                            final_y = self._safe_float(pos.get("y", 0))
-
-                    if (
-                        int(xml_type) == 1
-                        and hole_type in ["SCREW", "DOWEL"]
-                        and face_id == "5"
-                    ):
-                        convert_face_id = int(face_id)
-                        face_id = str(convert_face_id - 1)
 
                     machining_attrs = {
                         "ID": "1000",
@@ -852,9 +804,9 @@ class NestingService:
                         }
                     )
 
-                    # If Edge Drill (XML Type 1), we need Z.
-                    if xml_type == "1":
-                        z_val = thval / 2
+                    # Face 5 / 6 must only carry X,Y in XML.
+                    if xml_type == "1" and face_id not in ["5", "6"]:
+                        z_val = self._safe_float(hole.get("z", thval / 2))
                         machining_attrs["Z"] = f"{z_val:.6f}"
 
                     ET.SubElement(machines, "Machining", **machining_attrs)
