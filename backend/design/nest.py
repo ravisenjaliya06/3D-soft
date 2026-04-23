@@ -603,6 +603,44 @@ class NestingService:
                 return 0.0
             return min(radius, max_radius)
 
+        def _panel_bounds_from_outline(
+            panel_design: Dict[str, Any], panel_length: float, panel_width: float
+        ) -> Tuple[float, float, float, float]:
+            outline = panel_design.get("outline", [])
+            if isinstance(outline, list) and outline:
+                xs = [self._safe_float(p.get("x", 0.0)) for p in outline if isinstance(p, dict)]
+                ys = [self._safe_float(p.get("y", 0.0)) for p in outline if isinstance(p, dict)]
+                if xs and ys:
+                    return min(xs), max(xs), min(ys), max(ys)
+            # Fallback to centered local frame.
+            return (
+                -panel_length / 2,
+                panel_length / 2,
+                -panel_width / 2,
+                panel_width / 2,
+            )
+
+        def _to_panel_xy(x: float, y: float, min_x: float, min_y: float) -> Tuple[float, float]:
+            # Convert panel-local coordinates (centered/outline space) into XML face coordinates.
+            return x - min_x, y - min_y
+
+        def _from_output_to_local_xy(
+            x: float,
+            y: float,
+            min_x: float,
+            max_x: float,
+            min_y: float,
+            x_top_right: Any = None,
+            y_top_right: Any = None,
+        ) -> Tuple[float, float]:
+            # Prefer explicit top-right output coordinates when provided.
+            # x from right edge toward left, y from top downward.
+            if x_top_right is not None and y_top_right is not None:
+                tr_x = self._safe_float(x_top_right, x)
+                tr_y = self._safe_float(y_top_right, y)
+                return max_x - tr_x, min_y + tr_y
+            return x, y
+
         def _curve_center(
             corner_index: int, radius: float, panel_length: float, panel_width: float
         ) -> Tuple[float, float]:
@@ -959,7 +997,202 @@ class NestingService:
             except Exception as e:  # noqa: BLE001
                 logger.warning(f"Error processing corner profiles: {e}")
 
-            # 3. Grooves / Slots
+            # 3. Panel Design Holes (Type=3 profile pocket)
+            try:
+                panel_design = item.get("panel_design", {})
+                if not isinstance(panel_design, dict):
+                    panel_design = {}
+
+                panel_holes = panel_design.get("holes", [])
+                if not isinstance(panel_holes, list):
+                    panel_holes = []
+
+                min_x, max_x, min_y, max_y = _panel_bounds_from_outline(
+                    panel_design, length_val, width_val
+                )
+                panel_span_x = max(max_x - min_x, 0.0)
+                panel_span_y = max(max_y - min_y, 0.0)
+
+                for panel_hole in panel_holes:
+                    if not isinstance(panel_hole, dict):
+                        continue
+
+                    hole_type = str(panel_hole.get("type", "")).strip().lower()
+                    depth_val = self._safe_float(panel_hole.get("depth", 6.0), 6.0)
+
+                    if hole_type in ["square", "polygon"]:
+                        points = panel_hole.get("points", [])
+                        if not isinstance(points, list) or len(points) < 3:
+                            # Fallback rectangular polygon from x/y/width/height
+                            raw_x = self._safe_float(panel_hole.get("x", 0.0))
+                            raw_y = self._safe_float(panel_hole.get("y", 0.0))
+                            raw_x, raw_y = _from_output_to_local_xy(
+                                raw_x,
+                                raw_y,
+                                min_x,
+                                max_x,
+                                min_y,
+                                panel_hole.get("x_top_right"),
+                                panel_hole.get("y_top_right"),
+                            )
+                            w = self._safe_float(panel_hole.get("width", 0.0))
+                            h = self._safe_float(panel_hole.get("height", 0.0))
+                            points = [
+                                {"x": raw_x, "y": raw_y},
+                                {"x": raw_x + w, "y": raw_y},
+                                {"x": raw_x + w, "y": raw_y + h},
+                                {"x": raw_x, "y": raw_y + h},
+                            ]
+
+                        converted_points: List[Tuple[float, float]] = []
+                        points_top_right = panel_hole.get("points_top_right", [])
+                        use_points_top_right = isinstance(points_top_right, list) and len(
+                            points_top_right
+                        ) == len(points)
+
+                        for idx, p in enumerate(points):
+                            if not isinstance(p, dict):
+                                continue
+                            px = self._safe_float(p.get("x", 0.0))
+                            py = self._safe_float(p.get("y", 0.0))
+                            tr_point = (
+                                points_top_right[idx]
+                                if use_points_top_right and isinstance(points_top_right[idx], dict)
+                                else None
+                            )
+                            px, py = _from_output_to_local_xy(
+                                px,
+                                py,
+                                min_x,
+                                max_x,
+                                min_y,
+                                tr_point.get("x") if tr_point else None,
+                                tr_point.get("y") if tr_point else None,
+                            )
+                            xml_x, xml_y = _to_panel_xy(px, py, min_x, min_y)
+                            converted_points.append((xml_x, xml_y))
+
+                        if len(converted_points) < 3:
+                            continue
+
+                        # For profile pocket, machine anchor X/Y is last point,
+                        # then lines walk through all polygon points and return to anchor.
+                        start_x, start_y = converted_points[-1]
+                        mac_index += 1
+                        hole_attrs = {
+                            "ID": "10",
+                            "Type": "3",
+                            "IsGenCode": "2",
+                            "Face": "5",
+                            "Depth": f"{depth_val:.6f}",
+                            "X": f"{start_x:.6f}",
+                            "Y": f"{start_y:.6f}",
+                            "Pocket": "1",
+                            "ToolOffset": "R",
+                            "EditType": "0",
+                            "GroupName": "",
+                            "ToolName": "0",
+                            "MacIndex": str(mac_index),
+                        }
+                        hole_machining = ET.SubElement(machines, "Machining", **hole_attrs)
+                        lines_el = ET.SubElement(hole_machining, "Lines")
+
+                        line_id = 1
+                        for px, py in converted_points:
+                            ET.SubElement(
+                                lines_el,
+                                "Line",
+                                LineID=str(line_id),
+                                EndX=f"{px:.6f}",
+                                EndY=f"{py:.6f}",
+                                Angle="0.000000",
+                            )
+                            line_id += 1
+
+                        ET.SubElement(
+                            lines_el,
+                            "Line",
+                            LineID=str(line_id),
+                            EndX=f"{start_x:.6f}",
+                            EndY=f"{start_y:.6f}",
+                            Angle="0.000000",
+                        )
+
+                    elif hole_type == "circle":
+                        radius = self._safe_float(panel_hole.get("radius", 0.0), 0.0)
+                        if radius <= 0:
+                            radius = self._safe_float(panel_hole.get("width", 0.0), 0.0) / 2
+                        if radius <= 0:
+                            continue
+
+                        raw_x = self._safe_float(panel_hole.get("x", 0.0))
+                        raw_y = self._safe_float(panel_hole.get("y", 0.0))
+                        raw_x, raw_y = _from_output_to_local_xy(
+                            raw_x,
+                            raw_y,
+                            min_x,
+                            max_x,
+                            min_y,
+                            panel_hole.get("x_top_right"),
+                            panel_hole.get("y_top_right"),
+                        )
+                        # Input x/y is top-left of circle bounding box.
+                        center_x_raw = raw_x + radius
+                        center_y_raw = raw_y + radius
+                        center_x, center_y = _to_panel_xy(
+                            center_x_raw, center_y_raw, min_x, min_y
+                        )
+
+                        # Keep circle safely inside current panel extents.
+                        if (
+                            center_x + radius < 0
+                            or center_x - radius > panel_span_x
+                            or center_y + radius < 0
+                            or center_y - radius > panel_span_y
+                        ):
+                            continue
+
+                        mac_index += 1
+                        start_x = center_x + radius
+                        start_y = center_y
+                        hole_attrs = {
+                            "ID": "10",
+                            "Type": "3",
+                            "IsGenCode": "2",
+                            "Face": "5",
+                            "Depth": f"{depth_val:.6f}",
+                            # Match reference XML: X/Y stores contour start point, not center.
+                            "X": f"{start_x:.6f}",
+                            "Y": f"{start_y:.6f}",
+                            "Pocket": "1",
+                            "ToolOffset": "R",
+                            "EditType": "0",
+                            "GroupName": "",
+                            "ToolName": "0",
+                            "MacIndex": str(mac_index),
+                        }
+                        hole_machining = ET.SubElement(machines, "Machining", **hole_attrs)
+                        lines_el = ET.SubElement(hole_machining, "Lines")
+
+                        # Full-circle polyline; density proportional to radius.
+                        line_count = max(24, int(2 * math.pi * radius * 5) - 5)
+                        for line_id in range(1, line_count + 1):
+                            theta = (line_id / line_count) * (2 * math.pi)
+                            end_x = center_x + radius * math.cos(theta)
+                            end_y = center_y - radius * math.sin(theta)
+                            ET.SubElement(
+                                lines_el,
+                                "Line",
+                                LineID=str(line_id),
+                                EndX=f"{end_x:.6f}",
+                                EndY=f"{end_y:.6f}",
+                                Angle="0.000000",
+                            )
+
+            except Exception as e:  # noqa: BLE001
+                logger.warning(f"Error processing panel design holes: {e}")
+
+            # 4. Grooves / Slots
             grooves = item.get("grooves", [])
             for groove in grooves:
                 try:

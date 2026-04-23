@@ -346,11 +346,16 @@ def parse_catalog_data(catalogs: List[DesignCatalog]) -> Dict:
         if not isinstance(outline, list):
             outline = []
 
+        holes = panel_design_raw.get("holes", [])
+        if not isinstance(holes, list):
+            holes = []
+
         plank_data["panel_design"] = {
             "corner_types": corner_types,
             "corner_radius": corner_radius,
             "curve_controls": curve_controls,
             "outline": outline,
+            "holes": holes,
         }
 
         # Extract texture grain from possible keys (numeric preferred)
