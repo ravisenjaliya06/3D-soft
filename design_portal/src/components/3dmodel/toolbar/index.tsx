@@ -70,6 +70,30 @@ const MODEL_CATEGORY_TO_ITEMS: Record<string, any[]> = {
   'Study Table': CENTER_STUDY_TABLE,
 };
 
+/**
+ * Resolves a path to a full URL, handling external links, local assets, and API base prefixing.
+ */
+const resolveAssetUrl = (path: string | null | undefined): string => {
+  if (!path) return '';
+
+  // Return as-is if it's already a full URL or a data URI
+  if (path.startsWith('http') || path.startsWith('data:')) {
+    return path;
+  }
+
+  // Local static assets should not be prefixed with the API base
+  if (path.startsWith('/assets/') || path.startsWith('/glb/')) {
+    return path;
+  }
+
+  // Prefix with API base, ensuring correct slash handling
+  const apiBase = process.env.NEXT_PUBLIC_PUBLIC_API || '';
+  const cleanBase = apiBase.endsWith('/') ? apiBase.slice(0, -1) : apiBase;
+  const cleanPath = path.startsWith('/') ? path : `/${path}`;
+
+  return `${cleanBase}${cleanPath}`;
+};
+
 const GltfModel = ({
   url,
   onLoad,
@@ -509,24 +533,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
           }
         }
 
-        const isExternal =
-          item.path.startsWith('http') ||
-          item.path.startsWith('https') ||
-          item.path.startsWith('data:');
-        const apiBase = process.env.NEXT_PUBLIC_PUBLIC_API || '';
-        const cleanBase = apiBase.endsWith('/') ? apiBase.slice(0, -1) : apiBase;
-        const cleanPath = item.path.startsWith('/') ? item.path : `/${item.path}`;
-
-        const activePath = isExternal
-          ? item.path
-          : item.path.startsWith('/assets/') || item.path.startsWith('/glb/')
-            ? item.path
-            : `${cleanBase}${cleanPath}`;
-
-        if (process.env.NEXT_PUBLIC_DEBUG === 'true') {
-          console.log(`[DynamicModel Debug] Loading ${item.name} from:`, activePath);
-        }
-
+        const activePath = resolveAssetUrl(item.path);
         const model = await GLBLoader(activePath, item.name, targetSize);
         let position: THREE.Vector3 | null = null;
 
@@ -938,11 +945,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
             item.properties?.model_file;
 
           if (modelFile && !item.path) {
-            const apiBase = process.env.NEXT_PUBLIC_PUBLIC_API || '';
-            const cleanBase = apiBase.endsWith('/') ? apiBase.slice(0, -1) : apiBase;
-            const cleanFile = modelFile.startsWith('/') ? modelFile : `/${modelFile}`;
-
-            item.path = modelFile.startsWith('http') ? modelFile : `${cleanBase}${cleanFile}`;
+            item.path = resolveAssetUrl(modelFile);
           }
 
           return itemData?.category === category;
@@ -1342,9 +1345,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
                   <img
                     src={
                       item.image
-                        ? item.image.startsWith('data:image') || item.image.startsWith('/assets/')
-                          ? item.image
-                          : `${process.env.NEXT_PUBLIC_PUBLIC_API}${item.image}`
+                        ? resolveAssetUrl(item.image)
                         : (item.type === OBJECT_TYPES.CUPBOARD || item.type === 'Cabinet'
                             ? `/assets/3dmodel/sidebar/${formatEnumLabel(item.name)}.png`
                             : iconMap[

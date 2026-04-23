@@ -476,7 +476,6 @@ class ScenePayloadSerializer(serializers.Serializer):
 
         organization = request.user.selected_organization
         for item in items:
-            # Safety check: if item is a list (due to QueryDict setlist issues), take first
             if isinstance(item, list) and len(item) > 0:
                 item = item[0]
 
@@ -509,13 +508,6 @@ class ScenePayloadSerializer(serializers.Serializer):
 
         if items is None:
             return {}
-
-        if not items:
-            return {
-                "message": "No items to save",
-                "version_id": version.id if version else None,
-                "catalog_ids": [],
-            }
 
         with transaction.atomic():
 

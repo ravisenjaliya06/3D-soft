@@ -711,14 +711,11 @@ class MaterialSerializer(serializers.ModelSerializer):
 
             if properties_id:
                 properties = Properties.objects.filter(id=properties_id).first()
-                if properties:
-                    Properties.objects.create(
-                        material=material,
-                        model_file=properties.model_file,
-                        **properties_data,
-                    )
-                else:
-                    Properties.objects.create(material=material, **properties_data)
+                Properties.objects.create(
+                    material=material,
+                    model_file=properties.model_file if properties else None,
+                    **properties_data,
+                )
             else:
                 Properties.objects.create(material=material, **properties_data)
 
