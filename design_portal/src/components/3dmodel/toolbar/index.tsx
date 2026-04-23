@@ -70,23 +70,14 @@ const MODEL_CATEGORY_TO_ITEMS: Record<string, any[]> = {
   'Study Table': CENTER_STUDY_TABLE,
 };
 
-/**
- * Resolves a path to a full URL, handling external links, local assets, and API base prefixing.
- */
 const resolveAssetUrl = (path: string | null | undefined): string => {
   if (!path) return '';
-
-  // Return as-is if it's already a full URL or a data URI
   if (path.startsWith('http') || path.startsWith('data:')) {
     return path;
   }
-
-  // Local static assets should not be prefixed with the API base
   if (path.startsWith('/assets/') || path.startsWith('/glb/')) {
     return path;
   }
-
-  // Prefix with API base, ensuring correct slash handling
   const apiBase = process.env.NEXT_PUBLIC_PUBLIC_API || '';
   const cleanBase = apiBase.endsWith('/') ? apiBase.slice(0, -1) : apiBase;
   const cleanPath = path.startsWith('/') ? path : `/${path}`;
