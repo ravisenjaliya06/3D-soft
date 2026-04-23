@@ -1,6 +1,6 @@
 # Python imports
-import math
 import logging
+import math
 import os
 import re
 import secrets
@@ -591,10 +591,10 @@ class NestingService:
         Also generates 'Cutting List.xlsx' in the same folder.
         """
 
-        def _is_round_corner(corner_type: Any) -> bool:
+        def _is_round_corner(corner_type: str | None) -> bool:
             return str(corner_type or "").strip().lower() == "round"
 
-        def _safe_radius(radius_value: Any, max_radius: float) -> float:
+        def _safe_radius(radius_value: int | float | None, max_radius: float) -> float:
             radius = self._safe_float(radius_value, 0.0)
             if radius <= 0:
                 return 0.0
@@ -816,12 +816,8 @@ class NestingService:
                         hole.get("length") or hole.get("depth") or 0
                     )
                     # Frontend now provides final machining coordinates.
-                    final_x = self._safe_float(
-                        hole.get("x", pos.get("x", 0))
-                    )
-                    final_y = self._safe_float(
-                        hole.get("y", pos.get("y", 0))
-                    )
+                    final_x = self._safe_float(hole.get("x", pos.get("x", 0)))
+                    final_y = self._safe_float(hole.get("y", pos.get("y", 0)))
                     final_depth = raw_depth
                     final_diameter = raw_diameter
 
@@ -885,8 +881,16 @@ class NestingService:
                 max_curve_radius = min(length_val, width_val)
 
                 for corner_index in range(4):
-                    corner_type = corner_types[corner_index] if corner_index < len(corner_types) else ""
-                    radius_value = corner_radii[corner_index] if corner_index < len(corner_radii) else 0
+                    corner_type = (
+                        corner_types[corner_index]
+                        if corner_index < len(corner_types)
+                        else ""
+                    )
+                    radius_value = (
+                        corner_radii[corner_index]
+                        if corner_index < len(corner_radii)
+                        else 0
+                    )
 
                     if not _is_round_corner(corner_type):
                         continue
@@ -915,7 +919,9 @@ class NestingService:
                         "MacIndex": str(mac_index),
                         "ToolOffset": "L",
                     }
-                    curve_machining = ET.SubElement(machines, "Machining", **curve_attrs)
+                    curve_machining = ET.SubElement(
+                        machines, "Machining", **curve_attrs
+                    )
                     lines_el = ET.SubElement(curve_machining, "Lines")
 
                     # Match reference density closely:
