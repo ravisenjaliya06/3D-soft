@@ -641,6 +641,194 @@ class NestingService:
                 return max_x - tr_x, min_y + tr_y
             return x, y
 
+        def _polygon_signed_area(points: List[Tuple[float, float]]) -> float:
+            if len(points) < 3:
+                return 0.0
+            area = 0.0
+            for i, (x1, y1) in enumerate(points):
+                x2, y2 = points[(i + 1) % len(points)]
+                area += x1 * y2 - x2 * y1
+            return area / 2.0
+
+        def _line_intersection(
+            p1: Tuple[float, float],
+            d1: Tuple[float, float],
+            p2: Tuple[float, float],
+            d2: Tuple[float, float],
+        ) -> Optional[Tuple[float, float]]:
+            det = d1[0] * d2[1] - d1[1] * d2[0]
+            if abs(det) < 1e-9:
+                return None
+            dx = p2[0] - p1[0]
+            dy = p2[1] - p1[1]
+            t = (dx * d2[1] - dy * d2[0]) / det
+            return p1[0] + d1[0] * t, p1[1] + d1[1] * t
+
+        def _rounded_polygon_points(
+            points: List[Tuple[float, float]],
+            corner_types: List[Any],
+            corner_radii: List[Any],
+        ) -> List[Tuple[float, float]]:
+            n = len(points)
+            if n < 3:
+                return points
+
+            def _safe_unit(dx: float, dy: float) -> Optional[Tuple[float, float]]:
+                ln = math.hypot(dx, dy)
+                if ln < 1e-9:
+                    return None
+                return dx / ln, dy / ln
+
+            signed_area = _polygon_signed_area(points)
+            if abs(signed_area) < 1e-9:
+                return points
+            is_ccw = signed_area > 0
+            orientation_sign = 1.0 if is_ccw else -1.0
+            result: List[Tuple[float, float]] = []
+
+            for i in range(n):
+                prev = points[(i - 1 + n) % n]
+                curr = points[i]
+                nxt = points[(i + 1) % n]
+
+                ctype = str(corner_types[i] if i < len(corner_types) else "").strip().lower()
+                radius = self._safe_float(corner_radii[i] if i < len(corner_radii) else 0.0, 0.0)
+
+                if radius <= 0:
+                    result.append(curr)
+                    continue
+
+                in_to_prev_u = _safe_unit(prev[0] - curr[0], prev[1] - curr[1])
+                out_to_next_u = _safe_unit(nxt[0] - curr[0], nxt[1] - curr[1])
+                if in_to_prev_u is None or out_to_next_u is None:
+                    result.append(curr)
+                    continue
+
+                in_len = math.hypot(prev[0] - curr[0], prev[1] - curr[1])
+                out_len = math.hypot(nxt[0] - curr[0], nxt[1] - curr[1])
+
+                in_dir = _safe_unit(curr[0] - prev[0], curr[1] - prev[1])
+                out_dir = _safe_unit(nxt[0] - curr[0], nxt[1] - curr[1])
+                if in_dir is None or out_dir is None:
+                    result.append(curr)
+                    continue
+
+                cross_turn = in_dir[0] * out_dir[1] - in_dir[1] * out_dir[0]
+                if abs(cross_turn) <= 1e-9:
+                    result.append(curr)
+                    continue
+                is_convex_corner = cross_turn * orientation_sign > 0
+
+                # Chamfer corner: replace vertex with a straight cut between two edge points.
+                if ctype == "chamfer":
+                    chamfer_dist = min(radius, in_len * 0.499, out_len * 0.499)
+                    if chamfer_dist <= 1e-6:
+                        result.append(curr)
+                        continue
+                    chamfer_start = (
+                        curr[0] + in_to_prev_u[0] * chamfer_dist,
+                        curr[1] + in_to_prev_u[1] * chamfer_dist,
+                    )
+                    chamfer_end = (
+                        curr[0] + out_to_next_u[0] * chamfer_dist,
+                        curr[1] + out_to_next_u[1] * chamfer_dist,
+                    )
+                    result.append(chamfer_start)
+                    result.append(chamfer_end)
+                    continue
+
+                # Round corner: replace vertex with a tangent arc approximation.
+                if ctype != "round":
+                    result.append(curr)
+                    continue
+
+                dot = max(
+                    -1.0,
+                    min(
+                        1.0,
+                        in_to_prev_u[0] * out_to_next_u[0]
+                        + in_to_prev_u[1] * out_to_next_u[1],
+                    ),
+                )
+                angle = math.acos(dot)
+                if angle < 1e-4 or abs(math.pi - angle) < 1e-4:
+                    result.append(curr)
+                    continue
+
+                tan_half = math.tan(angle / 2.0)
+                if abs(tan_half) < 1e-9:
+                    result.append(curr)
+                    continue
+
+                # Geometric max fillet radius that still fits both adjacent edges.
+                max_radius = min(in_len, out_len) * tan_half * 0.999
+                effective_radius = min(radius, max_radius)
+                if effective_radius <= 1e-6:
+                    result.append(curr)
+                    continue
+
+                tangent_dist = effective_radius / tan_half
+                if tangent_dist <= 1e-6:
+                    result.append(curr)
+                    continue
+
+                start = (
+                    curr[0] + in_to_prev_u[0] * tangent_dist,
+                    curr[1] + in_to_prev_u[1] * tangent_dist,
+                )
+                end = (
+                    curr[0] + out_to_next_u[0] * tangent_dist,
+                    curr[1] + out_to_next_u[1] * tangent_dist,
+                )
+
+                if is_ccw:
+                    n1 = (-in_dir[1], in_dir[0])
+                    n2 = (-out_dir[1], out_dir[0])
+                else:
+                    n1 = (in_dir[1], -in_dir[0])
+                    n2 = (out_dir[1], -out_dir[0])
+
+                center = _line_intersection(start, n1, end, n2)
+                if center is None:
+                    result.append(curr)
+                    continue
+
+                cx, cy = center
+                a1 = math.atan2(start[1] - cy, start[0] - cx)
+                a2 = math.atan2(end[1] - cy, end[0] - cx)
+
+                # At reflex (concave) corners, local traversal flips direction.
+                sweep_ccw = is_ccw if is_convex_corner else not is_ccw
+                if sweep_ccw and a2 <= a1:
+                    a2 += 2 * math.pi
+                if not sweep_ccw and a2 >= a1:
+                    a2 -= 2 * math.pi
+
+                sweep = a2 - a1
+                arc_len = abs(sweep * effective_radius)
+                segs = max(4, int(arc_len / 2.0))
+
+                result.append(start)
+                for step in range(1, segs + 1):
+                    t = step / segs
+                    a = a1 + sweep * t
+                    result.append(
+                        (
+                            cx + effective_radius * math.cos(a),
+                            cy + effective_radius * math.sin(a),
+                        )
+                    )
+
+            # Remove adjacent duplicates to avoid zero-length segments.
+            cleaned: List[Tuple[float, float]] = []
+            for pt in result:
+                if not cleaned:
+                    cleaned.append(pt)
+                    continue
+                if math.hypot(pt[0] - cleaned[-1][0], pt[1] - cleaned[-1][1]) > 1e-4:
+                    cleaned.append(pt)
+            return cleaned if cleaned else points
+
         def _curve_center(
             corner_index: int, radius: float, panel_length: float, panel_width: float
         ) -> Tuple[float, float]:
@@ -1032,6 +1220,12 @@ class NestingService:
                     if hole_type in ["square", "polygon", "slotting"]:
                         points = panel_hole.get("points", [])
                         points_top_right = panel_hole.get("points_top_right", [])
+                        corner_types = panel_hole.get("corner_types", [])
+                        corner_radii = panel_hole.get("corner_radius", [])
+                        if not isinstance(corner_types, list):
+                            corner_types = []
+                        if not isinstance(corner_radii, list):
+                            corner_radii = []
                         if not isinstance(points, list) or len(points) < 3:
                             # Fallback rectangular polygon from x/y/width/height
                             w = self._safe_float(panel_hole.get("width", 0.0))
@@ -1079,6 +1273,12 @@ class NestingService:
                                 xml_x, xml_y = _to_panel_xy(px, py, min_x, min_y)
                                 converted_points.append((xml_x, xml_y))
 
+                        if len(converted_points) < 3:
+                            continue
+
+                        converted_points = _rounded_polygon_points(
+                            converted_points, corner_types, corner_radii
+                        )
                         if len(converted_points) < 3:
                             continue
 
