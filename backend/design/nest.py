@@ -1018,59 +1018,61 @@ class NestingService:
                         continue
 
                     hole_type = str(panel_hole.get("type", "")).strip().lower()
+                    has_top_right_xy = (
+                        panel_hole.get("x_top_right") is not None
+                        and panel_hole.get("y_top_right") is not None
+                    )
                     depth_val = self._safe_float(panel_hole.get("depth", 6.0), 6.0)
 
                     if hole_type in ["square", "polygon"]:
                         points = panel_hole.get("points", [])
+                        points_top_right = panel_hole.get("points_top_right", [])
                         if not isinstance(points, list) or len(points) < 3:
                             # Fallback rectangular polygon from x/y/width/height
-                            raw_x = self._safe_float(panel_hole.get("x", 0.0))
-                            raw_y = self._safe_float(panel_hole.get("y", 0.0))
-                            raw_x, raw_y = _from_output_to_local_xy(
-                                raw_x,
-                                raw_y,
-                                min_x,
-                                max_x,
-                                min_y,
-                                panel_hole.get("x_top_right"),
-                                panel_hole.get("y_top_right"),
-                            )
                             w = self._safe_float(panel_hole.get("width", 0.0))
                             h = self._safe_float(panel_hole.get("height", 0.0))
-                            points = [
-                                {"x": raw_x, "y": raw_y},
-                                {"x": raw_x + w, "y": raw_y},
-                                {"x": raw_x + w, "y": raw_y + h},
-                                {"x": raw_x, "y": raw_y + h},
-                            ]
+                            if has_top_right_xy:
+                                raw_x = self._safe_float(panel_hole.get("x_top_right", 0.0))
+                                raw_y = self._safe_float(panel_hole.get("y_top_right", 0.0))
+                                # top-right referenced axis: +x goes leftwards.
+                                points_top_right = [
+                                    {"x": raw_x, "y": raw_y},
+                                    {"x": raw_x - w, "y": raw_y},
+                                    {"x": raw_x - w, "y": raw_y + h},
+                                    {"x": raw_x, "y": raw_y + h},
+                                ]
+                                points = []
+                            else:
+                                raw_x = self._safe_float(panel_hole.get("x", 0.0))
+                                raw_y = self._safe_float(panel_hole.get("y", 0.0))
+                                points = [
+                                    {"x": raw_x, "y": raw_y},
+                                    {"x": raw_x + w, "y": raw_y},
+                                    {"x": raw_x + w, "y": raw_y + h},
+                                    {"x": raw_x, "y": raw_y + h},
+                                ]
 
                         converted_points: List[Tuple[float, float]] = []
-                        points_top_right = panel_hole.get("points_top_right", [])
-                        use_points_top_right = isinstance(points_top_right, list) and len(
-                            points_top_right
-                        ) == len(points)
+                        use_points_top_right = isinstance(points_top_right, list) and len(points_top_right) > 0
 
-                        for idx, p in enumerate(points):
-                            if not isinstance(p, dict):
-                                continue
-                            px = self._safe_float(p.get("x", 0.0))
-                            py = self._safe_float(p.get("y", 0.0))
-                            tr_point = (
-                                points_top_right[idx]
-                                if use_points_top_right and isinstance(points_top_right[idx], dict)
-                                else None
-                            )
-                            px, py = _from_output_to_local_xy(
-                                px,
-                                py,
-                                min_x,
-                                max_x,
-                                min_y,
-                                tr_point.get("x") if tr_point else None,
-                                tr_point.get("y") if tr_point else None,
-                            )
-                            xml_x, xml_y = _to_panel_xy(px, py, min_x, min_y)
-                            converted_points.append((xml_x, xml_y))
+                        if use_points_top_right:
+                            for p in points_top_right:
+                                if not isinstance(p, dict):
+                                    continue
+                                converted_points.append(
+                                    (
+                                        self._safe_float(p.get("x", 0.0)),
+                                        self._safe_float(p.get("y", 0.0)),
+                                    )
+                                )
+                        else:
+                            for p in points:
+                                if not isinstance(p, dict):
+                                    continue
+                                px = self._safe_float(p.get("x", 0.0))
+                                py = self._safe_float(p.get("y", 0.0))
+                                xml_x, xml_y = _to_panel_xy(px, py, min_x, min_y)
+                                converted_points.append((xml_x, xml_y))
 
                         if len(converted_points) < 3:
                             continue
@@ -1125,23 +1127,21 @@ class NestingService:
                         if radius <= 0:
                             continue
 
-                        raw_x = self._safe_float(panel_hole.get("x", 0.0))
-                        raw_y = self._safe_float(panel_hole.get("y", 0.0))
-                        raw_x, raw_y = _from_output_to_local_xy(
-                            raw_x,
-                            raw_y,
-                            min_x,
-                            max_x,
-                            min_y,
-                            panel_hole.get("x_top_right"),
-                            panel_hole.get("y_top_right"),
-                        )
-                        # Input x/y is top-left of circle bounding box.
-                        center_x_raw = raw_x + radius
-                        center_y_raw = raw_y + radius
-                        center_x, center_y = _to_panel_xy(
-                            center_x_raw, center_y_raw, min_x, min_y
-                        )
+                        if has_top_right_xy:
+                            # top-right referenced output stores top-left of circle bbox.
+                            raw_x = self._safe_float(panel_hole.get("x_top_right", 0.0))
+                            raw_y = self._safe_float(panel_hole.get("y_top_right", 0.0))
+                            center_x = raw_x - radius
+                            center_y = raw_y + radius
+                        else:
+                            raw_x = self._safe_float(panel_hole.get("x", 0.0))
+                            raw_y = self._safe_float(panel_hole.get("y", 0.0))
+                            # Input x/y is top-left of circle bounding box.
+                            center_x_raw = raw_x + radius
+                            center_y_raw = raw_y + radius
+                            center_x, center_y = _to_panel_xy(
+                                center_x_raw, center_y_raw, min_x, min_y
+                            )
 
                         # Keep circle safely inside current panel extents.
                         if (
