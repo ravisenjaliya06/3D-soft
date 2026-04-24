@@ -224,6 +224,14 @@ export class DesignBuilder {
       this._createInitialCompartments(finalRoot);
       updateMinifixesForCupboard(finalRoot);
     }
+    // Recompute minifix for nested main assemblies (e.g. drawer groups) in
+    // their own reference frame after full hierarchy rebuild.
+    finalRoot.traverse((obj) => {
+      if (!(obj instanceof THREE.Mesh) || !obj.userData?.isMain) return;
+      if (obj.userData?.type === PART_TYPES.DRAWER) {
+        updateMinifixesForCupboard(obj);
+      }
+    });
     finalRoot.updateMatrixWorld(true);
     return finalRoot;
   }
