@@ -1022,9 +1022,14 @@ class NestingService:
                         panel_hole.get("x_top_right") is not None
                         and panel_hole.get("y_top_right") is not None
                     )
-                    depth_val = self._safe_float(panel_hole.get("depth", 6.0), 6.0)
+                    is_slotting = hole_type == "slotting"
+                    depth_val = (
+                        self._safe_float(panel_hole.get("depth", thval), thval)
+                        if is_slotting
+                        else thval
+                    )
 
-                    if hole_type in ["square", "polygon"]:
+                    if hole_type in ["square", "polygon", "slotting"]:
                         points = panel_hole.get("points", [])
                         points_top_right = panel_hole.get("points_top_right", [])
                         if not isinstance(points, list) or len(points) < 3:
