@@ -608,8 +608,16 @@ class NestingService:
         ) -> Tuple[float, float, float, float]:
             outline = panel_design.get("outline", [])
             if isinstance(outline, list) and outline:
-                xs = [self._safe_float(p.get("x", 0.0)) for p in outline if isinstance(p, dict)]
-                ys = [self._safe_float(p.get("y", 0.0)) for p in outline if isinstance(p, dict)]
+                xs = [
+                    self._safe_float(p.get("x", 0.0))
+                    for p in outline
+                    if isinstance(p, dict)
+                ]
+                ys = [
+                    self._safe_float(p.get("y", 0.0))
+                    for p in outline
+                    if isinstance(p, dict)
+                ]
                 if xs and ys:
                     return min(xs), max(xs), min(ys), max(ys)
             # Fallback to centered local frame.
@@ -620,26 +628,11 @@ class NestingService:
                 panel_width / 2,
             )
 
-        def _to_panel_xy(x: float, y: float, min_x: float, min_y: float) -> Tuple[float, float]:
+        def _to_panel_xy(
+            x: float, y: float, min_x: float, min_y: float
+        ) -> Tuple[float, float]:
             # Convert panel-local coordinates (centered/outline space) into XML face coordinates.
             return x - min_x, y - min_y
-
-        def _from_output_to_local_xy(
-            x: float,
-            y: float,
-            min_x: float,
-            max_x: float,
-            min_y: float,
-            x_top_right: Any = None,
-            y_top_right: Any = None,
-        ) -> Tuple[float, float]:
-            # Prefer explicit top-right output coordinates when provided.
-            # x from right edge toward left, y from top downward.
-            if x_top_right is not None and y_top_right is not None:
-                tr_x = self._safe_float(x_top_right, x)
-                tr_y = self._safe_float(y_top_right, y)
-                return max_x - tr_x, min_y + tr_y
-            return x, y
 
         def _polygon_signed_area(points: List[Tuple[float, float]]) -> float:
             if len(points) < 3:
@@ -691,8 +684,14 @@ class NestingService:
                 curr = points[i]
                 nxt = points[(i + 1) % n]
 
-                ctype = str(corner_types[i] if i < len(corner_types) else "").strip().lower()
-                radius = self._safe_float(corner_radii[i] if i < len(corner_radii) else 0.0, 0.0)
+                ctype = (
+                    str(corner_types[i] if i < len(corner_types) else "")
+                    .strip()
+                    .lower()
+                )
+                radius = self._safe_float(
+                    corner_radii[i] if i < len(corner_radii) else 0.0, 0.0
+                )
 
                 if radius <= 0:
                     result.append(curr)
@@ -1240,8 +1239,12 @@ class NestingService:
                             w = self._safe_float(panel_hole.get("width", 0.0))
                             h = self._safe_float(panel_hole.get("height", 0.0))
                             if has_top_right_xy:
-                                raw_x = self._safe_float(panel_hole.get("x_top_right", 0.0))
-                                raw_y = self._safe_float(panel_hole.get("y_top_right", 0.0))
+                                raw_x = self._safe_float(
+                                    panel_hole.get("x_top_right", 0.0)
+                                )
+                                raw_y = self._safe_float(
+                                    panel_hole.get("y_top_right", 0.0)
+                                )
                                 # top-right referenced axis: +x goes leftwards.
                                 points_top_right = [
                                     {"x": raw_x, "y": raw_y},
@@ -1261,7 +1264,10 @@ class NestingService:
                                 ]
 
                         converted_points: List[Tuple[float, float]] = []
-                        use_points_top_right = isinstance(points_top_right, list) and len(points_top_right) > 0
+                        use_points_top_right = (
+                            isinstance(points_top_right, list)
+                            and len(points_top_right) > 0
+                        )
 
                         if use_points_top_right:
                             for p in points_top_right:
@@ -1310,7 +1316,9 @@ class NestingService:
                             "ToolName": "0",
                             "MacIndex": str(mac_index),
                         }
-                        hole_machining = ET.SubElement(machines, "Machining", **hole_attrs)
+                        hole_machining = ET.SubElement(
+                            machines, "Machining", **hole_attrs
+                        )
                         lines_el = ET.SubElement(hole_machining, "Lines")
 
                         line_id = 1
@@ -1337,7 +1345,9 @@ class NestingService:
                     elif hole_type == "circle":
                         radius = self._safe_float(panel_hole.get("radius", 0.0), 0.0)
                         if radius <= 0:
-                            radius = self._safe_float(panel_hole.get("width", 0.0), 0.0) / 2
+                            radius = (
+                                self._safe_float(panel_hole.get("width", 0.0), 0.0) / 2
+                            )
                         if radius <= 0:
                             continue
 
@@ -1385,7 +1395,9 @@ class NestingService:
                             "ToolName": "0",
                             "MacIndex": str(mac_index),
                         }
-                        hole_machining = ET.SubElement(machines, "Machining", **hole_attrs)
+                        hole_machining = ET.SubElement(
+                            machines, "Machining", **hole_attrs
+                        )
                         lines_el = ET.SubElement(hole_machining, "Lines")
 
                         # Full-circle polyline; density proportional to radius.
