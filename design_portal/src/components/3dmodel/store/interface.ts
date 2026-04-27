@@ -186,6 +186,7 @@ export interface DataState {
   globalDoorsOpen?: boolean;
   isWireframeVisible: boolean;
   wireframeColor: string;
+  wallPointMode: 'external' | 'internal' | 'center';
 }
 export interface HistoryAction {
   id: string;
