@@ -348,11 +348,22 @@ export function updateMinifixesForCupboard(cupboardMesh: THREE.Mesh) {
       }
 
       const { width, height, depth } = getMeshDimensions(child);
+      // Always resolve plank position in the current assembly reference frame.
+      // This keeps drawer minifix calculations relative to the drawer group
+      // (when `cupboardMesh` is a drawer) instead of accidentally using a
+      // higher-level cupboard/local frame.
+      const childWorldPosition = new THREE.Vector3();
+      child.getWorldPosition(childWorldPosition);
+      const positionInReference = cupboardMesh.worldToLocal(childWorldPosition.clone());
 
       planks.push({
         id: child.userData.objectId || child.uuid,
         name: child.name,
-        position: { x: child.position.x, y: child.position.y, z: child.position.z },
+        position: {
+          x: positionInReference.x,
+          y: positionInReference.y,
+          z: positionInReference.z,
+        },
         width: width,
         height: height,
         depth: depth,
