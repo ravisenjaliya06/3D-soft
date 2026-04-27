@@ -222,10 +222,24 @@ export function generateCompartmentsFromMesh(boxMesh: THREE.Mesh) {
     return [mesh];
   }
 
-  const minW = bb.min.x;
-  const maxW = bb.max.x;
-  const minH = bb.min.y;
-  const maxH = bb.max.y;
+  let localMinW = Infinity;
+  let localMaxW = -Infinity;
+  let localMinH = Infinity;
+  let localMaxH = -Infinity;
+
+  planks.forEach((p) => {
+    if (p.wMin < localMinW) localMinW = p.wMin;
+    if (p.wMax > localMaxW) localMaxW = p.wMax;
+    if (p.hMin < localMinH) localMinH = p.hMin;
+    if (p.hMax > localMaxH) localMaxH = p.hMax;
+  });
+
+  const minW = Math.max(bb.min.x, localMinW);
+  const maxW = Math.min(bb.max.x, localMaxW);
+  const minH = Math.max(bb.min.y, localMinH);
+  const maxH = Math.min(bb.max.y, localMaxH);
+
+  if (minW >= maxW || minH >= maxH) return [];
 
   const TARGET_GRID_CELLS = 2000;
   const stepW = (maxW - minW) / TARGET_GRID_CELLS;
@@ -348,11 +362,22 @@ export function updateMinifixesForCupboard(cupboardMesh: THREE.Mesh) {
       }
 
       const { width, height, depth } = getMeshDimensions(child);
+      // Always resolve plank position in the current assembly reference frame.
+      // This keeps drawer minifix calculations relative to the drawer group
+      // (when `cupboardMesh` is a drawer) instead of accidentally using a
+      // higher-level cupboard/local frame.
+      const childWorldPosition = new THREE.Vector3();
+      child.getWorldPosition(childWorldPosition);
+      const positionInReference = cupboardMesh.worldToLocal(childWorldPosition.clone());
 
       planks.push({
         id: child.userData.objectId || child.uuid,
         name: child.name,
-        position: { x: child.position.x, y: child.position.y, z: child.position.z },
+        position: {
+          x: positionInReference.x,
+          y: positionInReference.y,
+          z: positionInReference.z,
+        },
         width: width,
         height: height,
         depth: depth,
