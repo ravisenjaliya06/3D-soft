@@ -417,7 +417,7 @@ export class SelectObjectController {
     }
 
     if (!this.hoveredObject) return;
-    const outline = createLineObjects(this.hoveredObject, 0x00eeff);
+    const outline = createLineObjects(this.hoveredObject, 0x00ffff);
     this.scene.add(outline);
     this.hoverOutline = outline;
   }
@@ -453,7 +453,7 @@ export class SelectObjectController {
 
   private _createSelectionBox(obj: THREE.Mesh): THREE.Mesh {
     const material = new THREE.MeshBasicMaterial({
-      color: 0x12086f,
+      color: 0x1f7aff,
       transparent: true,
       opacity: 0.3,
       depthTest: false,
@@ -482,7 +482,20 @@ export class SelectObjectController {
 
     // Here we create the mesh without MeshBuilder because in the future we may need to apply draggable behavior
     const mesh = new THREE.Mesh(geometry, material);
+    mesh.renderOrder = 1002;
     mesh.name = obj.userData.objectId ? `outline_box-${obj.userData.objectId}` : 'outline_box';
+
+    // Add a crisp border so selected boxes stay clearly blue at all zoom levels.
+    const edgeGeometry = new THREE.EdgesGeometry(geometry);
+    const edgeMaterial = new THREE.LineBasicMaterial({
+      color: 0x0f5fff,
+      transparent: true,
+      opacity: 1,
+      depthTest: false,
+    });
+    const edges = new THREE.LineSegments(edgeGeometry, edgeMaterial);
+    edges.renderOrder = 1003;
+    mesh.add(edges);
 
     if (obj.geometry) {
       mesh.matrixAutoUpdate = false;

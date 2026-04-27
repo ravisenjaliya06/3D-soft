@@ -608,13 +608,15 @@ class NestingService:
         ) -> Tuple[float, float]:
             # Corner index order:
             # 0: Left-top, 1: Right-top, 2: Right-bottom, 3: Left-bottom
-            if corner_index == 0:
-                return panel_length, radius
-            if corner_index == 1:
-                return radius, 0.0
-            if corner_index == 2:
-                return 0.0, panel_width - radius
-            return panel_length - radius, panel_width
+            match corner_index:
+                case 0:
+                    return panel_length, radius
+                case 1:
+                    return radius, 0.0
+                case 2:
+                    return 0.0, panel_width - radius
+                case _:
+                    return panel_length - radius, panel_width
 
         def _curve_point(
             corner_index: int,
@@ -626,23 +628,24 @@ class NestingService:
             sin_t = math.sin(theta)
             cos_t = math.cos(theta)
 
-            if corner_index == 0:
-                # Left-top: (L, r) -> (L-r, 0)
-                return (
-                    panel_length - radius + radius * cos_t,
-                    radius - radius * sin_t,
-                )
-            if corner_index == 1:
-                # Right-top: (r, 0) -> (0, r)
-                return radius - radius * sin_t, radius - radius * cos_t
-            if corner_index == 2:
-                # Right-bottom: (0, W-r) -> (r, W)
-                return radius - radius * cos_t, panel_width - radius + radius * sin_t
-            # Left-bottom: (L-r, W) -> (L, W-r)
-            return (
-                panel_length - radius + radius * sin_t,
-                panel_width - radius + radius * cos_t,
-            )
+            match corner_index:
+                case 0:
+                    return (
+                        panel_length - radius + radius * cos_t,
+                        radius - radius * sin_t,
+                    )
+                case 1:
+                    return radius - radius * sin_t, radius - radius * cos_t
+                case 2:
+                    return (
+                        radius - radius * cos_t,
+                        panel_width - radius + radius * sin_t,
+                    )
+                case _:
+                    return (
+                        panel_length - radius + radius * sin_t,
+                        panel_width - radius + radius * cos_t,
+                    )
 
         generated_files = []
         base_dir = os.path.dirname(output_path)

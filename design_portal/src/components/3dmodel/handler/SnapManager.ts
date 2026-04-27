@@ -6,6 +6,7 @@ import {
   PLATFORM_THICKNESS,
 } from '../handler/constant';
 import { FLOOR_PLAN_TYPES, OBJECT_TYPES } from '../sceneCreator/interface';
+import { updateEdges } from '../sceneCreator/utils';
 
 export class SnapManager {
   private walls: THREE.Mesh[] = [];
@@ -203,6 +204,7 @@ export class SnapManager {
         if (Math.abs(g.width - widthCM) > 0.1) {
           object.geometry.dispose();
           object.geometry = new THREE.BoxGeometry(widthCM, PLATFORM_THICKNESS, PLATFORM_DEPTH);
+          updateEdges(object, object.geometry);
         }
       }
     }
