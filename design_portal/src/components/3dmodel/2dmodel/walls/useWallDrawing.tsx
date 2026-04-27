@@ -155,7 +155,7 @@ export function useWallDrawing(svgWidth: number, svgHeight: number) {
       id: crypto.randomUUID(),
       name: `Wall`,
       type: FLOOR_PLAN_TYPES.WALL,
-      isMain: true,
+      isMain: false,
       geometryType: GEOMETRY.BOX_GEOMETRY,
       dimensions: {
         width: wallLength,

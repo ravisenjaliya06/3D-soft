@@ -325,6 +325,34 @@ def parse_catalog_data(catalogs: List[DesignCatalog]) -> Dict:
         plank_data["position"] = catalog_data.get("position", {"x": 0, "y": 0, "z": 0})
         plank_data["rotation"] = catalog_data.get("rotation", {"x": 0, "y": 0, "z": 0})
 
+        # Extract panel design (corner curve metadata for XML generation)
+        panel_design_raw = catalog_data.get("panel_design", {})
+        if not isinstance(panel_design_raw, dict):
+            panel_design_raw = {}
+
+        corner_types = panel_design_raw.get("corner_types", [])
+        if not isinstance(corner_types, list):
+            corner_types = []
+
+        corner_radius = panel_design_raw.get("corner_radius", [])
+        if not isinstance(corner_radius, list):
+            corner_radius = []
+
+        curve_controls = panel_design_raw.get("curve_controls", {})
+        if not isinstance(curve_controls, dict):
+            curve_controls = {}
+
+        outline = panel_design_raw.get("outline", [])
+        if not isinstance(outline, list):
+            outline = []
+
+        plank_data["panel_design"] = {
+            "corner_types": corner_types,
+            "corner_radius": corner_radius,
+            "curve_controls": curve_controls,
+            "outline": outline,
+        }
+
         # Extract texture grain from possible keys (numeric preferred)
         texture_val = None
         for key in ("textureGrain", "texture_grain", "texture"):

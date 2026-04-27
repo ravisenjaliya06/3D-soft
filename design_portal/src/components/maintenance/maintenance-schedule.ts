@@ -16,7 +16,7 @@ const IST_FORMATTER = new Intl.DateTimeFormat('en-US', {
 export function getMaintenanceMode(now: Date = new Date()): MaintenanceMode {
   const parts = IST_FORMATTER.formatToParts(now);
   const weekday = parts.find((part) => part.type === 'weekday')?.value;
-  const hour = Number(parts.find((part) => part.type === 'hour')?.value);
+  // const hour = Number(parts.find((part) => part.type === 'hour')?.value);
 
   const isTargetDay = weekday === 'Wed' || weekday === 'Fri';
   if (!isTargetDay) {
@@ -27,9 +27,9 @@ export function getMaintenanceMode(now: Date = new Date()): MaintenanceMode {
     // if (hour >= 19 && hour < 20) {
     //   return 'fullPage';
     // }
-    if (hour >= 13 && hour < 19) {
-      return 'banner';
-    }
+    // if (hour >= 13 && hour < 19) {
+    //   return 'banner';
+    // }
   }
 
   return 'none';

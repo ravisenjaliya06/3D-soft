@@ -12,7 +12,7 @@ class FloorBuilder {
   constructor(points: WallPoint[], scene: THREE.Scene, textureUrl?: string) {
     this.points = points;
     this.scene = scene;
-    this.textureUrl = textureUrl || '/textures/wood_7.jpg';
+    this.textureUrl = textureUrl || '/textures/floor_white.jpg';
   }
 
   private createShape(): THREE.Shape {
@@ -144,7 +144,7 @@ export class FloorManager {
     const newMeshes: THREE.Mesh[] = [];
     for (const floor of this.floorData) {
       // Get texture URL from floor data if available
-      const textureUrl = (floor as any).textureUrl || '/textures/wood_7.jpg';
+      const textureUrl = (floor as any).textureUrl || '/textures/floor_white.jpg';
 
       // Use the internal FloorBuilder class
       const builder = new FloorBuilder(floor.points, this.scene, textureUrl);

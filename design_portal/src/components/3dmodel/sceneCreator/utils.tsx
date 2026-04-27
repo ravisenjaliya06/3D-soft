@@ -889,7 +889,8 @@ export function updateEdges(mesh: THREE.Mesh, geometry: THREE.BufferGeometry) {
     type === OBJECT_TYPES.SINK ||
     type === OBJECT_TYPES.MODEL ||
     type === FLOOR_PLAN_TYPES.FLOOR ||
-    mesh.userData.isInvisibleBox
+    mesh.userData.isInvisibleBox ||
+    mesh.userData.isMain
   ) {
     return;
   }
@@ -905,10 +906,20 @@ export function updateEdges(mesh: THREE.Mesh, geometry: THREE.BufferGeometry) {
     }
   }
 
+  const wireframeColor = store.getState().data.wireframeColor;
+
   const edges = new THREE.EdgesGeometry(geometry);
-  const edgesMaterial = new THREE.LineBasicMaterial({ color: 0x000000 });
+  const edgesMaterial = new THREE.LineBasicMaterial({
+    color: wireframeColor,
+    polygonOffset: true,
+    polygonOffsetFactor: -5,
+    polygonOffsetUnits: -5,
+    depthTest: true,
+    depthWrite: true,
+  });
   const edgeLines = new THREE.LineSegments(edges, edgesMaterial);
   edgeLines.userData.isWireframeEdge = true;
+  edgeLines.renderOrder = 1;
 
   // Respect the wireframe visibility setting from Redux
   const isWireframeVisible = store.getState().data.isWireframeVisible;

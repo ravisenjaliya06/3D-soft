@@ -1,5 +1,6 @@
 # Python imports
 import logging
+import math
 import os
 import re
 import secrets
@@ -341,6 +342,7 @@ class NestingService:
                             "material_name": item_details.get("material_name", ""),
                             "depth": item_details.get(KEY_DEPTH, 17.0),
                             "minifix_holes": item_details.get("minifix_holes", []),
+                            "panel_design": item_details.get("panel_design", {}),
                             "grooves": item_details.get("grooves", []),
                             "edge_banding": item_details.get("edge_banding", {}),
                             "parent_name": item_details.get("parent_name", ""),
@@ -589,6 +591,62 @@ class NestingService:
         Also generates 'Cutting List.xlsx' in the same folder.
         """
 
+        def _is_round_corner(corner_type: str | None) -> bool:
+            return str(corner_type or "").strip().lower() == "round"
+
+        def _is_chamfer_corner(corner_type: str | None) -> bool:
+            return str(corner_type or "").strip().lower() == "chamfer"
+
+        def _safe_radius(radius_value: float | None, max_radius: float) -> float:
+            radius = self._safe_float(radius_value, 0.0)
+            if radius <= 0:
+                return 0.0
+            return min(radius, max_radius)
+
+        def _curve_center(
+            corner_index: int, radius: float, panel_length: float, panel_width: float
+        ) -> Tuple[float, float]:
+            # Corner index order:
+            # 0: Left-top, 1: Right-top, 2: Right-bottom, 3: Left-bottom
+            match corner_index:
+                case 0:
+                    return panel_length, radius
+                case 1:
+                    return radius, 0.0
+                case 2:
+                    return 0.0, panel_width - radius
+                case _:
+                    return panel_length - radius, panel_width
+
+        def _curve_point(
+            corner_index: int,
+            radius: float,
+            panel_length: float,
+            panel_width: float,
+            theta: float,
+        ) -> Tuple[float, float]:
+            sin_t = math.sin(theta)
+            cos_t = math.cos(theta)
+
+            match corner_index:
+                case 0:
+                    return (
+                        panel_length - radius + radius * cos_t,
+                        radius - radius * sin_t,
+                    )
+                case 1:
+                    return radius - radius * sin_t, radius - radius * cos_t
+                case 2:
+                    return (
+                        radius - radius * cos_t,
+                        panel_width - radius + radius * sin_t,
+                    )
+                case _:
+                    return (
+                        panel_length - radius + radius * sin_t,
+                        panel_width - radius + radius * cos_t,
+                    )
+
         generated_files = []
         base_dir = os.path.dirname(output_path)
 
@@ -764,12 +822,8 @@ class NestingService:
                         hole.get("length") or hole.get("depth") or 0
                     )
                     # Frontend now provides final machining coordinates.
-                    final_x = self._safe_float(
-                        hole.get("x", pos.get("x", 0))
-                    )
-                    final_y = self._safe_float(
-                        hole.get("y", pos.get("y", 0))
-                    )
+                    final_x = self._safe_float(hole.get("x", pos.get("x", 0)))
+                    final_y = self._safe_float(hole.get("y", pos.get("y", 0)))
                     final_depth = raw_depth
                     final_diameter = raw_diameter
 
@@ -815,7 +869,106 @@ class NestingService:
                     logger.warning(f"Error processing hole: {e}")
                     continue
 
-            # 2. Grooves / Slots
+            # 2. Corner Profiles (Type=3): round + chamfer
+            # Uses panel_design.corner_types / corner_radius arrays in index order:
+            # [left-top, right-top, right-bottom, left-bottom]
+            try:
+                panel_design = item.get("panel_design", {})
+                if not isinstance(panel_design, dict):
+                    panel_design = {}
+
+                corner_types = panel_design.get("corner_types", [])
+                corner_radii = panel_design.get("corner_radius", [])
+                if not isinstance(corner_types, list):
+                    corner_types = []
+                if not isinstance(corner_radii, list):
+                    corner_radii = []
+
+                max_curve_radius = min(length_val, width_val)
+
+                for corner_index in range(4):
+                    corner_type = (
+                        corner_types[corner_index]
+                        if corner_index < len(corner_types)
+                        else ""
+                    )
+                    radius_value = (
+                        corner_radii[corner_index]
+                        if corner_index < len(corner_radii)
+                        else 0
+                    )
+
+                    is_round = _is_round_corner(corner_type)
+                    is_chamfer = _is_chamfer_corner(corner_type)
+                    if not is_round and not is_chamfer:
+                        continue
+
+                    radius = _safe_radius(radius_value, max_curve_radius)
+                    if radius <= 0:
+                        continue
+
+                    center_x, center_y = _curve_center(
+                        corner_index, radius, length_val, width_val
+                    )
+
+                    mac_index += 1
+                    curve_attrs = {
+                        "ID": "10",
+                        "Type": "3",
+                        "IsGenCode": "2",
+                        "Face": "5",
+                        "Depth": f"{thval:.6f}",
+                        "X": f"{center_x:.6f}",
+                        "Y": f"{center_y:.6f}",
+                        "Z": "0.000000",
+                        "Pocket": "0",
+                        "SpatialLine": "0",
+                        "ToolName": "0",
+                        "MacIndex": str(mac_index),
+                        "ToolOffset": "L",
+                    }
+                    curve_machining = ET.SubElement(
+                        machines, "Machining", **curve_attrs
+                    )
+                    lines_el = ET.SubElement(curve_machining, "Lines")
+
+                    if is_chamfer:
+                        # Chamfer is represented as a single straight segment to the
+                        # quarter-profile endpoint used by the CNC XML schema.
+                        end_x, end_y = _curve_point(
+                            corner_index, radius, length_val, width_val, math.pi / 2
+                        )
+                        ET.SubElement(
+                            lines_el,
+                            "Line",
+                            LineID="1",
+                            EndX=f"{end_x:.6f}",
+                            EndY=f"{end_y:.6f}",
+                            EndZ="0.000000",
+                            Angle="0.000000",
+                        )
+                    else:
+                        # Match reference density closely:
+                        # R100 -> 1569, R50 -> 784, R150 -> 2355
+                        line_count = max(8, int(radius * math.pi * 5) - 1)
+                        for line_id in range(1, line_count + 1):
+                            theta = (line_id / line_count) * (math.pi / 2)
+                            end_x, end_y = _curve_point(
+                                corner_index, radius, length_val, width_val, theta
+                            )
+                            ET.SubElement(
+                                lines_el,
+                                "Line",
+                                LineID=str(line_id),
+                                EndX=f"{end_x:.6f}",
+                                EndY=f"{end_y:.6f}",
+                                EndZ="0.000000",
+                                Angle="0.000000",
+                            )
+            except Exception as e:  # noqa: BLE001
+                logger.warning(f"Error processing corner profiles: {e}")
+
+            # 3. Grooves / Slots
             grooves = item.get("grooves", [])
             for groove in grooves:
                 try:
