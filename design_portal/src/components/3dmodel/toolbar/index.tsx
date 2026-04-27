@@ -85,6 +85,19 @@ const resolveAssetUrl = (path: string | null | undefined): string => {
   return `${cleanBase}${cleanPath}`;
 };
 
+const shouldUseStandaloneModelFlow = (item: MeshObjectData | any): boolean => {
+  if (!item?.path) return false;
+  if (item?.type === OBJECT_TYPES.MODEL) return true;
+
+  // Parts and non-model object types should continue with SyncManager/invisible-box flow
+  // even if backend payload includes a model file path for attached hardware.
+  if (item?.type && Object.values(PART_TYPES).includes(item.type)) return false;
+  if (item?.type && Object.values(OBJECT_TYPES).includes(item.type)) return false;
+
+  // Keep static toolbar GLB assets (e.g. Sofa/Fridge) on model flow.
+  return true;
+};
+
 const GltfModel = ({
   url,
   onLoad,
@@ -425,8 +438,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
 
   /** Handle selection of a cabinet item from toolbar submenu */
   const handleCabinetItemSelect = async (event: React.MouseEvent, item: MeshObjectData | any) => {
-    // Check if it's a GLB model (has path property)
-    if (item.path) {
+    if (shouldUseStandaloneModelFlow(item)) {
       if (!threeDView || !threeDView.scene) return;
 
       await showFullScreenLoader(`Loading ${item.name}...`);
