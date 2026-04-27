@@ -132,25 +132,19 @@ export class SnapManager {
     }
   }
 
-  /**
-   * Raycasts on thin walls often hit front vs back face on alternating frames; face normals flip 180°.
-   * Pick the normal that points from the wall center toward the object so position/rotation stay stable.
-   */
-  private getStableWallOutwardNormal(
-    wall: THREE.Mesh,
-    hit: THREE.Intersection,
-    objectWorldPos: THREE.Vector3
-  ): THREE.Vector3 {
-    const n = hit.face
-      ? hit.face.normal.clone().transformDirection(wall.matrixWorld).normalize()
-      : new THREE.Vector3(0, 0, 1);
-    const wallCenter = new THREE.Vector3();
-    wall.getWorldPosition(wallCenter);
-    const towardObject = objectWorldPos.clone().sub(wallCenter);
-    if (towardObject.lengthSq() > 1e-6 && n.dot(towardObject) < 0) {
-      n.negate();
+  private getStableWallOutwardNormal(wall: THREE.Mesh, hit: THREE.Intersection): THREE.Vector3 {
+    const wallForward = this.getWallWorldForward(wall);
+
+    // Transform hit point to wall's local space to determine which side of the wall was hit.
+    // BoxGeometry is centered at local Z=0. The front face is at +depth/2, back face at -depth/2.
+    const localHitPoint = wall.worldToLocal(hit.point.clone());
+
+    // The wall's outward normal matches wallForward if we hit the positive local Z side.
+    if (localHitPoint.z > 0) {
+      return wallForward;
+    } else {
+      return wallForward.clone().negate();
     }
-    return n;
   }
 
   private getWallWorldForward(wall: THREE.Mesh): THREE.Vector3 {
@@ -167,9 +161,7 @@ export class SnapManager {
     if (!hit) return;
 
     const wall = hit.object as THREE.Mesh;
-    const objectWorldPos = new THREE.Vector3();
-    object.getWorldPosition(objectWorldPos);
-    const wallNormal = this.getStableWallOutwardNormal(wall, hit, objectWorldPos);
+    const wallNormal = this.getStableWallOutwardNormal(wall, hit);
 
     // PLATFORM
     if (object.userData.type === OBJECT_TYPES.PLATFORM) {

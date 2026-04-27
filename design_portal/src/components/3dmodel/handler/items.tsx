@@ -222,10 +222,24 @@ export function generateCompartmentsFromMesh(boxMesh: THREE.Mesh) {
     return [mesh];
   }
 
-  const minW = bb.min.x;
-  const maxW = bb.max.x;
-  const minH = bb.min.y;
-  const maxH = bb.max.y;
+  let localMinW = Infinity;
+  let localMaxW = -Infinity;
+  let localMinH = Infinity;
+  let localMaxH = -Infinity;
+
+  planks.forEach((p) => {
+    if (p.wMin < localMinW) localMinW = p.wMin;
+    if (p.wMax > localMaxW) localMaxW = p.wMax;
+    if (p.hMin < localMinH) localMinH = p.hMin;
+    if (p.hMax > localMaxH) localMaxH = p.hMax;
+  });
+
+  const minW = Math.max(bb.min.x, localMinW);
+  const maxW = Math.min(bb.max.x, localMaxW);
+  const minH = Math.max(bb.min.y, localMinH);
+  const maxH = Math.min(bb.max.y, localMaxH);
+
+  if (minW >= maxW || minH >= maxH) return [];
 
   const TARGET_GRID_CELLS = 2000;
   const stepW = (maxW - minW) / TARGET_GRID_CELLS;
