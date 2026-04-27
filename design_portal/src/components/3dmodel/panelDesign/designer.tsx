@@ -490,7 +490,13 @@ export default function PanelDesigner({ state }: PanelDesignerProps) {
     mesh.geometry = finalGeometry;
 
     // Update wireframe edges
-    updateEdges(mesh, finalGeometry);
+    updateEdges(mesh, finalGeometry, {
+      panelHoles: holes,
+      curveControls,
+      panelOutline: points,
+      panelCornerRadius: cornerRadius,
+      panelCornerTypes: cornerTypes,
+    });
 
     // --- Cleanup Old Slotting Plugs (if any) ---
     const oldPlugs = mesh.children.filter((c) => c.name === 'slottingPlug');

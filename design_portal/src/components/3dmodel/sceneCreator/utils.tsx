@@ -2,10 +2,14 @@ import { API_ENDPOINT } from '@/services/ApiEndPoints';
 import commonService from '@/services/CommonService';
 
 import * as THREE from 'three';
+import * as BufferGeometryUtils from 'three/addons/utils/BufferGeometryUtils.js';
+import { detectPlankByBoundingBox } from '../../utils/plankUtils';
 import { WallPoint } from '../2dmodel/interface';
 import { TEXTURE_CACHE_NAME } from '../constants';
 import { ThreeDView } from '../design/interface';
 import { UpdateDimensionsParams } from '../handler/interface';
+import { buildThreeShape, createHolePath } from '../panelDesign/utils/geometryUtils';
+import { CornerType, CurveControls, Hole, Point } from '../panelDesign/types';
 import { prefetchTexture } from '../helper/glbLoader';
 import { Dimensions } from '../interface';
 import { store } from '../store';
@@ -883,7 +887,182 @@ export function mapAxis(
 }
 
 // update edges of the mesh
-export function updateEdges(mesh: THREE.Mesh, geometry: THREE.BufferGeometry) {
+interface EdgeGenerationOptions {
+  panelHoles?: Hole[];
+  curveControls?: CurveControls;
+  panelOutline?: Point[];
+  panelCornerRadius?: number[];
+  panelCornerTypes?: CornerType[];
+}
+
+const BASE_EDGE_THRESHOLD_ANGLE = 45;
+const CUT_EDGE_THRESHOLD_ANGLE = 45;
+
+function shapeFromPath(path: THREE.Path): THREE.Shape {
+  const shape = new THREE.Shape();
+  shape.curves = path.curves.slice();
+  shape.autoClose = true;
+  return shape;
+}
+
+function buildBoundingOutlineEdgesGeometry(geometry: THREE.BufferGeometry) {
+  const source = geometry.clone();
+  source.computeBoundingBox();
+  const bbox = source.boundingBox;
+  source.dispose();
+
+  if (!bbox) return null;
+
+  const size = new THREE.Vector3();
+  const center = new THREE.Vector3();
+  bbox.getSize(size);
+  bbox.getCenter(center);
+
+  const outlineBox = new THREE.BoxGeometry(size.x, size.y, size.z);
+  outlineBox.translate(center.x, center.y, center.z);
+  const edges = new THREE.EdgesGeometry(outlineBox, 1);
+  outlineBox.dispose();
+  return edges;
+}
+
+function buildPanelOutlineEdgesGeometry(
+  mesh: THREE.Mesh,
+  panelOutline: Point[],
+  panelCornerRadius: number[],
+  panelCornerTypes: CornerType[],
+  curveControls: CurveControls
+) {
+  if (!panelOutline || panelOutline.length < 3) return null;
+
+  const { thicknessAxis, size } = detectPlankByBoundingBox(mesh);
+  const thickness = size[thicknessAxis];
+  if (!Number.isFinite(thickness) || thickness <= 0) return null;
+
+  let w = 0;
+  let h = 0;
+  if (thicknessAxis === 'y') {
+    w = size.x;
+    h = size.z;
+  } else if (thicknessAxis === 'x') {
+    w = size.z;
+    h = size.y;
+  } else {
+    w = size.x;
+    h = size.y;
+  }
+
+  const isRotated2D = h > w;
+  const mappedOutline = isRotated2D ? panelOutline.map((p) => ({ x: -p.y, y: p.x })) : panelOutline;
+  const panelShape = buildThreeShape(
+    mappedOutline,
+    panelCornerRadius,
+    curveControls,
+    'shape',
+    panelCornerTypes
+  );
+
+  const extruded = new THREE.ExtrudeGeometry(panelShape, {
+    depth: thickness,
+    bevelEnabled: false,
+    curveSegments: 32,
+  });
+  extruded.translate(0, 0, -thickness / 2);
+
+  if (thicknessAxis === 'x') {
+    extruded.rotateY(Math.PI / 2);
+  } else if (thicknessAxis === 'y') {
+    extruded.rotateX(Math.PI / 2);
+  }
+
+  const welded = BufferGeometryUtils.mergeVertices(extruded.clone(), 1e-4);
+  const outlineEdges = new THREE.EdgesGeometry(welded, BASE_EDGE_THRESHOLD_ANGLE);
+  welded.dispose();
+  extruded.dispose();
+  return outlineEdges;
+}
+
+function buildPanelCutOnlyEdgesGeometry(
+  mesh: THREE.Mesh,
+  holes: Hole[],
+  curveControls: CurveControls
+): THREE.BufferGeometry | null {
+  if (!holes || holes.length === 0) return null;
+
+  const { thicknessAxis, size } = detectPlankByBoundingBox(mesh);
+  const thickness = size[thicknessAxis];
+  if (!Number.isFinite(thickness) || thickness <= 0) return null;
+
+  let w = 0;
+  let h = 0;
+  if (thicknessAxis === 'y') {
+    w = size.x;
+    h = size.z;
+  } else if (thicknessAxis === 'x') {
+    w = size.z;
+    h = size.y;
+  } else {
+    w = size.x;
+    h = size.y;
+  }
+  const isRotated2D = h > w;
+  const getMappedPoint = (p: { x: number; y: number }) => (isRotated2D ? { x: -p.y, y: p.x } : p);
+
+  const edgeGeometries: THREE.BufferGeometry[] = [];
+
+  holes.forEach((hole, holeIndex) => {
+    const holePath = createHolePath(hole, holeIndex, curveControls, getMappedPoint, isRotated2D);
+    const holeShape = shapeFromPath(holePath);
+
+    let cutGeom: THREE.ExtrudeGeometry;
+    if (hole.type === 'slotting') {
+      const pocketDepth = Math.max(0.01, Math.min(hole.depth ?? 10, thickness));
+      cutGeom = new THREE.ExtrudeGeometry(holeShape, {
+        depth: pocketDepth,
+        bevelEnabled: false,
+        curveSegments: 32,
+      });
+      const face = hole.face ?? 'front';
+      if (face === 'back') {
+        cutGeom.translate(0, 0, -thickness / 2);
+      } else {
+        cutGeom.translate(0, 0, thickness / 2 - pocketDepth);
+      }
+    } else {
+      cutGeom = new THREE.ExtrudeGeometry(holeShape, {
+        depth: thickness,
+        bevelEnabled: false,
+        curveSegments: 32,
+      });
+      cutGeom.translate(0, 0, -thickness / 2);
+    }
+
+    if (thicknessAxis === 'x') {
+      cutGeom.rotateY(Math.PI / 2);
+    } else if (thicknessAxis === 'y') {
+      cutGeom.rotateX(Math.PI / 2);
+    }
+
+    cutGeom.computeVertexNormals();
+
+    const welded = BufferGeometryUtils.mergeVertices(cutGeom.clone(), 1e-4);
+    const holeEdges = new THREE.EdgesGeometry(welded, CUT_EDGE_THRESHOLD_ANGLE);
+    welded.dispose();
+    cutGeom.dispose();
+    edgeGeometries.push(holeEdges);
+  });
+
+  if (edgeGeometries.length === 0) return null;
+
+  const mergedEdges = BufferGeometryUtils.mergeGeometries(edgeGeometries, false);
+  edgeGeometries.forEach((g) => g.dispose());
+  return mergedEdges;
+}
+
+export function updateEdges(
+  mesh: THREE.Mesh,
+  geometry: THREE.BufferGeometry,
+  options?: EdgeGenerationOptions
+) {
   const type = mesh.userData.type;
   if (
     type === OBJECT_TYPES.SINK ||
@@ -907,8 +1086,51 @@ export function updateEdges(mesh: THREE.Mesh, geometry: THREE.BufferGeometry) {
   }
 
   const wireframeColor = store.getState().data.wireframeColor;
+  const panelHoles = options?.panelHoles;
+  const curveControls = options?.curveControls || {};
+  const panelOutline = options?.panelOutline || [];
+  const panelCornerRadius = options?.panelCornerRadius || [];
+  const panelCornerTypes = options?.panelCornerTypes || [];
 
-  const edges = new THREE.EdgesGeometry(geometry);
+  let edges: THREE.BufferGeometry | null = null;
+  let baseEdges: THREE.BufferGeometry | null = null;
+
+  if (panelHoles && panelHoles.length > 0) {
+    baseEdges =
+      buildPanelOutlineEdgesGeometry(
+        mesh,
+        panelOutline,
+        panelCornerRadius,
+        panelCornerTypes,
+        curveControls
+      ) || buildBoundingOutlineEdgesGeometry(geometry);
+    const cutOnlyEdges = buildPanelCutOnlyEdgesGeometry(mesh, panelHoles, curveControls);
+
+    if (baseEdges && cutOnlyEdges) {
+      const merged = BufferGeometryUtils.mergeGeometries([baseEdges, cutOnlyEdges], false);
+      baseEdges.dispose();
+      cutOnlyEdges.dispose();
+      edges = merged;
+    } else if (baseEdges) {
+      edges = baseEdges;
+    } else if (cutOnlyEdges) {
+      edges = cutOnlyEdges;
+    }
+  } else {
+    const baseEdgeSource = BufferGeometryUtils.mergeVertices(geometry.clone(), 1e-4);
+    baseEdgeSource.computeVertexNormals();
+    baseEdges = new THREE.EdgesGeometry(baseEdgeSource, BASE_EDGE_THRESHOLD_ANGLE);
+    baseEdgeSource.dispose();
+    edges = baseEdges;
+  }
+
+  if (!edges) {
+    const baseEdgeSource = BufferGeometryUtils.mergeVertices(geometry.clone(), 1e-4);
+    baseEdgeSource.computeVertexNormals();
+    edges = new THREE.EdgesGeometry(baseEdgeSource, BASE_EDGE_THRESHOLD_ANGLE);
+    baseEdgeSource.dispose();
+  }
+
   const edgesMaterial = new THREE.LineBasicMaterial({
     color: wireframeColor,
     polygonOffset: true,
