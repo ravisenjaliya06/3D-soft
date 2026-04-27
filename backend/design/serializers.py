@@ -292,6 +292,105 @@ class SceneGetSerializer(serializers.Serializer):
 class ScenePayloadSerializer(serializers.Serializer):
     design_id = serializers.UUIDField()
     items = serializers.ListField(required=False)
+    ROOT_ITEM_FIELDS = {
+        "name",
+        "type",
+        "is_main",
+        "dimensions",
+        "position",
+        "rotation",
+        "scale",
+        "data",
+        "material",
+        "image",
+        "model_file",
+        "parent",
+    }
+
+    def _is_already_structured_items(self: "ScenePayloadSerializer", data: dict) -> bool:
+        return "items" in data and isinstance(data["items"], list)
+
+    def _ensure_mutable_payload(self: "ScenePayloadSerializer", data: dict) -> dict:
+        """
+        Return a mutable payload copy when the incoming structure supports mutation copy.
+        """
+        if hasattr(data, "copy"):
+            return data.copy()
+        return data
+
+    def _extract_root_item_from_metadata(self: "ScenePayloadSerializer", data: dict) -> dict:
+        """
+        Parse metadata payload as root item when possible.
+        """
+        try:
+            raw_metadata = data["metadata"]
+            parsed_metadata = (
+                json.loads(raw_metadata) if isinstance(raw_metadata, str) else raw_metadata
+            )
+            if isinstance(parsed_metadata, dict):
+                return parsed_metadata
+        except (KeyError, ValueError, TypeError):
+            pass
+        return {}
+
+    def _parse_indexed_item_key(
+        self: "ScenePayloadSerializer", key: str
+    ) -> tuple[int | None, str | None]:
+        """
+        Parse flattened indexed key formats like `items[0]name` or `items[0].name`.
+        """
+        match = re.match(r"items\[(\d+)\]\.?(.*)", key)
+        if not match:
+            return None, None
+
+        index = int(match.group(1))
+        field_name = match.group(2).strip("[]")
+        if not field_name:
+            return index, None
+        return index, field_name
+
+    def _collect_indexed_item(
+        self: "ScenePayloadSerializer",
+        indexed_items: dict[int, dict],
+        item_index: int,
+        field_name: str,
+        value: object,
+    ) -> None:
+        if item_index not in indexed_items:
+            indexed_items[item_index] = {}
+        indexed_items[item_index][field_name] = self._maybe_json(value)
+
+    def _collect_root_item_field(
+        self: "ScenePayloadSerializer",
+        root_item: dict,
+        key: str,
+        value: object,
+        has_root_context: bool,
+    ) -> None:
+        if has_root_context and key in self.ROOT_ITEM_FIELDS:
+            root_item[key] = self._maybe_json(value)
+
+    def _build_items_list(
+        self: "ScenePayloadSerializer",
+        indexed_items: dict[int, dict],
+        root_item: dict,
+    ) -> list[dict]:
+        items = [indexed_items[idx] for idx in sorted(indexed_items.keys())]
+        if root_item:
+            items.append(root_item)
+        return items
+
+    def _inject_items_into_payload(
+        self: "ScenePayloadSerializer", data: dict, items: list[dict]
+    ) -> dict:
+        if not items:
+            return data
+
+        if hasattr(data, "setlist"):
+            data.setlist("items", items)
+        else:
+            data["items"] = items
+        return data
 
     def to_internal_value(self: "ScenePayloadSerializer", data: dict) -> dict:
         """
@@ -301,78 +400,40 @@ class ScenePayloadSerializer(serializers.Serializer):
         - items[0]name, items[0]dimensions
         - root level name, type, etc.
         """
-        # Standard JSON check
-        if "items" in data and isinstance(data["items"], list):
+        if self._is_already_structured_items(data):
             return super().to_internal_value(data)
 
-        # Optimized grouping
-        temp_items = {}  # index -> dict
-        root_item = {}
+        indexed_items: dict[int, dict] = {}
         has_root_metadata = "metadata" in data
         has_root_item = "name" in data and "type" in data
+        has_root_context = has_root_metadata or has_root_item
 
-        # Determine if we need to modify the data (QueryDicts are immutable)
-        needs_copy = hasattr(data, "setlist") or hasattr(data, "copy")
-        if needs_copy and hasattr(data, "copy"):
-            data = data.copy()
+        data = self._ensure_mutable_payload(data)
+        root_item = (
+            self._extract_root_item_from_metadata(data) if has_root_metadata else {}
+        )
 
-        # Handle metadata JSON if present
-        if has_root_metadata:
-            try:
-                raw_metadata = data["metadata"]
-                root_item = (
-                    json.loads(raw_metadata)
-                    if isinstance(raw_metadata, str)
-                    else raw_metadata
-                )
-                if not isinstance(root_item, dict):
-                    root_item = {}
-            except (ValueError, TypeError):
-                root_item = {}
-
-        for key, value in data.items():
-            # Handle indexed items: items[0]name or items[0].name
-            match = re.match(r"items\[(\d+)\]\.?(.*)", key)
-            if match:
-                idx = int(match.group(1))
-                field = match.group(2).strip("[]")
-                if not field:
-                    continue
-
-                if idx not in temp_items:
-                    temp_items[idx] = {}
-                temp_items[idx][field] = self._maybe_json(value)
+        for key, value in list(data.items()):
+            item_index, field_name = self._parse_indexed_item_key(key)
+            if item_index is not None:
+                if field_name:
+                    self._collect_indexed_item(
+                        indexed_items=indexed_items,
+                        item_index=item_index,
+                        field_name=field_name,
+                        value=value,
+                    )
                 continue
 
-            # Handle root fields and top-level files for metadata/direct upload
-            if has_root_metadata or has_root_item:
-                root_item_fields = {
-                    "name",
-                    "type",
-                    "is_main",
-                    "dimensions",
-                    "position",
-                    "rotation",
-                    "scale",
-                    "data",
-                    "material",
-                    "image",
-                    "model_file",
-                    "parent",
-                }
-                if key in root_item_fields:
-                    root_item[key] = self._maybe_json(value)
+            self._collect_root_item_field(
+                root_item=root_item,
+                key=key,
+                value=value,
+                has_root_context=has_root_context,
+            )
 
-        # Build final items list
-        items = [temp_items[i] for i in sorted(temp_items.keys())]
-        if root_item:
-            items.append(root_item)
-
-        if items:
-            if hasattr(data, "setlist"):
-                data.setlist("items", items)
-            else:
-                data["items"] = items
+        items = self._build_items_list(indexed_items, root_item)
+        data = self._inject_items_into_payload(data, items)
 
         return super().to_internal_value(data)
 
