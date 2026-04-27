@@ -1,5 +1,4 @@
 import * as THREE from 'three';
-import { store } from '../../store';
 import { setobjectSelected, setSelectedChildObject } from '../../store/dataSlice';
 import { createLineObjects } from '../../utils/outlineHelpers';
 import { FLOOR_PLAN_TYPES, INVISIBLE_BOXES, OBJECT_TYPES, PART_TYPES } from '../interface';
@@ -32,9 +31,12 @@ export class SelectObjectController {
   public onSelect: ((obj: THREE.Mesh | null) => void) | null = null;
   public onShowHelperTool: ((obj: THREE.Mesh | null) => void) | null = null;
 
-  constructor(camera: THREE.PerspectiveCamera, scene: THREE.Scene) {
+  private dispatch: any;
+
+  constructor(camera: THREE.PerspectiveCamera, scene: THREE.Scene, dispatch?: any) {
     this.camera = camera;
     this.scene = scene;
+    this.dispatch = dispatch;
 
     this.raycaster = new THREE.Raycaster();
     this.mouse = new THREE.Vector2();
@@ -100,8 +102,10 @@ export class SelectObjectController {
     this.objectSelectOutline = null;
     this.partSelectOutline = null;
 
-    store.dispatch(setobjectSelected(null));
-    store.dispatch(setSelectedChildObject(null));
+    if (this.dispatch) {
+      this.dispatch(setobjectSelected(null));
+      this.dispatch(setSelectedChildObject(null));
+    }
 
     if (this.onSelect) this.onSelect(null);
 
@@ -134,8 +138,10 @@ export class SelectObjectController {
     this.selectedPart = null;
     this.clearCache();
 
-    store.dispatch(setobjectSelected(object.userData.objectId));
-    store.dispatch(setSelectedChildObject(null));
+    if (this.dispatch) {
+      this.dispatch(setobjectSelected(object.userData.objectId));
+      this.dispatch(setSelectedChildObject(null));
+    }
 
     this._applySmallCupboardSelectOutline(object);
 
@@ -167,7 +173,9 @@ export class SelectObjectController {
     this.clearCache();
 
     if (this.onSelect) this.onSelect(object);
-    store.dispatch(setSelectedChildObject(object.userData.objectId));
+    if (this.dispatch) {
+      this.dispatch(setSelectedChildObject(object.userData.objectId));
+    }
 
     this._applyPartSelectOutline(object);
 

@@ -8,7 +8,8 @@ const sceneCache = new Map<string, ThreeDView>();
 export function getOrCreateThreeDView(
   mount: HTMLDivElement,
   designId: string,
-  versionId?: string
+  versionId?: string,
+  dispatch?: any
 ): ThreeDView {
   const cacheKey = versionId ? `${designId}_${versionId}` : designId;
   let threeDView = sceneCache.get(cacheKey);
@@ -21,7 +22,7 @@ export function getOrCreateThreeDView(
   }
 
   // Create new scene and fetch initial state
-  const builder = new SceneBuilder({ mount });
+  const builder = new SceneBuilder({ mount, dispatch });
   threeDView = builder.build();
   sceneCache.set(cacheKey, threeDView);
   getDesignCatalogs(versionId, threeDView);

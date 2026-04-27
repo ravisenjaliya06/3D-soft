@@ -280,6 +280,7 @@ export interface SceneBuilderConfig {
     enableZoom?: boolean;
     enablePan?: boolean;
   };
+  dispatch?: any;
 }
 
 export interface HelperToolProps {

@@ -258,7 +258,11 @@ export class SceneBuilder {
   public toggleSky(): void {}
 
   private initSelector() {
-    this.selector = new SelectObjectController(this.camera as THREE.PerspectiveCamera, this.scene);
+    this.selector = new SelectObjectController(
+      this.camera as THREE.PerspectiveCamera,
+      this.scene,
+      this.config.dispatch
+    );
   }
 
   private initMoveHandler() {

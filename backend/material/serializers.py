@@ -96,12 +96,24 @@ class ValidationMixin:
         received_fields = set(data.keys())
 
         has_id = "id" in data
-        optional_fields = {"id", "model_file"}
+        optional_fields = {
+            "id",
+            "model_file",
+            "waste",
+            "default_cost",
+            "sales_tax",
+            "sell_price",
+            "default_tax_rate",
+            "default_markup",
+            "estimate",
+            "model",
+            "thickness",
+        }
 
         if has_id:
             required_fields = allowed_fields - optional_fields
         else:
-            required_fields = allowed_fields - {"id"}
+            required_fields = allowed_fields - optional_fields
 
         missing_fields = required_fields - received_fields
         if missing_fields:
@@ -698,10 +710,10 @@ class MaterialSerializer(serializers.ModelSerializer):
             properties_id = properties_data.pop("id", None)
 
             if properties_id:
-                properties = Properties.objects.get(id=properties_id)
+                properties = Properties.objects.filter(id=properties_id).first()
                 Properties.objects.create(
                     material=material,
-                    model_file=properties.model_file,
+                    model_file=properties.model_file if properties else None,
                     **properties_data,
                 )
             else:

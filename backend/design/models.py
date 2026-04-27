@@ -241,6 +241,7 @@ class DesignCatalog(models.Model):
     name = models.CharField(max_length=100)
     description = models.TextField(null=True, blank=True)
     image = models.ImageField(upload_to="catalog_images", null=True, blank=True)
+    model_file = models.FileField(upload_to="model_files", null=True, blank=True)
     parent = models.ForeignKey("self", on_delete=models.CASCADE, null=True, blank=True)
     is_library = models.BooleanField(default=False)
     script_parent = models.UUIDField(null=True, blank=True)

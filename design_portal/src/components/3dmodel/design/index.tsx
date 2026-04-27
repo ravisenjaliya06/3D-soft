@@ -105,7 +105,7 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
     const versionId = (router.query.versionid as string) ?? gettingVersionID();
 
     // Get or create scene for this design (each design has its own scene)
-    const threeDView = getOrCreateThreeDView(mountRef.current, designId, versionId);
+    const threeDView = getOrCreateThreeDView(mountRef.current, designId, versionId, dispatch);
 
     setLocalDesign3D(threeDView);
     setDesign3D(threeDView);

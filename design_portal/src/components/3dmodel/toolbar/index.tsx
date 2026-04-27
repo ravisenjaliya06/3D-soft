@@ -70,6 +70,21 @@ const MODEL_CATEGORY_TO_ITEMS: Record<string, any[]> = {
   'Study Table': CENTER_STUDY_TABLE,
 };
 
+const resolveAssetUrl = (path: string | null | undefined): string => {
+  if (!path) return '';
+  if (path.startsWith('http') || path.startsWith('data:')) {
+    return path;
+  }
+  if (path.startsWith('/assets/') || path.startsWith('/glb/')) {
+    return path;
+  }
+  const apiBase = process.env.NEXT_PUBLIC_PUBLIC_API || '';
+  const cleanBase = apiBase.endsWith('/') ? apiBase.slice(0, -1) : apiBase;
+  const cleanPath = path.startsWith('/') ? path : `/${path}`;
+
+  return `${cleanBase}${cleanPath}`;
+};
+
 const GltfModel = ({
   url,
   onLoad,
@@ -279,55 +294,61 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
     }
 
     setIsUploading(true);
-    const formData = new FormData();
 
-    const itemPayload = {
-      name: uploadData.name,
-      type: 'model',
-      data: {
-        category: selectedFurnitureCategory,
+    try {
+      const formData = new FormData();
+      const metadata = {
+        name: uploadData.name,
+        type: 'model',
+        is_main: true,
         dimensions: {
-          width: Number(uploadData.width) / 1000, // Convert MM to Meters
+          width: Number(uploadData.width) / 1000,
           height: Number(uploadData.height) / 1000,
           depth: Number(uploadData.depth) / 1000,
         },
-      },
-      material: [
-        {
-          name: `${uploadData.name} Material`,
-          type: 'Miscellaneous',
-          properties: {
-            model_file: null,
-          },
+        position: { x: 0, y: 1, z: 0 },
+        rotation: { x: 0, y: 0, z: 0 },
+        scale: { x: 1, y: 1, z: 1 },
+        data: {
+          category: selectedFurnitureCategory,
         },
-      ],
-    };
+        material: [
+          {
+            name: `${uploadData.name} Material`,
+            type: 'Miscellaneous',
+            properties: {
+              model_file: null,
+            },
+          },
+        ],
+      };
 
-    let thumbnailBase64 = '';
-    if (previewRendererRef.current) {
-      thumbnailBase64 = previewRendererRef.current.domElement.toDataURL('image/png');
-    }
+      const payload: Record<string, any> = {
+        design_id: designId,
+        metadata: JSON.stringify(metadata),
+        model_file: uploadData.file,
+      };
 
-    formData.append('design_id', designId);
-    formData.append('items[0]name', itemPayload.name);
-    formData.append('items[0]type', itemPayload.type);
-    formData.append('items[0]data', JSON.stringify(itemPayload.data));
+      if (previewRendererRef.current) {
+        const thumbnailBase64 = previewRendererRef.current.domElement.toDataURL('image/png');
+        payload.image = await (await fetch(thumbnailBase64)).blob();
+      }
 
-    if (thumbnailBase64) {
-      // Convert base64 to blob for better backend compatibility
-      const blob = await (await fetch(thumbnailBase64)).blob();
-      formData.append('items[0]image', blob, `${uploadData.name}_thumbnail.png`);
-    }
+      Object.entries(payload).forEach(([key, value]) => {
+        if (value) {
+          if (key === 'image') {
+            formData.append(key, value, `${uploadData.name}_thumbnail.png`);
+          } else {
+            formData.append(key, value);
+          }
+        }
+      });
 
-    formData.append('items[0]material[0]name', itemPayload.material[0].name);
-    formData.append('items[0]material[0]type', itemPayload.material[0].type);
-    formData.append('items[0]material[0]properties[model_file]', uploadData.file);
-
-    try {
       const response = await commonService.post(
         API_ENDPOINT.CREATE_LIBRARY_CATALOGS(true),
         formData
       );
+
       if (response.status === 201) {
         toast.success('Model uploaded successfully');
         closePopup();
@@ -454,7 +475,52 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
           }
         }
 
-        const model = await GLBLoader(item.path, item.name, targetSize);
+        // Configuration for realistic dimensions based on item keywords
+        const REALISTIC_DIMENSIONS: Record<
+          string,
+          { width: number; height: number; depth: number }
+        > = {
+          sofa: { width: 2.0, height: 0.8, depth: 0.9 },
+          fridge: { width: 0.8, height: 1.7, depth: 0.7 },
+          stove: { width: 0.6, height: 0.9, depth: 0.6 },
+          tv: { width: 1.2, height: 0.7, depth: 0.1 },
+          'dinner table': { width: 1.5, height: 0.75, depth: 0.9 },
+          flower: { width: 0.3, height: 0.4, depth: 0.3 },
+          microwave: { width: 0.5, height: 0.3, depth: 0.4 },
+          'study table': { width: 1.2, height: 0.75, depth: 0.6 },
+          table: { width: 1.2, height: 0.75, depth: 0.6 },
+        };
+
+        const itemPath = item.path.toLowerCase();
+        const itemDataStr = (
+          item.data ? (typeof item.data === 'string' ? item.data : JSON.stringify(item.data)) : ''
+        ).toLowerCase();
+
+        // Find matching category
+        const categoryKey = Object.keys(REALISTIC_DIMENSIONS).find(
+          (key) => itemPath.includes(key.replace(' ', '')) || itemDataStr.includes(key)
+        );
+
+        if (categoryKey) {
+          targetSize = REALISTIC_DIMENSIONS[categoryKey];
+        } else {
+          // Check for dynamic models with dimensions in data
+          try {
+            const itemData = item.data
+              ? typeof item.data === 'string'
+                ? JSON.parse(item.data)
+                : item.data
+              : null;
+            if (itemData?.dimensions) {
+              targetSize = itemData.dimensions;
+            }
+          } catch (_err) {
+            console.error('Error parsing item data', _err);
+          }
+        }
+
+        const activePath = resolveAssetUrl(item.path);
+        const model = await GLBLoader(activePath, item.name, targetSize);
         let position: THREE.Vector3 | null = null;
 
         if (model) {
@@ -857,12 +923,15 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
         try {
           const itemData = typeof item.data === 'string' ? JSON.parse(item.data) : item.data;
 
-          // Set path from material properties if available
-          const modelFile = item.material?.[0]?.properties?.model_file;
-          if (modelFile) {
-            item.path = modelFile.startsWith('http')
-              ? modelFile
-              : `${process.env.NEXT_PUBLIC_PUBLIC_API}${modelFile}`;
+          // Set path from various possible locations in the response
+          const modelFile =
+            item.model_file ||
+            item.material?.[0]?.properties?.model_file ||
+            item.material?.[0]?.model_file ||
+            item.properties?.model_file;
+
+          if (modelFile && !item.path) {
+            item.path = resolveAssetUrl(modelFile);
           }
 
           return itemData?.category === category;
@@ -1262,9 +1331,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
                   <img
                     src={
                       item.image
-                        ? item.image.startsWith('data:image') || item.image.startsWith('/assets/')
-                          ? item.image
-                          : `${process.env.NEXT_PUBLIC_PUBLIC_API}${item.image}`
+                        ? resolveAssetUrl(item.image)
                         : (item.type === OBJECT_TYPES.CUPBOARD || item.type === 'Cabinet'
                             ? `/assets/3dmodel/sidebar/${formatEnumLabel(item.name)}.png`
                             : iconMap[
@@ -1426,7 +1493,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
                   <div className={styles.formGrid}>
                     <div className={styles.formRowFull}>
                       <label className={styles.uploadLabel}>Model File (.glb)</label>
-                      <div className={styles.fileUploadBox}>
+                      <label htmlFor="glb-upload" className={styles.fileUploadBox}>
                         <input
                           type="file"
                           id="glb-upload"
@@ -1440,13 +1507,13 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
                           alt="upload"
                           style={{ width: '1.5rem', opacity: 0.8 }}
                         />
-                        <label htmlFor="glb-upload" className={styles.fileBoxLabel}>
+                        <div className={styles.fileBoxLabel}>
                           {uploadData.file ? uploadData.file.name : 'Click to browse GLB file'}
-                        </label>
+                        </div>
                         {!uploadData.file && (
                           <p className={styles.fileBoxHint}>Max file size: 20MB</p>
                         )}
-                      </div>
+                      </label>
                     </div>
 
                     <div className={styles.formRowFull}>

@@ -1,5 +1,7 @@
 # Python imports
 import base64
+import json
+import re
 from typing import Any, Dict
 from urllib.request import Request
 from uuid import uuid4
@@ -261,6 +263,17 @@ class SceneGetSerializer(serializers.Serializer):
         if edge_data is not None:
             data["edge_banding"] = edge_data
 
+        model_url = None
+        if catalog.model_file:
+            model_url = f"{settings.MEDIA_URL}{catalog.model_file.name}"
+        else:
+            # Fallback for old models stored in materials
+            for material in catalog.materials.all():
+                props = self._serialize_properties(material)
+                if props and props.get("model_file"):
+                    model_url = props.get("model_file")
+                    break
+
         return {
             **data,
             "id": str(catalog.id),
@@ -269,6 +282,8 @@ class SceneGetSerializer(serializers.Serializer):
             "image": (
                 f"{settings.MEDIA_URL}{catalog.image.name}" if catalog.image else None
             ),
+            "model_file": model_url,
+            "path": model_url,
             "parent": str(catalog.parent_id) if catalog.parent_id else None,
             "material": self._serialize_materials_without_cnc(catalog.materials.all()),
         }
@@ -277,6 +292,159 @@ class SceneGetSerializer(serializers.Serializer):
 class ScenePayloadSerializer(serializers.Serializer):
     design_id = serializers.UUIDField()
     items = serializers.ListField(required=False)
+    ROOT_ITEM_FIELDS = {
+        "name",
+        "type",
+        "is_main",
+        "dimensions",
+        "position",
+        "rotation",
+        "scale",
+        "data",
+        "material",
+        "image",
+        "model_file",
+        "parent",
+    }
+
+    def _is_already_structured_items(self: "ScenePayloadSerializer", data: dict) -> bool:
+        return "items" in data and isinstance(data["items"], list)
+
+    def _ensure_mutable_payload(self: "ScenePayloadSerializer", data: dict) -> dict:
+        """
+        Return a mutable payload copy when the incoming structure supports mutation copy.
+        """
+        if hasattr(data, "copy"):
+            return data.copy()
+        return data
+
+    def _extract_root_item_from_metadata(self: "ScenePayloadSerializer", data: dict) -> dict:
+        """
+        Parse metadata payload as root item when possible.
+        """
+        try:
+            raw_metadata = data["metadata"]
+            parsed_metadata = (
+                json.loads(raw_metadata) if isinstance(raw_metadata, str) else raw_metadata
+            )
+            if isinstance(parsed_metadata, dict):
+                return parsed_metadata
+        except (KeyError, ValueError, TypeError):
+            pass
+        return {}
+
+    def _parse_indexed_item_key(
+        self: "ScenePayloadSerializer", key: str
+    ) -> tuple[int | None, str | None]:
+        """
+        Parse flattened indexed key formats like `items[0]name` or `items[0].name`.
+        """
+        match = re.match(r"items\[(\d+)\]\.?(.*)", key)
+        if not match:
+            return None, None
+
+        index = int(match.group(1))
+        field_name = match.group(2).strip("[]")
+        if not field_name:
+            return index, None
+        return index, field_name
+
+    def _collect_indexed_item(
+        self: "ScenePayloadSerializer",
+        indexed_items: dict[int, dict],
+        item_index: int,
+        field_name: str,
+        value: object,
+    ) -> None:
+        if item_index not in indexed_items:
+            indexed_items[item_index] = {}
+        indexed_items[item_index][field_name] = self._maybe_json(value)
+
+    def _collect_root_item_field(
+        self: "ScenePayloadSerializer",
+        root_item: dict,
+        key: str,
+        value: object,
+        has_root_context: bool,
+    ) -> None:
+        if has_root_context and key in self.ROOT_ITEM_FIELDS:
+            root_item[key] = self._maybe_json(value)
+
+    def _build_items_list(
+        self: "ScenePayloadSerializer",
+        indexed_items: dict[int, dict],
+        root_item: dict,
+    ) -> list[dict]:
+        items = [indexed_items[idx] for idx in sorted(indexed_items.keys())]
+        if root_item:
+            items.append(root_item)
+        return items
+
+    def _inject_items_into_payload(
+        self: "ScenePayloadSerializer", data: dict, items: list[dict]
+    ) -> dict:
+        if not items:
+            return data
+
+        if hasattr(data, "setlist"):
+            data.setlist("items", items)
+        else:
+            data["items"] = items
+        return data
+
+    def to_internal_value(self: "ScenePayloadSerializer", data: dict) -> dict:
+        """
+        Optimized single-pass parsing for structured/flattened multipart data.
+        Supports:
+        - metadata (JSON string) + top-level files
+        - items[0]name, items[0]dimensions
+        - root level name, type, etc.
+        """
+        if self._is_already_structured_items(data):
+            return super().to_internal_value(data)
+
+        indexed_items: dict[int, dict] = {}
+        has_root_metadata = "metadata" in data
+        has_root_item = "name" in data and "type" in data
+        has_root_context = has_root_metadata or has_root_item
+
+        data = self._ensure_mutable_payload(data)
+        root_item = (
+            self._extract_root_item_from_metadata(data) if has_root_metadata else {}
+        )
+
+        for key, value in list(data.items()):
+            item_index, field_name = self._parse_indexed_item_key(key)
+            if item_index is not None:
+                if field_name:
+                    self._collect_indexed_item(
+                        indexed_items=indexed_items,
+                        item_index=item_index,
+                        field_name=field_name,
+                        value=value,
+                    )
+                continue
+
+            self._collect_root_item_field(
+                root_item=root_item,
+                key=key,
+                value=value,
+                has_root_context=has_root_context,
+            )
+
+        items = self._build_items_list(indexed_items, root_item)
+        data = self._inject_items_into_payload(data, items)
+
+        return super().to_internal_value(data)
+
+    def _maybe_json(self: "ScenePayloadSerializer", value: object) -> object:
+        """Helper to parse JSON strings if applicable."""
+        if isinstance(value, str) and value.strip().startswith(("{", "[")):
+            try:
+                return json.loads(value)
+            except (ValueError, TypeError):
+                return value
+        return value
 
     def _get_design(
         self: "ScenePayloadSerializer", design_id: str, organization: Organization
@@ -310,9 +478,11 @@ class ScenePayloadSerializer(serializers.Serializer):
         request: Request,
     ) -> None:
         """
-        Attach material using MaterialSerializer (create if missing).
+        Attach material using MaterialSerializer.
+        Supports structured and flattened multipart field naming.
         """
-        material_data = item.get("material")
+        material_data = item.get("material") or []
+
         if not material_data:
             return
 
@@ -323,8 +493,7 @@ class ScenePayloadSerializer(serializers.Serializer):
 
     def _clean_data(self: "ScenePayloadSerializer", data: object) -> object:
         """
-        Recursively remove non-JSON serializable objects (like files)
-        from a dictionary or list.
+        Recursively remove File objects from dictionary/list so they can be JSON-saved.
         """
         if isinstance(data, dict):
             return {
@@ -336,10 +505,41 @@ class ScenePayloadSerializer(serializers.Serializer):
             return [self._clean_data(v) for v in data if not hasattr(v, "read")]
         return data
 
+    def validate(self: "ScenePayloadSerializer", data: dict) -> dict:
+        request = self.context["request"]
+        is_library = request.query_params.get("is_library", "false").lower() == "true"
+        if not is_library:
+            return data
+
+        items = data.get("items")
+        if not items:
+            return data
+
+        organization = request.user.selected_organization
+        for item in items:
+            if isinstance(item, list) and len(item) > 0:
+                item = item[0]
+
+            if not isinstance(item, dict):
+                continue
+
+            name = item.get("name")
+            if not name:
+                continue
+
+            if DesignCatalog.objects.filter(
+                name=name, organization=organization
+            ).exists():
+                raise serializers.ValidationError(
+                    "This name is already present, please choose another name."
+                )
+
+        return data
+
     def create(self: "ScenePayloadSerializer", validated_data: Dict[str, Any]) -> dict:
         request = self.context["request"]
         organization = request.user.selected_organization
-        items = validated_data["items"]
+        items = validated_data.get("items")
         is_library = request.query_params.get("is_library", "false").lower() == "true"
 
         design = self._get_design(validated_data["design_id"], organization)
@@ -376,6 +576,12 @@ class ScenePayloadSerializer(serializers.Serializer):
                     image_file = image_data
                     item.pop("image", None)
 
+                model_file_data = item.get("model_file")
+                model_file = None
+                if model_file_data and not isinstance(model_file_data, str):
+                    model_file = model_file_data
+                    item.pop("model_file", None)
+
                 catalog = DesignCatalog.objects.create(
                     organization=organization,
                     version=version,
@@ -384,6 +590,7 @@ class ScenePayloadSerializer(serializers.Serializer):
                     parent=None,
                     is_library=is_library,
                     image=image_file,
+                    model_file=model_file,
                     data=self._clean_data(item.copy()),
                 )
 
