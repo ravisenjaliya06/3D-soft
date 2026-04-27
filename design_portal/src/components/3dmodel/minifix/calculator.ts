@@ -96,7 +96,11 @@ function calculateLocal2D(
 
   const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
   const primaryCoord = clamp(pointAxis01(point, plank, frame.primaryAxis), 0, frame.primarySize);
-  const secondaryCoord = clamp(pointAxis01(point, plank, frame.secondaryAxis), 0, frame.secondarySize);
+  const secondaryCoord = clamp(
+    pointAxis01(point, plank, frame.secondaryAxis),
+    0,
+    frame.secondarySize
+  );
 
   switch (faceId) {
     case '1':
@@ -316,11 +320,7 @@ function calculateSingleConnectionData(
     face: camFaceId,
     diameter: standards.camDiameter,
     depth: standards.camDepth,
-    localPosition2D: calculateLocal2D(
-      camPos3D,
-      housingPlank,
-      camFaceId
-    ),
+    localPosition2D: calculateLocal2D(camPos3D, housingPlank, camFaceId),
   };
 
   // DOWEL HOLES
