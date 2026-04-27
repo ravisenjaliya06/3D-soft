@@ -218,7 +218,8 @@ export class MeshBuilder {
             })
           : new THREE.MeshStandardMaterial({
               color: 0xe8e6e1,
-              roughness: 0.85,
+              roughness: 0.95,
+              metalness: 0,
             });
       } else if (materialData.type === MATERIAL_TYPES.MISCELLANEOUS) {
         // Support floor material type - use same texture loading as Panel Stock
@@ -238,7 +239,15 @@ export class MeshBuilder {
       }
     });
 
-    return createdMaterial || new THREE.MeshStandardMaterial({ visible: false });
+    // Apply polygon offset to push the mesh faces slightly backwards in the depth buffer.
+    // This allows the wireframe edges (which do not have this offset, or have a negative one)
+    // to cleanly render on top without any z-fighting between intersecting mesh pieces.
+    const finalMaterial = createdMaterial || new THREE.MeshStandardMaterial({ visible: false });
+    finalMaterial.polygonOffset = true;
+    finalMaterial.polygonOffsetFactor = 1;
+    finalMaterial.polygonOffsetUnits = 1;
+
+    return finalMaterial;
   }
 
   private _createBoxGeometry(): THREE.BoxGeometry {
@@ -936,7 +945,8 @@ export class MeshBuilder {
       new THREE.BufferGeometry(), // Temporary geometry
       material ?? new THREE.MeshBasicMaterial({ visible: false })
     );
-
+    mesh.castShadow = true;
+    mesh.receiveShadow = false;
     this.mesh = mesh;
 
     // Now compute the real geometry (possibly with CSG)

@@ -1,6 +1,6 @@
 # Python imports
-import math
 import logging
+import math
 import os
 import re
 import secrets
@@ -591,13 +591,13 @@ class NestingService:
         Also generates 'Cutting List.xlsx' in the same folder.
         """
 
-        def _is_round_corner(corner_type: Any) -> bool:
+        def _is_round_corner(corner_type: str | None) -> bool:
             return str(corner_type or "").strip().lower() == "round"
 
-        def _is_chamfer_corner(corner_type: Any) -> bool:
+        def _is_chamfer_corner(corner_type: str | None) -> bool:
             return str(corner_type or "").strip().lower() == "chamfer"
 
-        def _safe_radius(radius_value: Any, max_radius: float) -> float:
+        def _safe_radius(radius_value: float | None, max_radius: float) -> float:
             radius = self._safe_float(radius_value, 0.0)
             if radius <= 0:
                 return 0.0
@@ -834,13 +834,15 @@ class NestingService:
         ) -> Tuple[float, float]:
             # Corner index order:
             # 0: Left-top, 1: Right-top, 2: Right-bottom, 3: Left-bottom
-            if corner_index == 0:
-                return panel_length, radius
-            if corner_index == 1:
-                return radius, 0.0
-            if corner_index == 2:
-                return 0.0, panel_width - radius
-            return panel_length - radius, panel_width
+            match corner_index:
+                case 0:
+                    return panel_length, radius
+                case 1:
+                    return radius, 0.0
+                case 2:
+                    return 0.0, panel_width - radius
+                case _:
+                    return panel_length - radius, panel_width
 
         def _curve_point(
             corner_index: int,
@@ -852,23 +854,24 @@ class NestingService:
             sin_t = math.sin(theta)
             cos_t = math.cos(theta)
 
-            if corner_index == 0:
-                # Left-top: (L, r) -> (L-r, 0)
-                return (
-                    panel_length - radius + radius * cos_t,
-                    radius - radius * sin_t,
-                )
-            if corner_index == 1:
-                # Right-top: (r, 0) -> (0, r)
-                return radius - radius * sin_t, radius - radius * cos_t
-            if corner_index == 2:
-                # Right-bottom: (0, W-r) -> (r, W)
-                return radius - radius * cos_t, panel_width - radius + radius * sin_t
-            # Left-bottom: (L-r, W) -> (L, W-r)
-            return (
-                panel_length - radius + radius * sin_t,
-                panel_width - radius + radius * cos_t,
-            )
+            match corner_index:
+                case 0:
+                    return (
+                        panel_length - radius + radius * cos_t,
+                        radius - radius * sin_t,
+                    )
+                case 1:
+                    return radius - radius * sin_t, radius - radius * cos_t
+                case 2:
+                    return (
+                        radius - radius * cos_t,
+                        panel_width - radius + radius * sin_t,
+                    )
+                case _:
+                    return (
+                        panel_length - radius + radius * sin_t,
+                        panel_width - radius + radius * cos_t,
+                    )
 
         generated_files = []
         base_dir = os.path.dirname(output_path)
@@ -1045,12 +1048,8 @@ class NestingService:
                         hole.get("length") or hole.get("depth") or 0
                     )
                     # Frontend now provides final machining coordinates.
-                    final_x = self._safe_float(
-                        hole.get("x", pos.get("x", 0))
-                    )
-                    final_y = self._safe_float(
-                        hole.get("y", pos.get("y", 0))
-                    )
+                    final_x = self._safe_float(hole.get("x", pos.get("x", 0)))
+                    final_y = self._safe_float(hole.get("y", pos.get("y", 0)))
                     final_depth = raw_depth
                     final_diameter = raw_diameter
 
@@ -1114,8 +1113,16 @@ class NestingService:
                 max_curve_radius = min(length_val, width_val)
 
                 for corner_index in range(4):
-                    corner_type = corner_types[corner_index] if corner_index < len(corner_types) else ""
-                    radius_value = corner_radii[corner_index] if corner_index < len(corner_radii) else 0
+                    corner_type = (
+                        corner_types[corner_index]
+                        if corner_index < len(corner_types)
+                        else ""
+                    )
+                    radius_value = (
+                        corner_radii[corner_index]
+                        if corner_index < len(corner_radii)
+                        else 0
+                    )
 
                     is_round = _is_round_corner(corner_type)
                     is_chamfer = _is_chamfer_corner(corner_type)
@@ -1146,7 +1153,9 @@ class NestingService:
                         "MacIndex": str(mac_index),
                         "ToolOffset": "L",
                     }
-                    curve_machining = ET.SubElement(machines, "Machining", **curve_attrs)
+                    curve_machining = ET.SubElement(
+                        machines, "Machining", **curve_attrs
+                    )
                     lines_el = ET.SubElement(curve_machining, "Lines")
 
                     if is_chamfer:
