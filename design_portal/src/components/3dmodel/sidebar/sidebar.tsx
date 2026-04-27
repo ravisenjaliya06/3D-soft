@@ -69,7 +69,6 @@ import { findMesh, formatEnumLabel } from '../sceneCreator/utils';
 import { DistanceInput } from './DistanceInput';
 import { Axis, Field, TextureGrain } from './interface';
 import { MaterialChangePopup } from './MaterialChangePopup';
-import SidebarInput from './SidebarInput';
 import SidebarInputWithSuffix from './SidebarInputWithSuffix';
 
 const Sidebar: React.FC = () => {
@@ -2133,46 +2132,25 @@ const Sidebar: React.FC = () => {
                               <p className="mb-[0rem] text-[0.6rem] font-[700] text-[var(--primary-color)]">
                                 Height
                               </p>
-                              <SidebarInput
+                              <SidebarInputWithSuffix
+                                wrapperClassName="relative w-[5rem]"
+                                inputStyleCSS="h-[1.2rem] w-[5rem] [appearance:textfield] rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                                suffix="MM"
+                                type="number"
                                 min={1}
                                 step="1"
                                 value={dimensionsUI.height ?? ''}
-                                onUpdate={(val) =>
-                                  handleDimensionChange('height', Math.max(1, val))
+                                onChange={(e) =>
+                                  handleDimensionChange(
+                                    'height',
+                                    Math.max(1, Number(e.target.value))
+                                  )
                                 }
                                 disabled={isDisabled}
-                                className="h-[1.2rem] w-[5rem] [appearance:textfield] rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                               />
                             </div>
                           </div>
                         )}
-                      </div>
-
-                      <hr className="mx-[0.2rem] my-[0.3rem] ml-[0rem] w-[15rem] pl-[0rem] opacity-20" />
-
-                      {/* Wall – Texture */}
-                      <div className="mr-[0rem] ml-[1rem] flex flex-col gap-[0rem]">
-                        <div className="mt-[0rem] flex gap-[0rem]">
-                          <div className="flex-1">
-                            <p className="m-[0.5rem] ml-[0rem] text-[0.6rem] font-[700] text-[var(--primary-color)]">
-                              Wall Texture
-                            </p>
-                          </div>
-                        </div>
-
-                        <div className="mt-[0rem] flex gap-[1rem]">
-                          {/* Select Texture Button */}
-                          <button
-                            onClick={toggleTextureList}
-                            disabled={isDisabled}
-                            className={`flex h-[1.3rem] w-[5rem] flex-1 cursor-pointer appearance-none items-center justify-between rounded-[0.1rem] border-[0rem] bg-[var(--primary-color)] p-[0rem] px-[0.2rem] text-left font-[comfortaa] text-[0.5rem] font-[var(--font-family)] font-extralight text-[var(--primary-white)] transition-colors duration-200 ease-in-out ${
-                              isDisabled ? 'cursor-not-allowed opacity-50' : ''
-                            }`}
-                          >
-                            Select Texture
-                            <img src={assets.down_arrow1} className="h-[0.6rem] w-[0.6rem]" />
-                          </button>
-                        </div>
                       </div>
 
                       <hr className="mx-[0.2rem] my-[0.3rem] ml-[0rem] w-[15rem] pl-[0rem] opacity-20" />
@@ -2231,7 +2209,7 @@ const Sidebar: React.FC = () => {
                                   </p>
                                   <SidebarInputWithSuffix
                                     wrapperClassName="relative w-[5rem]"
-                                    inputClassName="h-[1.2rem] w-[5rem] [appearance:textfield] appearance-none rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                                    inputStyleCSS="h-[1.2rem] w-[5rem] [appearance:textfield] appearance-none rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                                     suffix="MM"
                                     type="number"
                                     disabled={isDisabled}
@@ -2288,7 +2266,7 @@ const Sidebar: React.FC = () => {
                                   </p>
                                   <SidebarInputWithSuffix
                                     wrapperClassName="relative w-[5rem]"
-                                    inputClassName="h-[1.2rem] w-[5rem] [appearance:textfield] appearance-none rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                                    inputStyleCSS="h-[1.2rem] w-[5rem] [appearance:textfield] appearance-none rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                                     suffix="MM"
                                     type="number"
                                     disabled={!minifixEnabled || isDisabled}
@@ -2338,7 +2316,7 @@ const Sidebar: React.FC = () => {
                                   </p>
                                   <SidebarInputWithSuffix
                                     wrapperClassName="relative w-[5rem]"
-                                    inputClassName="h-[1.2rem] w-[5rem] [appearance:textfield] appearance-none rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                                    inputStyleCSS="h-[1.2rem] w-[5rem] [appearance:textfield] appearance-none rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                                     suffix="MM"
                                     type="number"
                                     disabled={true}
@@ -2354,7 +2332,7 @@ const Sidebar: React.FC = () => {
                                   </p>
                                   <SidebarInputWithSuffix
                                     wrapperClassName="relative w-[5rem]"
-                                    inputClassName="h-[1.2rem] w-[5rem] [appearance:textfield] appearance-none rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                                    inputStyleCSS="h-[1.2rem] w-[5rem] [appearance:textfield] appearance-none rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                                     suffix="MM"
                                     type="number"
                                     disabled={true}
@@ -2396,7 +2374,7 @@ const Sidebar: React.FC = () => {
                                 </p>
                                 <SidebarInputWithSuffix
                                   wrapperClassName="relative w-[5rem]"
-                                  inputClassName="h-[1.2rem] w-[5rem] [appearance:textfield] appearance-none rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                                  inputStyleCSS="h-[1.2rem] w-[5rem] [appearance:textfield] appearance-none rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                                   suffix="MM"
                                   type="number"
                                   disabled={!minifixEnabled || isDisabled}
@@ -2419,7 +2397,7 @@ const Sidebar: React.FC = () => {
                                 </p>
                                 <SidebarInputWithSuffix
                                   wrapperClassName="relative w-[5rem]"
-                                  inputClassName="h-[1.2rem] w-[5rem] [appearance:textfield] appearance-none rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                                  inputStyleCSS="h-[1.2rem] w-[5rem] [appearance:textfield] appearance-none rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                                   suffix="MM"
                                   type="number"
                                   disabled={!minifixEnabled || isDisabled}
@@ -2448,7 +2426,7 @@ const Sidebar: React.FC = () => {
                                 </p>
                                 <SidebarInputWithSuffix
                                   wrapperClassName="relative w-[5rem]"
-                                  inputClassName="h-[1.2rem] w-[5rem] [appearance:textfield] appearance-none rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                                  inputStyleCSS="h-[1.2rem] w-[5rem] [appearance:textfield] appearance-none rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                                   suffix="MM"
                                   type="number"
                                   disabled={!minifixEnabled || isDisabled}
@@ -2500,7 +2478,7 @@ const Sidebar: React.FC = () => {
                             </p>
                             <SidebarInputWithSuffix
                               wrapperClassName="relative w-[5rem]"
-                              inputClassName="h-[1.2rem] w-[5rem] [appearance:textfield] appearance-none rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none disabled:opacity-50 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                              inputStyleCSS="h-[1.2rem] w-[5rem] [appearance:textfield] appearance-none rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none disabled:opacity-50 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                               suffix="MM"
                               type="number"
                               min={0}
@@ -2686,7 +2664,7 @@ const Sidebar: React.FC = () => {
                                         ) : (
                                           <SidebarInputWithSuffix
                                             wrapperClassName="relative mt-[0.25rem] mr-[1rem] w-[5rem]"
-                                            inputClassName="h-[1.2rem] w-[3.5rem] [appearance:textfield] items-center justify-between rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] pr-[1.4rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                                            inputStyleCSS="h-[1.2rem] w-[3.5rem] [appearance:textfield] items-center justify-between rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] pr-[1.4rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                                             suffix="MM"
                                             min={field.min}
                                             step={1}
@@ -2713,7 +2691,7 @@ const Sidebar: React.FC = () => {
                                       </p>
                                       <SidebarInputWithSuffix
                                         wrapperClassName="relative w-[5rem]"
-                                        inputClassName="h-[1.2rem] w-[5rem] [appearance:textfield] rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                                        inputStyleCSS="h-[1.2rem] w-[5rem] [appearance:textfield] rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                                         suffix="MM"
                                         type="number"
                                         min={1}
@@ -2733,7 +2711,7 @@ const Sidebar: React.FC = () => {
                                       </p>
                                       <SidebarInputWithSuffix
                                         wrapperClassName="relative w-[5rem]"
-                                        inputClassName="h-[1.2rem] w-[5rem] [appearance:textfield] rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                                        inputStyleCSS="h-[1.2rem] w-[5rem] [appearance:textfield] rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                                         suffix="MM"
                                         type="number"
                                         min={1}
@@ -2758,7 +2736,7 @@ const Sidebar: React.FC = () => {
                                       </p>
                                       <SidebarInputWithSuffix
                                         wrapperClassName="relative w-[5rem]"
-                                        inputClassName="h-[1.2rem] w-[5rem] [appearance:textfield] rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                                        inputStyleCSS="h-[1.2rem] w-[5rem] [appearance:textfield] rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                                         suffix="MM"
                                         type="number"
                                         min={1}
@@ -2826,7 +2804,7 @@ const Sidebar: React.FC = () => {
                 )}
 
                 {/* ================= Main Object Position ================= */}
-                {!isQuickHideActive && isSettingOpen && isMainObject && (
+                {!isQuickHideActive && isSettingOpen && isMainObject && !isWallSelected && (
                   <>
                     <div className="mb-[0.7rem] ml-[1rem] flex flex-col gap-[0.5rem]">
                       <div className="relative flex items-center justify-between gap-[0.5rem]">
@@ -2949,7 +2927,7 @@ const Sidebar: React.FC = () => {
                             </p>
                             <SidebarInputWithSuffix
                               wrapperClassName="relative w-[5rem]"
-                              inputClassName="h-[1.2rem] w-[5rem] [appearance:textfield] rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                              inputStyleCSS="h-[1.2rem] w-[5rem] [appearance:textfield] rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                               suffix="MM"
                               type="number"
                               value={Number(getTopPlank()?.dimensions?.depth ?? 0).toFixed(2)}
@@ -3049,7 +3027,7 @@ const Sidebar: React.FC = () => {
                                 </p>
                                 <SidebarInputWithSuffix
                                   wrapperClassName="relative w-[5rem]"
-                                  inputClassName="h-[1.2rem] w-[5rem] [appearance:textfield] rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                                  inputStyleCSS="h-[1.2rem] w-[5rem] [appearance:textfield] rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                                   suffix="MM"
                                   type="number"
                                   value={selectedObject?.skirtingOffset ?? 10}
@@ -3068,7 +3046,7 @@ const Sidebar: React.FC = () => {
                                 </p>
                                 <SidebarInputWithSuffix
                                   wrapperClassName="relative w-[5rem]"
-                                  inputClassName="h-[1.2rem] w-[5rem] [appearance:textfield] rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                                  inputStyleCSS="h-[1.2rem] w-[5rem] [appearance:textfield] rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                                   suffix="MM"
                                   type="number"
                                   value={selectedObject?.skirtingHeight ?? 75}
@@ -3331,22 +3309,24 @@ const Sidebar: React.FC = () => {
                     </div> */}
 
                       {/* Change Material */}
-                      <div
-                        onClick={handleMaterialChange}
-                        className="mb-2 flex items-center justify-between gap-[0rem] py-[0rem] pr-[0.5rem] pr-[0rem]"
-                      >
-                        <p className="ml-[1rem] text-[0.6rem] font-[700] text-[var(--primary-color)]">
-                          Change Material
-                        </p>
-                        <button
-                          className="flex h-[1.3rem] w-[6.8rem] cursor-pointer appearance-none items-center justify-between justify-center rounded-[0.1rem] border-[0rem] bg-[var(--primary-color)] p-[0rem] px-[0.5rem] text-center font-[comfortaa] text-[0.5rem] font-extralight text-[var(--primary-white)] transition-colors duration-200 ease-in-out"
-                          disabled={isDisabled}
+                      {!isWallSelected && (
+                        <div
+                          onClick={handleMaterialChange}
+                          className="mb-2 flex items-center justify-between gap-[0rem] py-[0rem] pr-[0.5rem] pr-[0rem]"
                         >
-                          <p className="items-center text-center text-[0.55rem] font-[700]">
-                            Press to Change
+                          <p className="ml-[1rem] text-[0.6rem] font-[700] text-[var(--primary-color)]">
+                            Change Material
                           </p>
-                        </button>
-                      </div>
+                          <button
+                            className="flex h-[1.3rem] w-[6.8rem] cursor-pointer appearance-none items-center justify-between justify-center rounded-[0.1rem] border-[0rem] bg-[var(--primary-color)] p-[0rem] px-[0.5rem] text-center font-[comfortaa] text-[0.5rem] font-extralight text-[var(--primary-white)] transition-colors duration-200 ease-in-out"
+                            disabled={isDisabled}
+                          >
+                            <p className="items-center text-center text-[0.55rem] font-[700]">
+                              Press to Change
+                            </p>
+                          </button>
+                        </div>
+                      )}
 
                       {/* Texture */}
 

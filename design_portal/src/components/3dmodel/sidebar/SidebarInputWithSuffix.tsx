@@ -5,14 +5,14 @@ interface SidebarInputWithSuffixProps extends Omit<
   'className'
 > {
   wrapperClassName?: string;
-  inputClassName?: string;
+  inputStyleCSS?: string;
   suffix?: string;
   suffixClassName?: string;
 }
 
 const SidebarInputWithSuffix: React.FC<SidebarInputWithSuffixProps> = ({
   wrapperClassName,
-  inputClassName,
+  inputStyleCSS,
   suffix,
   suffixClassName,
   value,
@@ -59,7 +59,7 @@ const SidebarInputWithSuffix: React.FC<SidebarInputWithSuffixProps> = ({
     <div className={wrapperClassName}>
       <input
         {...inputProps}
-        className={inputClassName}
+        className={inputStyleCSS}
         value={localValue ?? ''}
         onChange={(e) => setLocalValue(e.target.value)}
         onBlur={handleBlur}
