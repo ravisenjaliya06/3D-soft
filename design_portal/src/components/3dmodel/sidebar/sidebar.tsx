@@ -7,12 +7,12 @@ import { toast } from 'react-toastify';
 import * as THREE from 'three';
 import { itemType } from '../design/interface';
 import {
-  addLShapeToDrawersAndDoors,
+  addLShapeInDirection,
   addNailers,
   addSkirtingPlanks,
   applyNoBase,
   hasExtendedSidePlanks,
-  removeLShapeObjects,
+  removeLShapeForSingleDrawerOrDoor,
   removeNailers,
   removeSkirtingPlanks,
   updateDoorType,
@@ -182,8 +182,11 @@ const Sidebar: React.FC = () => {
       setTextureGrain(
         (selectedObject.textureGrain as 'None' | 'Horizontal' | 'Vertical') || 'None'
       );
+      // Initialize handle mode from per-object state
+      setHandleMode(((selectedObject as any).handleMode as 'handle' | 'handleless') || 'handle');
     } else {
       setTextureGrain('None');
+      setHandleMode('handle');
     }
 
     setWidthSide(null);
@@ -480,48 +483,75 @@ const Sidebar: React.FC = () => {
     });
   };
 
+  /**
+   * Find the parent cupboard mesh for a given child mesh (drawer/door).
+   * First tries Redux parent ID, then walks up the scene graph as fallback.
+   */
+  const findParentCupboardMesh = (childMesh: THREE.Mesh): THREE.Mesh | null => {
+    // Try via Redux parent ID
+    if (selectedObject?.parent) {
+      const parentMesh = findMesh(scene, selectedObject.parent);
+      if (parentMesh) return parentMesh;
+    }
+    // Fallback: walk up the scene graph
+    let parent: THREE.Object3D | null = childMesh.parent;
+    while (parent) {
+      if (parent instanceof THREE.Mesh && parent.userData.isMain) {
+        return parent;
+      }
+      parent = parent.parent;
+    }
+    return null;
+  };
+
   const handleHandleModeChange = async (mode: 'handle' | 'handleless') => {
-    if (!scene || !selectedObject || !isLatestVersion) return;
+    if (!scene || !selectedObject || !isLatestVersion || !isDoorOrDrawerSelected) return;
 
     setHandleMode(mode);
 
-    // Find the cupboard mesh
-    let cupboardMesh: THREE.Mesh | null = null;
-    scene.traverse((obj) => {
-      if (obj instanceof THREE.Mesh && obj.userData.objectId === selectedObject.id) {
-        cupboardMesh = obj;
-      }
-    });
-
-    if (!cupboardMesh) return;
+    const mesh = findMesh(scene, selectedObject.id);
+    if (!mesh) return;
 
     if (mode === 'handleless') {
-      // Handleless mode: add l-shape objects for visualization only (no modifications to drawer/door sizes)
-      await addLShapeToDrawersAndDoors(scene, cupboardMesh);
-      // Hide handles
-      scene.traverse((obj: THREE.Object3D) => {
-        if (obj instanceof THREE.Mesh && obj.userData.objectId === selectedObject.id) {
-          obj.traverse((child: THREE.Object3D) => {
-            if (child.userData.type === 'handle') {
-              child.visible = false;
-            }
-          });
+      // Just hide handles — L-shape will be applied when user clicks Up/Down buttons
+      mesh.traverse((child: THREE.Object3D) => {
+        if (child.userData.type === 'handle') {
+          child.visible = false;
         }
       });
     } else {
-      // Handle mode: remove l-shape objects and restore original heights, show handles
-      await removeLShapeObjects(cupboardMesh);
-      // Show handles
-      scene.traverse((obj: THREE.Object3D) => {
-        if (obj instanceof THREE.Mesh && obj.userData.objectId === selectedObject.id) {
-          obj.traverse((child: THREE.Object3D) => {
-            if (child.userData.type === 'handle') {
-              child.visible = true;
-            }
-          });
+      // Switching back to handle mode: remove L-shapes + restore + show handles
+      const cupboardMesh = findParentCupboardMesh(mesh);
+      if (cupboardMesh) {
+        await removeLShapeForSingleDrawerOrDoor(mesh, cupboardMesh);
+      }
+      mesh.traverse((child: THREE.Object3D) => {
+        if (child.userData.type === 'handle') {
+          child.visible = true;
         }
       });
     }
+
+    // Store handleMode per-object in Redux
+    applyObjectUpdate(selectedObject, {
+      handleMode: mode,
+    } as any);
+  };
+
+  /**
+   * Handle L-shape direction button click (Up Side / Down Side)
+   * Called when user manually chooses where to place the L-shape
+   */
+  const handleLShapeDirection = async (direction: 'up' | 'down') => {
+    if (!scene || !selectedObject || !isLatestVersion || !isDoorOrDrawerSelected) return;
+
+    const mesh = findMesh(scene, selectedObject.id);
+    if (!mesh) return;
+
+    const cupboardMesh = findParentCupboardMesh(mesh);
+    if (!cupboardMesh) return;
+
+    await addLShapeInDirection(scene, mesh, cupboardMesh, direction);
   };
 
   async function applyObjectUpdate(
@@ -3488,7 +3518,7 @@ const Sidebar: React.FC = () => {
                 </div>
                 <hr className="mx-[0.2rem] my-[0.2rem] ml-[0rem] w-[15rem] pl-[0rem] opacity-20" />
                 {/* Standalone Handle Mode section after Material */}
-                {!isQuickHideActive && isSettingOpen && isFullCupboard && (
+                {!isQuickHideActive && isSettingOpen && isDoorOrDrawerSelected && (
                   <>
                     <div className="mt-[0] mb-[0.7rem] ml-[1rem] flex items-center gap-[4rem]">
                       <div className="flex items-center justify-between">
@@ -3511,6 +3541,32 @@ const Sidebar: React.FC = () => {
                         </select>
                       </div>
                     </div>
+
+                    {/* Up Side / Down Side buttons — only for single drawer/door in handleless mode */}
+                    {isDoorOrDrawerSelected && handleMode === 'handleless' && (
+                      <div className="mt-[0.2rem] mb-[0.5rem] ml-[1rem] flex flex-col gap-[0.4rem]">
+                        <p className="mb-[0] text-[0.6rem] font-[600] text-[var(--primary-color)]">
+                          L-Shape Position
+                        </p>
+                        <div className="flex items-center gap-[0.5rem]">
+                          <button
+                            onClick={() => handleLShapeDirection('up')}
+                            disabled={isDisabled}
+                            className="flex h-[1.4rem] w-[5.5rem] cursor-pointer items-center justify-center rounded-[0.2rem] border-[0.1rem] border-[var(--primary-color)] bg-[var(--primary-white)] p-[0rem] text-[0.55rem] font-[600] text-[var(--primary-color)] transition-colors duration-200 hover:bg-[var(--primary-color)] hover:text-[var(--primary-white)] disabled:cursor-not-allowed disabled:opacity-50"
+                          >
+                            ▲ Up Side
+                          </button>
+                          <button
+                            onClick={() => handleLShapeDirection('down')}
+                            disabled={isDisabled}
+                            className="flex h-[1.4rem] w-[5.5rem] cursor-pointer items-center justify-center rounded-[0.2rem] border-[0.1rem] border-[var(--primary-color)] bg-[var(--primary-white)] p-[0rem] text-[0.55rem] font-[600] text-[var(--primary-color)] transition-colors duration-200 hover:bg-[var(--primary-color)] hover:text-[var(--primary-white)] disabled:cursor-not-allowed disabled:opacity-50"
+                          >
+                            ▼ Down Side
+                          </button>
+                        </div>
+                      </div>
+                    )}
+
                     <hr className="mx-[0.2rem] my-[0.2rem] ml-[0rem] w-[15rem] pl-[0rem] opacity-20" />
                   </>
                 )}

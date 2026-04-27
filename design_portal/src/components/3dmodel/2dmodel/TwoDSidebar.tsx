@@ -1,137 +1,163 @@
 import React, { useEffect, useState } from 'react';
 import { SidebarContainer } from '../panelDesign/components/Sidebars';
 import styles from '../panelDesign/panelDesign.module.css';
-import { FLOOR_PLAN_TYPES, MeshObjectData } from '../sceneCreator/interface';
-import { SyncManager } from '../sceneCreator/syncState';
+import { FLOOR_PLAN_TYPES } from '../sceneCreator/interface';
+import { FEET_CHANGE } from './constants';
 import { TwoDSidebarProps } from './interface';
 import { useWallAdjustment } from './walls/useWallAdjustment';
 
-export const TwoDSidebar: React.FC<TwoDSidebarProps> = ({ object, pos, onDragStart }) => {
+export const TwoDSidebar: React.FC<TwoDSidebarProps> = ({
+  object,
+  pos,
+  onDragStart,
+  pointMode,
+  onPointModeChange,
+}) => {
   const { adjustWallLength } = useWallAdjustment();
+  const selectedWall = object && object.type === FLOOR_PLAN_TYPES.WALL ? object : null;
 
-  // Wall-specific state (Feet)
-  const [wallLengthFt, setWallLengthFt] = useState((object.dimensions.width / 30.48).toFixed(2));
-
-  // Generic states (CM)
-  const [width, setWidth] = useState(object.dimensions.width.toString());
-  const [height, setHeight] = useState(object.dimensions.height.toString());
-  const [depth, setDepth] = useState(object.dimensions.depth.toString());
+  // Wall-specific state (Feet and MM)
+  const [wallLengthFt, setWallLengthFt] = useState(
+    selectedWall ? (selectedWall.dimensions.width / FEET_CHANGE).toFixed(2) : ''
+  );
+  const [wallLengthMm, setWallLengthMm] = useState(
+    selectedWall ? (selectedWall.dimensions.width * 10).toFixed(2) : ''
+  );
 
   useEffect(() => {
-    if (object.type === FLOOR_PLAN_TYPES.WALL) {
-      setWallLengthFt((object.dimensions.width / 30.48).toFixed(2));
+    if (selectedWall) {
+      setWallLengthFt((selectedWall.dimensions.width / FEET_CHANGE).toFixed(2));
+      setWallLengthMm((selectedWall.dimensions.width * 10).toFixed(2));
     } else {
-      setWidth(object.dimensions.width.toString());
-      setHeight(object.dimensions.height.toString());
-      setDepth(object.dimensions.depth.toString());
+      setWallLengthFt('');
+      setWallLengthMm('');
     }
-  }, [object.dimensions.width, object.dimensions.height, object.dimensions.depth, object.type]);
+  }, [selectedWall]);
 
-  const handleWallLengthChange = (val: number) => {
+  const handleWallLengthChangeFt = () => {
+    if (!selectedWall) return;
+    const val = parseFloat(wallLengthFt);
     if (!isNaN(val) && val > 0) {
-      const newLengthInCm = val * 30.48;
-      adjustWallLength(object.id, newLengthInCm);
+      const newLengthInCm = val * FEET_CHANGE;
+      adjustWallLength(selectedWall.id, newLengthInCm);
     } else {
-      setWallLengthFt((object.dimensions.width / 30.48).toFixed(2));
+      setWallLengthFt((selectedWall.dimensions.width / FEET_CHANGE).toFixed(2));
+      setWallLengthMm((selectedWall.dimensions.width * 10).toFixed(2));
     }
   };
 
-  const handleDimensionUpdate = async (dim: 'width' | 'height' | 'depth', val: string) => {
-    const newVal = parseFloat(val);
-    if (!isNaN(newVal) && newVal > 0) {
-      const newDimensions = { ...object.dimensions, [dim]: newVal };
-      const updateData = { id: object.id, dimensions: newDimensions };
-
-      // Perform 3D sync
-      const syncManager = new SyncManager({ ...object, ...updateData } as MeshObjectData);
-      await syncManager.syncData();
+  const handleWallLengthChangeMm = () => {
+    if (!selectedWall) return;
+    const val = parseFloat(wallLengthMm);
+    if (!isNaN(val) && val > 0) {
+      const newLengthInCm = val / 10;
+      adjustWallLength(selectedWall.id, newLengthInCm);
     } else {
-      // Revert if invalid
-      if (dim === 'width') setWidth(object.dimensions.width.toString());
-      if (dim === 'height') setHeight(object.dimensions.height.toString());
-      if (dim === 'depth') setDepth(object.dimensions.depth.toString());
+      setWallLengthFt((selectedWall.dimensions.width / FEET_CHANGE).toFixed(2));
+      setWallLengthMm((selectedWall.dimensions.width * 10).toFixed(2));
     }
   };
-
-  const isWall = object.type === FLOOR_PLAN_TYPES.WALL;
 
   return (
-    <SidebarContainer
-      title={isWall ? 'Wall Properties' : 'Object Properties'}
-      pos={pos}
-      onDragStart={onDragStart}
-    >
+    <SidebarContainer title="Wall Properties" pos={pos} onDragStart={onDragStart}>
       <div className={styles.sidebarSection}>
         <div className={styles.sidebarTitle}>Dimensions</div>
-        {isWall ? (
-          <div className={styles.sidebarRow} style={{ marginTop: '0.75rem' }}>
-            <span style={{ fontWeight: 500, color: '#555' }}>Length:</span>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <input
-                type="text"
-                value={wallLengthFt}
-                onChange={(e) => setWallLengthFt(e.target.value)}
-                onBlur={() => handleWallLengthChange(parseFloat(wallLengthFt))}
-                onKeyDown={(e) =>
-                  e.key === 'Enter' && handleWallLengthChange(parseFloat(wallLengthFt))
-                }
-                style={{
-                  width: '5rem',
-                  padding: '0.25rem 0.5rem',
-                  border: '1px solid #ccc',
-                  borderRadius: '0.25rem',
-                  fontSize: '0.875rem',
-                  textAlign: 'right',
-                }}
-              />
-              <span style={{ fontSize: '0.75rem', color: '#888', fontWeight: 600 }}>FT</span>
+        {selectedWall ? (
+          <>
+            <div className={styles.sidebarRow} style={{ marginTop: '0.75rem' }}>
+              <span style={{ fontWeight: 500, color: '#555' }}>Length (ft):</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <input
+                  type="text"
+                  value={wallLengthFt}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setWallLengthFt(val);
+                    const parsed = parseFloat(val);
+                    if (!isNaN(parsed)) {
+                      setWallLengthMm((parsed * FEET_CHANGE * 10).toFixed(2));
+                    } else {
+                      setWallLengthMm('');
+                    }
+                  }}
+                  onBlur={handleWallLengthChangeFt}
+                  onKeyDown={(e) => e.key === 'Enter' && handleWallLengthChangeFt()}
+                  style={{
+                    width: '5rem',
+                    padding: '0.25rem 0.5rem',
+                    border: '1px solid #ccc',
+                    borderRadius: '0.25rem',
+                    fontSize: '0.875rem',
+                    textAlign: 'right',
+                  }}
+                />
+                <span style={{ fontSize: '0.75rem', color: '#888', fontWeight: 600 }}>FT</span>
+              </div>
             </div>
-          </div>
+            <div className={styles.sidebarRow} style={{ marginTop: '0.75rem' }}>
+              <span style={{ fontWeight: 500, color: '#555' }}>Length (mm):</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <input
+                  type="text"
+                  value={wallLengthMm}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setWallLengthMm(val);
+                    const parsed = parseFloat(val);
+                    if (!isNaN(parsed)) {
+                      setWallLengthFt((parsed / 10 / FEET_CHANGE).toFixed(2));
+                    } else {
+                      setWallLengthFt('');
+                    }
+                  }}
+                  onBlur={handleWallLengthChangeMm}
+                  onKeyDown={(e) => e.key === 'Enter' && handleWallLengthChangeMm()}
+                  style={{
+                    width: '5rem',
+                    padding: '0.25rem 0.5rem',
+                    border: '1px solid #ccc',
+                    borderRadius: '0.25rem',
+                    fontSize: '0.875rem',
+                    textAlign: 'right',
+                  }}
+                />
+                <span style={{ fontSize: '0.75rem', color: '#888', fontWeight: 600 }}>MM</span>
+              </div>
+            </div>
+          </>
         ) : (
-          <div
-            style={{ marginTop: '0.5rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}
-          >
-            <div className={styles.sidebarRow}>
-              <span style={{ minWidth: '3.75rem' }}>Width:</span>
-              <input
-                type="text"
-                className={styles.propertyInputSmall}
-                style={{ textAlign: 'right', paddingRight: '0.5rem' }}
-                value={width}
-                onChange={(e) => setWidth(e.target.value)}
-                onBlur={() => handleDimensionUpdate('width', width)}
-                onKeyDown={(e) => e.key === 'Enter' && handleDimensionUpdate('width', width)}
-              />
-              <span style={{ fontSize: '0.625rem', color: '#888' }}>cm</span>
-            </div>
-            <div className={styles.sidebarRow}>
-              <span style={{ minWidth: '3.75rem' }}>Height:</span>
-              <input
-                type="text"
-                className={styles.propertyInputSmall}
-                style={{ textAlign: 'right', paddingRight: '0.5rem' }}
-                value={height}
-                onChange={(e) => setHeight(e.target.value)}
-                onBlur={() => handleDimensionUpdate('height', height)}
-                onKeyDown={(e) => e.key === 'Enter' && handleDimensionUpdate('height', height)}
-              />
-              <span style={{ fontSize: '0.625rem', color: '#888' }}>cm</span>
-            </div>
-            <div className={styles.sidebarRow}>
-              <span style={{ minWidth: '3.75rem' }}>Depth:</span>
-              <input
-                type="text"
-                className={styles.propertyInputSmall}
-                style={{ textAlign: 'right', paddingRight: '0.5rem' }}
-                value={depth}
-                onChange={(e) => setDepth(e.target.value)}
-                onBlur={() => handleDimensionUpdate('depth', depth)}
-                onKeyDown={(e) => e.key === 'Enter' && handleDimensionUpdate('depth', depth)}
-              />
-              <span style={{ fontSize: '0.625rem', color: '#888' }}>cm</span>
-            </div>
+          <div style={{ fontSize: '0.75rem', color: '#777', marginTop: '0.5rem' }}>
+            Select a wall to edit dimensions.
           </div>
         )}
+      </div>
+      <div className={styles.sidebarSection}>
+        <div className={styles.sidebarTitle}>Points Selection</div>
+        <div
+          style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginTop: '0.75rem' }}
+        >
+          {(['internal', 'center', 'external'] as const).map((mode) => (
+            <label
+              key={mode}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+                fontSize: '0.8rem',
+                color: '#444',
+                cursor: 'pointer',
+              }}
+            >
+              <input
+                type="radio"
+                name="wall-point-mode"
+                checked={pointMode === mode}
+                onChange={() => onPointModeChange(mode)}
+              />
+              <span style={{ textTransform: 'capitalize' }}>{mode}</span>
+            </label>
+          ))}
+        </div>
       </div>
     </SidebarContainer>
   );

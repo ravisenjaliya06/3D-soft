@@ -4,11 +4,30 @@ import Header from '@/components/header/header';
 import Sidebar from '@/components/sidebar/sidebar';
 import { API_ENDPOINT } from '@/services/ApiEndPoints';
 import CommonService from '@/services/CommonService';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 import { useRouter } from 'next/router';
 import { useEffect, useRef, useState } from 'react';
 import { useSelector } from 'react-redux';
 import * as XLSX from 'xlsx-js-style';
 import styles from '../mes/nesting.module.css';
+import {
+  BOM_CUTTING_HEADERS,
+  BOM_EDGE_HEADERS,
+  BOM_HARDWARE_HEADERS,
+  BOM_PANEL_HEADERS,
+  EDGE_FACE_BOTTOM,
+  EDGE_FACE_LEFT,
+  EDGE_FACE_RIGHT,
+  EDGE_FACE_TOP,
+  getQuoteTerms,
+  PDF_THEME,
+  PRICING,
+  QUOTATION_HEADERS,
+  QUOTE_VALIDITY_DAYS,
+} from './constants';
+
+type ExportFormat = 'excel' | 'pdf';
 
 const Nesting = () => {
   const router = useRouter();
@@ -22,6 +41,7 @@ const Nesting = () => {
   const [isGeneratingBOM, setIsGeneratingBOM] = useState(false);
   const [isGeneratingQuote, setIsGeneratingQuote] = useState(false);
   const [isDownloadingXML, setIsDownloadingXML] = useState(false);
+  const [openDropdown, setOpenDropdown] = useState<'quotation' | 'bom' | null>(null);
   /** Synchronous guard — state updates are async, so rapid clicks could otherwise stack requests before re-render. */
   const xmlDownloadInFlightRef = useRef(false);
 
@@ -88,79 +108,379 @@ const Nesting = () => {
     return `${Math.round(value)} mm`;
   };
 
-  const handleGenerateBOM = async () => {
+  const buildMaterialPriceMap = (materials: any[]) => {
+    const priceMap: Record<string, number> = {};
+    materials.forEach((material) => {
+      priceMap[material.id] = parseFloat(
+        material.properties?.sell_price || material.sell_price || 0
+      );
+    });
+    return priceMap;
+  };
+
+  const formatCurrency = (num: number) =>
+    `Rs ${num.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
+  const fetchDesignDetails = async () => {
+    const response: any = await CommonService.get(API_ENDPOINT.GET_DESIGN_DETAILS(design_id));
+    return response.data;
+  };
+
+  const fetchNestingLayoutData = async () => {
+    try {
+      const response: any = await CommonService.put(
+        API_ENDPOINT.DOWNLOAD_NESTING_PDF(design_id) + `?version_id=${version_id}`,
+        { format: 'json' }
+      );
+      if (response?.data && !response.data.error) {
+        return response.data;
+      }
+    } catch (error) {
+      console.warn('Nesting layout data not available', error);
+    }
+    return [];
+  };
+
+  const fetchMaterialCatalog = async () => {
+    try {
+      const response: any = await CommonService.get(API_ENDPOINT.GET_MATERIAL);
+      if (response?.data?.results) {
+        return response.data.results;
+      }
+      if (Array.isArray(response?.data)) {
+        return response.data;
+      }
+    } catch (error) {
+      console.warn('Material catalog data not available', error);
+    }
+    return [];
+  };
+
+  const fetchOrganizationDetails = async () => {
+    try {
+      const response: any = await CommonService.get(API_ENDPOINT.GET_ORGANIZATION_DETAILS);
+      if (response.status === 200) {
+        return response.data;
+      }
+    } catch (error) {
+      console.warn('Failed to fetch organization details for quotation styling', error);
+    }
+    return null;
+  };
+
+  const normalizeEdgeFace = (edge: any) =>
+    typeof edge === 'object' && edge?.face
+      ? String(edge.face).toUpperCase()
+      : String(edge).toUpperCase();
+
+  const getQuoteMeta = () => {
+    const quoteNo = `QT/${new Date().getFullYear()}/${design_id.substring(0, 4).toUpperCase()}`;
+    const quoteDate = new Date()
+      .toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
+      .replace(/ /g, '-');
+    const validDate = new Date(Date.now() + QUOTE_VALIDITY_DAYS * 24 * 60 * 60 * 1000)
+      .toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
+      .replace(/ /g, '-');
+    return { quoteNo, quoteDate, validDate };
+  };
+
+  const getOrganizationDisplayData = (organizationDetails: any) => {
+    const companyName = organizationDetails?.company_name || 'BRAVENTO FURNITURE SOLUTIONS';
+    const companyAddress =
+      organizationDetails?.company_address ||
+      'Address: 123, Furniture Complex, S.G. Highway, Ahmedabad - 380015, Gujarat, India';
+    const contactLine = `Phone: ${organizationDetails?.company_phone || '+91 79 1234 5678'} | Email: ${
+      organizationDetails?.company_email || 'sales@bravento.com'
+    } | Website: ${organizationDetails?.company_website || 'www.bravento.com'}`;
+    const taxLine = `GSTIN: ${
+      organizationDetails?.company_gstin || '24XXXXX1234X1Z5'
+    } | PAN: ${organizationDetails?.company_pan || 'XXXXX1234X'}`;
+    return { companyName, companyAddress, contactLine, taxLine };
+  };
+
+  const countHardware = (partsList: any[]) => {
+    let minifixCamCount = 0;
+    let minifixDowelCount = 0;
+    let hingeCount = 0;
+
+    partsList.forEach((part: any) => {
+      if (!part.minifix_holes || part.minifix_holes.length === 0) return;
+      part.minifix_holes.forEach((hole: any) => {
+        const holeType = (hole.type || '').toUpperCase();
+        if (holeType === 'CAM') minifixCamCount++;
+        if (holeType === 'DOWEL' || holeType === 'MINIFIX DOWEL') minifixDowelCount++;
+        if (holeType === 'HINGE') hingeCount++;
+      });
+    });
+
+    return { minifixCamCount, minifixDowelCount, hingeCount };
+  };
+
+  const buildMergedPartsList = (layoutData: any[], sourceData: any[]) =>
+    (layoutData.length > 0 ? layoutData : sourceData).map((p: any) => {
+      const layoutUniqueId = p['Unique ID'] || p.unique_id || p.ID;
+      const reduxPart = sourceData.find(
+        (d: any) =>
+          d.id === p.id || d.id === p.ID || (d.unique_id && d.unique_id === layoutUniqueId)
+      );
+
+      let eBands = p.edgebands || [];
+      if (eBands.length === 0) {
+        const rEdge = reduxPart?.edgeBanding || reduxPart?.edgeband;
+        if (rEdge) {
+          eBands = [];
+          if (rEdge.left) eBands.push('LEFT');
+          if (rEdge.right) eBands.push('RIGHT');
+          if (rEdge.top) eBands.push('TOP');
+          if (rEdge.bottom) eBands.push('BOTTOM');
+          if (rEdge.front) eBands.push('LEFT');
+          if (rEdge.back) eBands.push('RIGHT');
+          eBands = [...new Set(eBands)];
+        }
+      }
+      return {
+        ...p,
+        unique_id: reduxPart?.unique_id || layoutUniqueId,
+        edgebands: eBands,
+      };
+    });
+
+  const downloadBOMPdf = (
+    design: any,
+    cuttingRows: any[],
+    panelRows: any[],
+    edgeRows: any[],
+    hardwareRows: any[],
+    totalMaterialCost: number,
+    totalEdgeCost: number
+  ) => {
+    const doc = new jsPDF({ orientation: 'landscape', unit: 'pt', format: 'a4' });
+    const totalLaborCost = Math.round(totalMaterialCost * PRICING.laborRate);
+    const estimatedCost = totalMaterialCost + totalEdgeCost + totalLaborCost;
+    const finalPrice = Math.round(estimatedCost * PRICING.markupMultiplier);
+    const leftMargin = 40;
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const printableWidth = pageWidth - leftMargin * 2;
+    const firstPageTop = 34;
+    const tableLineColor: [number, number, number] = [210, 210, 210];
+
+    doc.setFillColor(...PDF_THEME.titleColor);
+    doc.rect(leftMargin, firstPageTop, printableWidth * 0.68, 18, 'F');
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(15);
+    doc.text(
+      'BRAVENTO - Bill of Materials',
+      leftMargin + printableWidth * 0.34,
+      firstPageTop + 13,
+      {
+        align: 'center',
+      }
+    );
+    doc.setTextColor(0, 0, 0);
+
+    const metaStartY = firstPageTop + 24;
+    const metaRows = [
+      [
+        'Project ID:',
+        design.project_code || design.id || '-',
+        '',
+        'Project Name:',
+        design.design_name || '-',
+        '',
+        'Customer:',
+        design.customer_name || '-',
+      ],
+      [
+        'Date:',
+        new Date(design.created_at || Date.now()).toLocaleDateString('en-GB'),
+        '',
+        'Designer:',
+        design.created_by?.username || '-',
+        '',
+        'Revision:',
+        '1',
+      ],
+      [
+        'Product Type:',
+        design.project_type || '-',
+        '',
+        'Finish:',
+        '-',
+        '',
+        'Status:',
+        design.status || '-',
+      ],
+      ['Project Description:', design?.description || 'Bespoke Cabinetry', '', '', '', '', '', ''],
+      ['Created Date:', new Date().toLocaleDateString('en-GB'), '', '', '', '', '', ''],
+    ];
+
+    autoTable(doc, {
+      startY: metaStartY,
+      body: metaRows,
+      theme: 'grid',
+      styles: {
+        font: 'helvetica',
+        fontSize: 9,
+        lineColor: tableLineColor,
+        lineWidth: 0.5,
+        cellPadding: { top: 3, right: 4, bottom: 3, left: 4 },
+      },
+      bodyStyles: { halign: 'left', valign: 'middle' },
+      columnStyles: {
+        0: { fontStyle: 'bold', cellWidth: 78 },
+        1: { cellWidth: 95 },
+        2: { cellWidth: 12 },
+        3: { fontStyle: 'bold', cellWidth: 78 },
+        4: { cellWidth: 95 },
+        5: { cellWidth: 12 },
+        6: { fontStyle: 'bold', cellWidth: 78 },
+        7: { cellWidth: 95 },
+      },
+      margin: { left: leftMargin },
+    });
+
+    const costHeaderY = ((doc as any).lastAutoTable?.finalY || metaStartY + 90) + 10;
+    doc.setFillColor(...PDF_THEME.titleColor);
+    doc.rect(leftMargin, costHeaderY, printableWidth * 0.68, 18, 'F');
+    doc.setTextColor(255, 255, 255);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(13);
+    doc.text('Cost Summary', leftMargin + printableWidth * 0.34, costHeaderY + 13, {
+      align: 'center',
+    });
+    doc.setTextColor(0, 0, 0);
+
+    autoTable(doc, {
+      startY: costHeaderY + 18,
+      body: [
+        [
+          'Total Material Cost:',
+          `${Math.round(totalMaterialCost)} Rs`,
+          'Total Edge Band Cost:',
+          `${totalEdgeCost.toFixed(2)} Rs`,
+          'Total Labor Cost:',
+          `${totalLaborCost} Rs`,
+        ],
+        ['Total Hardware Cost:', '-', 'Total Hardware Margin:', '-', 'Total Glass Cost:', '-'],
+        [
+          'Estimated Cost:',
+          `${estimatedCost.toFixed(3)} Rs`,
+          'Markup/Margin:',
+          '50%',
+          'Final Selling Price:',
+          `${finalPrice} Rs`,
+        ],
+      ],
+      theme: 'grid',
+      styles: {
+        font: 'helvetica',
+        fontSize: 9.5,
+        lineColor: tableLineColor,
+        lineWidth: 0.5,
+        cellPadding: { top: 3, right: 4, bottom: 3, left: 4 },
+      },
+      bodyStyles: { halign: 'left' },
+      columnStyles: {
+        0: { fontStyle: 'bold', cellWidth: 90 },
+        1: { cellWidth: 95 },
+        2: { fontStyle: 'bold', cellWidth: 98 },
+        3: { cellWidth: 95 },
+        4: { fontStyle: 'bold', cellWidth: 92 },
+        5: { cellWidth: 95 },
+      },
+      margin: { left: leftMargin },
+    });
+
+    doc.addPage();
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(13);
+    doc.text('Cutting List', 40, 32);
+    autoTable(doc, {
+      startY: 48,
+      head: [BOM_CUTTING_HEADERS],
+      body: cuttingRows,
+      theme: 'grid',
+      styles: { font: 'helvetica', fontSize: 8, lineColor: PDF_THEME.border },
+      headStyles: {
+        fillColor: PDF_THEME.tableHeaderBg,
+        textColor: PDF_THEME.tableHeaderText,
+        halign: 'center',
+      },
+      alternateRowStyles: { fillColor: PDF_THEME.lightGray },
+      columnStyles: { 1: { cellWidth: 105 }, 2: { cellWidth: 92 }, 3: { cellWidth: 65 } },
+    });
+
+    doc.addPage();
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(13);
+    doc.text('Panel Details', 40, 32);
+    autoTable(doc, {
+      startY: 48,
+      head: [BOM_PANEL_HEADERS],
+      body: panelRows,
+      theme: 'grid',
+      styles: { font: 'helvetica', fontSize: 8, lineColor: PDF_THEME.border },
+      headStyles: {
+        fillColor: PDF_THEME.tableHeaderBg,
+        textColor: PDF_THEME.tableHeaderText,
+        halign: 'center',
+      },
+      alternateRowStyles: { fillColor: PDF_THEME.lightGray },
+    });
+
+    doc.addPage();
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(13);
+    doc.text('Edge Banding', 40, 32);
+    autoTable(doc, {
+      startY: 48,
+      head: [BOM_EDGE_HEADERS],
+      body: edgeRows,
+      theme: 'grid',
+      styles: { font: 'helvetica', fontSize: 8, lineColor: PDF_THEME.border },
+      headStyles: {
+        fillColor: PDF_THEME.tableHeaderBg,
+        textColor: PDF_THEME.tableHeaderText,
+        halign: 'center',
+      },
+      alternateRowStyles: { fillColor: PDF_THEME.lightGray },
+    });
+
+    doc.addPage();
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(13);
+    doc.text('Hardware List', 40, 32);
+    autoTable(doc, {
+      startY: 48,
+      head: [BOM_HARDWARE_HEADERS],
+      body: hardwareRows,
+      theme: 'grid',
+      styles: { font: 'helvetica', fontSize: 8, lineColor: PDF_THEME.border },
+      headStyles: {
+        fillColor: PDF_THEME.tableHeaderBg,
+        textColor: PDF_THEME.tableHeaderText,
+        halign: 'center',
+      },
+      alternateRowStyles: { fillColor: PDF_THEME.lightGray },
+    });
+
+    doc.save(`BOM_${design.design_name || 'Design'}.pdf`);
+  };
+
+  const handleGenerateBOM = async (format: ExportFormat = 'excel') => {
     if (isGeneratingBOM) return;
     setIsGeneratingBOM(true);
     showFullScreenLoader('Generating BOM data...');
     try {
-      // 1. Fetch Design Details
-      const designResponse: any = await CommonService.get(
-        API_ENDPOINT.GET_DESIGN_DETAILS(design_id)
-      );
-      const design = designResponse.data;
+      const design = await fetchDesignDetails();
+      const layoutData = await fetchNestingLayoutData();
+      const allMaterials = await fetchMaterialCatalog();
 
-      // 2. Fetch Nesting Data (Layout with holes/grooves/edgebands)
-      let layoutData: any[] = [];
-      try {
-        const layoutResponse: any = await CommonService.put(
-          API_ENDPOINT.DOWNLOAD_NESTING_PDF(design_id) + `?version_id=${version_id}`,
-          { format: 'json' }
-        );
-        if (layoutResponse?.data && !layoutResponse.data.error) {
-          layoutData = layoutResponse.data;
-        }
-      } catch (e) {
-        console.warn('Nesting layout data not available', e);
-      }
-
-      // 3. Fetch Materials for Costing
-      let allMaterials: any[] = [];
-      try {
-        const materialResponse: any = await CommonService.get(API_ENDPOINT.GET_MATERIAL);
-        if (materialResponse?.data?.results) {
-          allMaterials = materialResponse.data.results;
-        } else if (Array.isArray(materialResponse?.data)) {
-          allMaterials = materialResponse.data;
-        }
-      } catch (e) {
-        console.warn('Material catalog data not available', e);
-      }
-
-      const materialPriceMap: Record<string, number> = {};
-      allMaterials.forEach((m) => {
-        materialPriceMap[m.id] = parseFloat(m.properties?.sell_price || m.sell_price || 0);
-      });
+      const materialPriceMap = buildMaterialPriceMap(allMaterials);
 
       // Merge data and layoutData to ensure edgebands are caught if they exist in Redux
-      const partsList = (layoutData.length > 0 ? layoutData : data).map((p: any) => {
-        // The API might return "Unique ID" or "Unique_ID" or "ID" depending on the table.
-        const layoutUniqueId = p['Unique ID'] || p.unique_id || p.ID;
-
-        const reduxPart = data.find(
-          (d: any) =>
-            d.id === p.id || d.id === p.ID || (d.unique_id && d.unique_id === layoutUniqueId)
-        );
-
-        let eBands = p.edgebands || [];
-        if (eBands.length === 0) {
-          const rEdge = reduxPart?.edgeBanding || reduxPart?.edgeband;
-          if (rEdge) {
-            eBands = [];
-            if (rEdge.left) eBands.push('LEFT');
-            if (rEdge.right) eBands.push('RIGHT');
-            if (rEdge.top) eBands.push('TOP');
-            if (rEdge.bottom) eBands.push('BOTTOM');
-            if (rEdge.front) eBands.push('LEFT'); // front = left face
-            if (rEdge.back) eBands.push('RIGHT'); // back = right face
-            eBands = [...new Set(eBands)]; // deduplicate
-          }
-        }
-        return {
-          ...p,
-          unique_id: reduxPart?.unique_id || layoutUniqueId,
-          edgebands: eBands,
-        };
-      });
+      const partsList = buildMergedPartsList(layoutData, data);
 
       const wb = XLSX.utils.book_new();
 
@@ -184,28 +504,7 @@ const Nesting = () => {
       const boldStyle = { font: { bold: true } };
 
       // (Summary sheet will be generated at the end to include total costs)      // --- Sheet 2: Cutting List ---
-      // Build a map of id -> name for parent cabinet lookup
-      const parentNameMap: Record<string, string> = {};
-      data.forEach((obj: any) => {
-        parentNameMap[obj.id] = obj.name || obj.type || obj.id;
-      });
 
-      const cuttingHeader = [
-        'Part ID',
-        'Part Name',
-        'Cabinet/Assembly',
-        'Material',
-        'Thickness',
-        'Length',
-        'Width',
-        'Qty',
-        'Area (sqm)',
-        'Grain Dir',
-        'Edge L1',
-        'Edge L2',
-        'Edge W1',
-        'Edge W2',
-      ];
       const cuttingRows = partsList.map((part: any) => {
         const h = parseFloat(part.height || part?.dimensions?.height || 0);
         const w = parseFloat(part.width || part?.dimensions?.width || 0);
@@ -222,18 +521,11 @@ const Nesting = () => {
         if (part.edgebands && part.edgebands.length > 0) {
           part.edgebands.forEach((e: any) => {
             // Handle both object and string formats
-            let eStr =
-              typeof e === 'object' && e?.face
-                ? String(e.face).toUpperCase()
-                : String(e).toUpperCase();
-            if (eStr === 'LEFT' || eStr === 'L' || eStr === '5' || eStr === 'FRONT')
-              edgeL1 = 'PVC 1mm';
-            else if (eStr === 'RIGHT' || eStr === 'R' || eStr === '3' || eStr === 'BACK')
-              edgeL2 = 'PVC 1mm';
-            else if (eStr === 'TOP' || eStr === 'T' || eStr === '4' || eStr === '1')
-              edgeW1 = 'PVC 1mm';
-            else if (eStr === 'BOTTOM' || eStr === 'B' || eStr === '2' || eStr === '6')
-              edgeW2 = 'PVC 1mm';
+            const edgeFace = normalizeEdgeFace(e);
+            if (EDGE_FACE_LEFT.includes(edgeFace)) edgeL1 = 'PVC 1mm';
+            else if (EDGE_FACE_RIGHT.includes(edgeFace)) edgeL2 = 'PVC 1mm';
+            else if (EDGE_FACE_TOP.includes(edgeFace)) edgeW1 = 'PVC 1mm';
+            else if (EDGE_FACE_BOTTOM.includes(edgeFace)) edgeW2 = 'PVC 1mm';
           });
         }
         return [
@@ -256,7 +548,7 @@ const Nesting = () => {
       const cuttingSheetData = [
         [{ v: 'CUTTING LIST FOR BEAM SAW', t: 's', s: titleStyle }, ...Array(13).fill('')],
         [],
-        cuttingHeader.map((h) => ({ v: h, s: headerStyle })),
+        BOM_CUTTING_HEADERS.map((h) => ({ v: h, s: headerStyle })),
         ...cuttingRows,
       ];
       const wsCutting = XLSX.utils.aoa_to_sheet(cuttingSheetData);
@@ -306,20 +598,10 @@ const Nesting = () => {
         thicknessMap[t].count += 1;
         if (cost > thicknessMap[t].costPerSheet) thicknessMap[t].costPerSheet = cost;
       });
-      const panelHeader = [
-        'Material Type',
-        'Thickness',
-        'Sheet Size',
-        'Sheets Required',
-        'Sheet Cost',
-        'Wastage %',
-        'Total Material Cost',
-        'Total Labor Cost',
-      ];
       let totalMaterialCost = 0;
       const panelRows = Object.keys(thicknessMap).map((t) => {
-        const sheetsReq = Math.ceil(thicknessMap[t].area / (2.44 * 1.22));
-        const sheetCost = thicknessMap[t].costPerSheet || 1500; // default 1500 if 0
+        const sheetsReq = Math.ceil(thicknessMap[t].area / PRICING.sheetAreaSqm);
+        const sheetCost = thicknessMap[t].costPerSheet || PRICING.defaultSheetCost; // default if 0
         const totalCost = sheetsReq * sheetCost;
         totalMaterialCost += totalCost;
         return [
@@ -330,13 +612,13 @@ const Nesting = () => {
           sheetCost,
           '10%',
           totalCost,
-          Math.round(totalCost * 0.2),
+          Math.round(totalCost * PRICING.laborRate),
         ]; // 20% labor guess
       });
       const panelSheetData = [
         [{ v: 'PANEL DETAILS & SHEET OPTIMIZATION', t: 's', s: titleStyle }, ...Array(7).fill('')],
         [],
-        panelHeader.map((h) => ({ v: h, s: headerStyle })),
+        BOM_PANEL_HEADERS.map((h) => ({ v: h, s: headerStyle })),
         ...panelRows,
       ];
       const wsPanel = XLSX.utils.aoa_to_sheet(panelSheetData);
@@ -355,16 +637,6 @@ const Nesting = () => {
       XLSX.utils.book_append_sheet(wb, wsPanel, 'Panel Details');
 
       // --- Sheet 4: Edge Banding ---
-      const edgeHeader = [
-        'Part ID',
-        'Part Name',
-        'Edge Type',
-        'Thickness',
-        'Total Length (m)',
-        'Rate/m',
-        'Total Cost',
-        'Remarks',
-      ];
       const edgeRows: any[] = [];
       let totalEdgeCost = 0;
       cuttingRows.forEach((row: any) => {
@@ -377,7 +649,7 @@ const Nesting = () => {
         if (row[13] !== 'None') len += w;
 
         if (len > 0) {
-          const edgeCost = len * 25; // assumed 25 per meter
+          const edgeCost = len * PRICING.edgeRatePerMeter;
           totalEdgeCost += edgeCost;
           edgeRows.push([
             row[0],
@@ -385,7 +657,7 @@ const Nesting = () => {
             'PVC 1mm',
             1,
             len.toFixed(2),
-            '25',
+            String(PRICING.edgeRatePerMeter),
             edgeCost.toFixed(2),
             '-',
           ]);
@@ -397,7 +669,7 @@ const Nesting = () => {
       const edgeSheetData = [
         [{ v: 'EDGE BANDING DETAILS', t: 's', s: titleStyle }, ...Array(7).fill('')],
         [],
-        edgeHeader.map((h) => ({ v: h, s: headerStyle })),
+        BOM_EDGE_HEADERS.map((h) => ({ v: h, s: headerStyle })),
         ...edgeRows,
       ];
       const wsEdge = XLSX.utils.aoa_to_sheet(edgeSheetData);
@@ -416,31 +688,7 @@ const Nesting = () => {
       XLSX.utils.book_append_sheet(wb, wsEdge, 'Edge Banding');
 
       // --- Sheet 5: Hardware List ---
-      let minifixCamCount = 0;
-      let minifixDowelCount = 0;
-      let hingeCount = 0;
-
-      partsList.forEach((part: any) => {
-        if (part.minifix_holes && part.minifix_holes.length > 0) {
-          part.minifix_holes.forEach((h: any) => {
-            const type = (h.type || '').toUpperCase();
-            if (type === 'CAM') minifixCamCount++;
-            if (type === 'DOWEL' || type === 'MINIFIX DOWEL') minifixDowelCount++;
-            if (type === 'HINGE') hingeCount++;
-          });
-        }
-      });
-      const hardwareHeader = [
-        'Hardware ID',
-        'Item Name',
-        'Specification',
-        'Brand',
-        'Qty',
-        'Unit Price',
-        'Installation',
-        'Total Cost',
-        'Supplier',
-      ];
+      const { minifixCamCount, minifixDowelCount, hingeCount } = countHardware(partsList);
       const hardwareRows = [
         [
           'HW-001',
@@ -479,7 +727,7 @@ const Nesting = () => {
       const hardwareSheetData = [
         [{ v: 'HARDWARE & FITTINGS', t: 's', s: titleStyle }, ...Array(8).fill('')],
         [],
-        hardwareHeader.map((h) => ({ v: h, s: headerStyle })),
+        BOM_HARDWARE_HEADERS.map((h) => ({ v: h, s: headerStyle })),
         ...hardwareRows,
       ];
       const wsHardware = XLSX.utils.aoa_to_sheet(hardwareSheetData);
@@ -499,9 +747,9 @@ const Nesting = () => {
       XLSX.utils.book_append_sheet(wb, wsHardware, 'Hardware List');
 
       // --- Sheet 1: Project Summary (Generated last to use totals) ---
-      const totalLaborCost = Math.round(totalMaterialCost * 0.2); // 20% labor guess
+      const totalLaborCost = Math.round(totalMaterialCost * PRICING.laborRate); // 20% labor guess
       const estCost = totalMaterialCost + totalEdgeCost + totalLaborCost;
-      const finalPrice = Math.round(estCost * 1.5); // 50% margin guess
+      const finalPrice = Math.round(estCost * PRICING.markupMultiplier); // 50% margin guess
 
       const summaryData: any[] = [
         [{ v: 'BRAVENTO - Bill of Materials', t: 's', s: titleStyle }, '', '', '', '', '', '', ''],
@@ -612,7 +860,19 @@ const Nesting = () => {
       const sheetName = wb.SheetNames.pop()!;
       wb.SheetNames.unshift(sheetName);
 
-      XLSX.writeFile(wb, `BOM_${design.design_name || 'Design'}.xlsx`);
+      if (format === 'excel') {
+        XLSX.writeFile(wb, `BOM_${design.design_name || 'Design'}.xlsx`);
+      } else {
+        downloadBOMPdf(
+          design,
+          cuttingRows,
+          panelRows,
+          edgeRows,
+          hardwareRows,
+          totalMaterialCost,
+          totalEdgeCost
+        );
+      }
     } catch (err) {
       console.error(err);
       alert('Failed to generate BOM Data.');
@@ -622,86 +882,249 @@ const Nesting = () => {
     }
   };
 
-  const handleGenerateQuotation = async () => {
+  const downloadQuotationPdf = (
+    design: any,
+    organizationDetails: any,
+    quoteRows: any[],
+    subTotal: number,
+    cgst: number,
+    sgst: number,
+    grandTotal: number,
+    numberToWords: (num: number) => string
+  ) => {
+    const doc = new jsPDF({ unit: 'pt', format: 'a4' });
+    const pageHeight = doc.internal.pageSize.getHeight();
+    const leftMargin = 40;
+    const rightMargin = 40;
+    const contentWidth = doc.internal.pageSize.getWidth() - leftMargin - rightMargin;
+    const bottomMargin = 36;
+    let cursorY = 36;
+
+    const ensureSpace = (neededHeight: number, nextPageY = 40) => {
+      if (cursorY + neededHeight > pageHeight - bottomMargin) {
+        doc.addPage();
+        cursorY = nextPageY;
+      }
+    };
+
+    const { companyName, companyAddress, contactLine, taxLine } =
+      getOrganizationDisplayData(organizationDetails);
+    const { quoteNo, quoteDate, validDate } = getQuoteMeta();
+
+    // Header block
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(...PDF_THEME.titleColor);
+    doc.setFontSize(14);
+    doc.text(companyName, 297, cursorY, { align: 'center' });
+    cursorY += 16;
+    doc.setTextColor(0, 0, 0);
+    doc.setFont('helvetica', 'italic');
+    doc.setFontSize(10);
+    doc.text('Custom Furniture Design & Manufacturing', 297, cursorY, { align: 'center' });
+    cursorY += 14;
+    doc.setFont('helvetica', 'normal');
+    doc.text(companyAddress, 297, cursorY, { align: 'center' });
+    cursorY += 14;
+    doc.text(contactLine, 297, cursorY, { align: 'center' });
+    cursorY += 14;
+    doc.setFont('helvetica', 'bold');
+    doc.text(taxLine, 297, cursorY, { align: 'center' });
+    cursorY += 10;
+
+    doc.setFillColor(...PDF_THEME.titleColor);
+    doc.rect(leftMargin, cursorY, contentWidth, 20, 'F');
+    doc.setTextColor(255, 255, 255);
+    doc.setFont('helvetica', 'bold');
+    doc.text('QUOTATION', 297, cursorY + 14, { align: 'center' });
+    doc.setTextColor(0, 0, 0);
+    cursorY += 30;
+
+    // Info block
+    autoTable(doc, {
+      startY: cursorY,
+      theme: 'grid',
+      styles: { font: 'helvetica', fontSize: 9, lineColor: PDF_THEME.border },
+      body: [
+        ['Quotation No:', quoteNo, '', '', 'Customer Name:', design.customer_name || 'Customer'],
+        ['Date:', quoteDate, '', '', 'Company:', design.customer_company || '-'],
+        ['Valid Till:', validDate, '', '', 'Address:', design.customer_address || '-'],
+        [
+          'Project ID:',
+          design.project_code || design.id,
+          '',
+          '',
+          'GSTIN:',
+          design.customer_gstin || '-',
+        ],
+        ['', '', '', '', 'Contact:', design.customer_contact || '-'],
+        ['', '', '', '', 'Email:', design.customer_email || '-'],
+      ],
+      columnStyles: { 0: { fontStyle: 'bold' }, 4: { fontStyle: 'bold' } },
+      margin: { left: leftMargin, right: rightMargin },
+    });
+    cursorY = ((doc as any).lastAutoTable?.finalY || cursorY) + 8;
+
+    autoTable(doc, {
+      startY: cursorY,
+      theme: 'grid',
+      styles: { font: 'helvetica', fontSize: 9, lineColor: PDF_THEME.border, fontStyle: 'bold' },
+      body: [[`PROJECT: ${design.project_type || 'Custom Furniture'} - ${design.design_name}`]],
+      margin: { left: leftMargin, right: rightMargin },
+    });
+    cursorY = ((doc as any).lastAutoTable?.finalY || cursorY) + 10;
+
+    // Item table
+    autoTable(doc, {
+      startY: cursorY,
+      head: [QUOTATION_HEADERS],
+      body: quoteRows.map((row) => row.slice(0, 9)),
+      theme: 'grid',
+      styles: { font: 'helvetica', fontSize: 8.8, cellPadding: 3, lineColor: PDF_THEME.border },
+      headStyles: {
+        fillColor: PDF_THEME.tableHeaderBg,
+        textColor: PDF_THEME.tableHeaderText,
+        halign: 'center',
+      },
+      alternateRowStyles: { fillColor: PDF_THEME.lightGray },
+      columnStyles: {
+        0: { cellWidth: 32, halign: 'center' },
+        1: { cellWidth: 145, halign: 'left' },
+        2: { cellWidth: 70, halign: 'center' },
+        3: { cellWidth: 60, halign: 'left' },
+        4: { cellWidth: 34, halign: 'center' },
+        5: { cellWidth: 55, halign: 'right' },
+        6: { cellWidth: 62, halign: 'right' },
+        7: { cellWidth: 34, halign: 'center' },
+        8: { cellWidth: 30, halign: 'center' },
+      },
+      margin: { left: leftMargin, right: rightMargin },
+    });
+    cursorY = ((doc as any).lastAutoTable?.finalY || cursorY) + 10;
+
+    // Totals
+    const roundedTotal = subTotal + cgst + sgst;
+    const roundOff = Math.round(roundedTotal) - roundedTotal;
+    autoTable(doc, {
+      startY: cursorY,
+      head: [['Summary', 'Value']],
+      body: [
+        ['SUBTOTAL (Before GST)', formatCurrency(subTotal)],
+        ['Add: CGST @ 9%', formatCurrency(cgst)],
+        ['Add: SGST @ 9%', formatCurrency(sgst)],
+        ['Round Off', formatCurrency(roundOff)],
+        ['GRAND TOTAL (Inclusive of all taxes)', formatCurrency(grandTotal)],
+      ],
+      theme: 'grid',
+      styles: { font: 'helvetica', fontSize: 9, lineColor: PDF_THEME.border },
+      headStyles: { fillColor: PDF_THEME.titleColor, textColor: PDF_THEME.tableHeaderText },
+      bodyStyles: { halign: 'right' },
+      columnStyles: { 0: { halign: 'left', fontStyle: 'bold' } },
+      margin: { left: leftMargin, right: rightMargin },
+    });
+    cursorY = ((doc as any).lastAutoTable?.finalY || cursorY) + 16;
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'bold');
+    ensureSpace(20, 40);
+    doc.text(`Amount in Words: ${numberToWords(grandTotal)}`, leftMargin, cursorY);
+    cursorY += 22;
+
+    // Terms section
+    ensureSpace(70, 40);
+    doc.setFontSize(11);
+    doc.setFont('helvetica', 'bold');
+    doc.text('TERMS AND CONDITIONS', leftMargin, cursorY);
+    cursorY += 18;
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(9);
+    const terms = getQuoteTerms();
+    terms.forEach((line) => {
+      const text = line === '' ? '' : line;
+      if (text === '') {
+        cursorY += 6;
+        return;
+      }
+      const wrapped = doc.splitTextToSize(text, contentWidth);
+      ensureSpace(wrapped.length * 12 + 2, 40);
+      const isHeading = /^[0-9]+\./.test(line);
+      if (isHeading) {
+        doc.setFont('helvetica', 'bold');
+      } else {
+        doc.setFont('helvetica', 'normal');
+      }
+      doc.text(wrapped, leftMargin, cursorY);
+      cursorY += wrapped.length * 12 + 2;
+    });
+
+    // Banking section
+    cursorY += 8;
+    ensureSpace(130, 40);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(11);
+    doc.text('Banking Details', leftMargin, cursorY);
+    cursorY += 16;
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(9);
+    const bankingLines = [
+      `Bank Name: ${organizationDetails?.bank_name || 'HDFC Bank Ltd.'}`,
+      `Account Name: ${organizationDetails?.account_name || 'Bravento Furniture Solutions'}`,
+      `Account Number: ${organizationDetails?.account_number || '50200012345678'}`,
+      `Account Type: ${organizationDetails?.account_type || 'Current Account'}`,
+      `IFSC Code: ${organizationDetails?.ifsc_code || 'HDFC0001234'}`,
+      `Branch: ${organizationDetails?.branch_name || 'S.G. Highway, Ahmedabad - 380015'}`,
+      `UPI ID: ${organizationDetails?.upi_id || 'bravento@hdfcbank'}`,
+    ];
+    bankingLines.forEach((line) => {
+      ensureSpace(14, 40);
+      doc.text(line, leftMargin, cursorY);
+      cursorY += 14;
+    });
+    cursorY += 10;
+
+    // Mandatory terminal footer block: NOTE + signature + thank-you
+    const signatureX = doc.internal.pageSize.getWidth() - 215;
+    const footerCompany = `For ${companyName}`;
+    const footerDate = `Date: ${quoteDate}`;
+    const thankYou =
+      'Thank you for considering Bravento Furniture Solutions. We look forward to transforming your space!';
+    const noteLine =
+      'NOTE: Please share your purchase order to confirm this quotation. Our team will contact you for final measurements and design approval.';
+    ensureSpace(110, 40);
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(10);
+    doc.text(noteLine, leftMargin, cursorY);
+    cursorY += 24;
+    doc.setFont('helvetica', 'bold');
+    doc.text(footerCompany, signatureX, cursorY);
+    cursorY += 34;
+    doc.setFont('helvetica', 'normal');
+    doc.text('____________________', signatureX, cursorY);
+    cursorY += 16;
+    doc.text('Authorized Signatory', signatureX, cursorY);
+    cursorY += 14;
+    doc.text(footerDate, signatureX, cursorY);
+    cursorY += 18;
+    doc.setFont('helvetica', 'italic');
+    doc.setFontSize(10.5);
+    doc.text(thankYou, 297, cursorY, { align: 'center' });
+
+    doc.save(`Quotation_${design.design_name || 'Design'}.pdf`);
+  };
+
+  const handleGenerateQuotation = async (format: ExportFormat = 'excel') => {
     if (isGeneratingQuote) return;
     setIsGeneratingQuote(true);
     showFullScreenLoader('Generating quotation...');
     try {
-      // 0. Fetch Organization Details for Company/Banking Info
-      let organizationDetails: any = null;
-      try {
-        const orgResp: any = await CommonService.get(API_ENDPOINT.GET_ORGANIZATION_DETAILS);
-        if (orgResp.status === 200) organizationDetails = orgResp.data;
-      } catch (e) {
-        console.warn('Failed to fetch organization details for quotation styling', e);
-      }
+      const organizationDetails = await fetchOrganizationDetails();
+      const design = await fetchDesignDetails();
+      const layoutData = await fetchNestingLayoutData();
+      const allMaterials = await fetchMaterialCatalog();
 
-      // 1. Fetch Design Details
-      const designResponse: any = await CommonService.get(
-        API_ENDPOINT.GET_DESIGN_DETAILS(design_id)
-      );
-      const design = designResponse.data;
-
-      // 2. Fetch Nesting Data
-      let layoutData: any[] = [];
-      try {
-        const layoutResponse: any = await CommonService.put(
-          API_ENDPOINT.DOWNLOAD_NESTING_PDF(design_id) + `?version_id=${version_id}`,
-          { format: 'json' }
-        );
-        if (layoutResponse?.data && !layoutResponse.data.error) {
-          layoutData = layoutResponse.data;
-        }
-      } catch (e) {
-        console.warn('Nesting layout data not available', e);
-      }
-
-      // 3. Fetch Materials
-      let allMaterials: any[] = [];
-      try {
-        const materialResponse: any = await CommonService.get(API_ENDPOINT.GET_MATERIAL);
-        if (materialResponse?.data?.results) {
-          allMaterials = materialResponse.data.results;
-        } else if (Array.isArray(materialResponse?.data)) {
-          allMaterials = materialResponse.data;
-        }
-      } catch (e) {
-        console.warn('Material catalog data not available', e);
-      }
-
-      const materialPriceMap: Record<string, number> = {};
-      allMaterials.forEach((m) => {
-        materialPriceMap[m.id] = parseFloat(m.properties?.sell_price || m.sell_price || 0);
-      });
+      const materialPriceMap = buildMaterialPriceMap(allMaterials);
 
       // 4. Merge Data (from BOM logic)
-      const partsList = (layoutData.length > 0 ? layoutData : data).map((p: any) => {
-        const layoutUniqueId = p['Unique ID'] || p.unique_id || p.ID;
-        const reduxPart = data.find(
-          (d: any) =>
-            d.id === p.id || d.id === p.ID || (d.unique_id && d.unique_id === layoutUniqueId)
-        );
-
-        let eBands = p.edgebands || [];
-        if (eBands.length === 0) {
-          const rEdge = reduxPart?.edgeBanding || reduxPart?.edgeband;
-          if (rEdge) {
-            eBands = [];
-            if (rEdge.left) eBands.push('LEFT');
-            if (rEdge.right) eBands.push('RIGHT');
-            if (rEdge.top) eBands.push('TOP');
-            if (rEdge.bottom) eBands.push('BOTTOM');
-            if (rEdge.front) eBands.push('LEFT');
-            if (rEdge.back) eBands.push('RIGHT');
-            eBands = [...new Set(eBands)];
-          }
-        }
-        return {
-          ...p,
-          unique_id: reduxPart?.unique_id || layoutUniqueId,
-          edgebands: eBands,
-        };
-      });
+      const partsList = buildMergedPartsList(layoutData, data);
 
       // 5. Group Parts by Assembly (Unit)
       const unitsMap: Record<string, any> = {};
@@ -765,11 +1188,11 @@ const Nesting = () => {
         const mat =
           rPart.material && Array.isArray(rPart.material) ? rPart.material[0] : rPart.material;
         const matId = mat?.id || mat;
-        const sheetCost = materialPriceMap[matId] || 1500;
+        const sheetCost = materialPriceMap[matId] || PRICING.defaultSheetCost;
 
         const areaReq = (h * w) / 1000000;
         // approx cost per sqm = sheetCost / (2.44*1.22)
-        const costPerSqm = sheetCost / 2.9768;
+        const costPerSqm = sheetCost / PRICING.sheetAreaSqm;
         unit.totalMaterialCost += areaReq * costPerSqm * (part.quantity || 1);
 
         // Edgebanding cost
@@ -778,17 +1201,14 @@ const Nesting = () => {
         const eW = w / 1000;
         if (part.edgebands && part.edgebands.length > 0) {
           part.edgebands.forEach((e: any) => {
-            let eStr =
-              typeof e === 'object' && e?.face
-                ? String(e.face).toUpperCase()
-                : String(e).toUpperCase();
-            if (['LEFT', 'L', '5', 'FRONT'].includes(eStr)) len += eH;
-            if (['RIGHT', 'R', '3', 'BACK'].includes(eStr)) len += eH;
-            if (['TOP', 'T', '4', '1'].includes(eStr)) len += eW;
-            if (['BOTTOM', 'B', '2', '6'].includes(eStr)) len += eW;
+            const edgeFace = normalizeEdgeFace(e);
+            if (EDGE_FACE_LEFT.includes(edgeFace)) len += eH;
+            if (EDGE_FACE_RIGHT.includes(edgeFace)) len += eH;
+            if (EDGE_FACE_TOP.includes(edgeFace)) len += eW;
+            if (EDGE_FACE_BOTTOM.includes(edgeFace)) len += eW;
           });
         }
-        unit.totalEdgeCost += len * 25; // 25 rs per meter
+        unit.totalEdgeCost += len * PRICING.edgeRatePerMeter;
 
         // Hardware
         if (part.minifix_holes && part.minifix_holes.length > 0) {
@@ -808,21 +1228,15 @@ const Nesting = () => {
       let srNo = 1;
       let subTotal = 0;
 
-      const formatCurrency = (num: number) => {
-        return (
-          '₹' + num.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
-        );
-      };
-
       Object.values(unitsMap).forEach((u) => {
         // Add hardware cost
         const hwCost = u.hingeCount * 150 + u.camCount * 20 + u.dowelCount * 10;
         const rawCost = u.totalMaterialCost + u.totalEdgeCost + hwCost;
-        const laborCost = rawCost * 0.2; // 20% labor
+        const laborCost = rawCost * PRICING.laborRate;
         const estCost = rawCost + laborCost;
 
-        let ratePerUnit = Math.round(estCost * 1.5); // 50% markup
-        if (ratePerUnit < 1000) ratePerUnit = 1500; // minimum boundary
+        let ratePerUnit = Math.round(estCost * PRICING.markupMultiplier);
+        if (ratePerUnit < PRICING.minRateThreshold) ratePerUnit = PRICING.minRateValue;
 
         const amount = ratePerUnit * u.qty;
         subTotal += amount;
@@ -854,7 +1268,7 @@ const Nesting = () => {
       });
 
       // Add standard items like installation
-      const installationCost = Math.round(subTotal * 0.05); // 5% installation
+      const installationCost = Math.round(subTotal * PRICING.installationRate);
       quoteRows.push([
         srNo++,
         'Installation & Fitting Charges\n(On-site assembly, alignment, testing)',
@@ -868,8 +1282,8 @@ const Nesting = () => {
       ]);
       subTotal += installationCost;
 
-      const cgst = subTotal * 0.09;
-      const sgst = subTotal * 0.09;
+      const cgst = subTotal * PRICING.gstRate;
+      const sgst = subTotal * PRICING.gstRate;
       const grandTotal = Math.round(subTotal + cgst + sgst);
 
       const numberToWords = (num: number) => {
@@ -1044,31 +1458,8 @@ const Nesting = () => {
         alignment: { horizontal: 'center', vertical: 'center', wrapText: true },
       };
 
-      const companyName = organizationDetails?.company_name || 'BRAVENTO FURNITURE SOLUTIONS';
-      const companyAddress =
-        organizationDetails?.company_address ||
-        'Address: 123, Furniture Complex, S.G. Highway, Ahmedabad - 380015, Gujarat, India';
-
-      let contactLine = '';
-      if (organizationDetails?.company_phone)
-        contactLine += `Phone: ${organizationDetails.company_phone} | `;
-      else contactLine += `Phone: +91 79 1234 5678 | `;
-
-      if (organizationDetails?.company_email)
-        contactLine += `Email: ${organizationDetails.company_email} | `;
-      else contactLine += `Email: sales@bravento.com | `;
-
-      if (organizationDetails?.company_website)
-        contactLine += `Website: ${organizationDetails.company_website}`;
-      else contactLine += `Website: www.bravento.com`;
-
-      let taxLine = '';
-      if (organizationDetails?.company_gstin)
-        taxLine += `GSTIN: ${organizationDetails.company_gstin} | `;
-      else taxLine += `GSTIN: 24XXXXX1234X1Z5 | `;
-
-      if (organizationDetails?.company_pan) taxLine += `PAN: ${organizationDetails.company_pan}`;
-      else taxLine += `PAN: XXXXX1234X`;
+      const { companyName, companyAddress, contactLine, taxLine } =
+        getOrganizationDisplayData(organizationDetails);
 
       pushR([{ v: companyName, s: sH1C }]);
       pushR([{ v: 'Custom Furniture Design & Manufacturing', s: sH2C }]);
@@ -1080,13 +1471,7 @@ const Nesting = () => {
       pushR([]);
 
       // 2. Info Block
-      const quoteNo = `QT/${new Date().getFullYear()}/${design_id.substring(0, 4).toUpperCase()}`;
-      const quoteDate = new Date()
-        .toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
-        .replace(/ /g, '-');
-      const validDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
-        .toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
-        .replace(/ /g, '-');
+      const { quoteNo, quoteDate, validDate } = getQuoteMeta();
 
       pushR([
         { v: 'Quotation No:', s: sKey },
@@ -1147,17 +1532,7 @@ const Nesting = () => {
       pushR([]);
 
       // 3. Table Headers
-      pushR([
-        { v: 'Sr.', s: sTh },
-        { v: 'Unit/Component Description', s: sTh },
-        { v: 'Dimensions (L×W×H)', s: sTh },
-        { v: 'Material', s: sTh },
-        { v: 'Qty', s: sTh },
-        { v: 'Rate/Unit', s: sTh },
-        { v: 'Amount', s: sTh },
-        { v: 'HSN', s: sTh },
-        { v: 'GST%', s: sTh },
-      ]);
+      pushR(QUOTATION_HEADERS.map((header) => ({ v: header, s: sTh })));
 
       // 4. Table Rows
       const tblStart = qData.length; // Row index is 16 (0-indexed)
@@ -1510,7 +1885,20 @@ const Nesting = () => {
       for (let i = 0; i < quoteRows.length; i++) ws['!rows'][tblStart + i] = { hpx: 45 }; // multi-line cells
 
       XLSX.utils.book_append_sheet(wb, ws, 'Quotation');
-      XLSX.writeFile(wb, `Quotation_${design.design_name || 'Design'}.xlsx`);
+      if (format === 'excel') {
+        XLSX.writeFile(wb, `Quotation_${design.design_name || 'Design'}.xlsx`);
+      } else {
+        downloadQuotationPdf(
+          design,
+          organizationDetails,
+          quoteRows,
+          subTotal,
+          cgst,
+          sgst,
+          grandTotal,
+          numberToWords
+        );
+      }
     } catch (err) {
       console.error(err);
       alert('Failed to generate Quotation Data.');
@@ -1534,24 +1922,72 @@ const Nesting = () => {
                 <h2>Design Data</h2>
 
                 <div className={styles.toolbarmenu}>
-                  {/* ✅ Quotation Button */}
-                  <button
-                    onClick={handleGenerateQuotation}
-                    disabled={isGeneratingQuote || displayData.length === 0}
-                    className={styles.viewDetailsButton}
-                    style={{ marginRight: '1rem', backgroundColor: '#392579', color: 'white' }}
-                  >
-                    Quotation
-                  </button>
-                  {/* ✅ BOM Data Button */}
-                  <button
-                    onClick={handleGenerateBOM}
-                    disabled={isGeneratingBOM || displayData.length === 0}
-                    className={styles.viewDetailsButton}
-                    style={{ marginRight: '1rem', backgroundColor: '#392579', color: 'white' }}
-                  >
-                    BOM Data
-                  </button>
+                  <div className={styles.exportDropdown}>
+                    <button
+                      onClick={() =>
+                        setOpenDropdown((prev) => (prev === 'quotation' ? null : 'quotation'))
+                      }
+                      disabled={isGeneratingQuote || displayData.length === 0}
+                      className={styles.viewDetailsButton}
+                      style={{ marginRight: '1rem', backgroundColor: '#392579', color: 'white' }}
+                    >
+                      Quotation ▾
+                    </button>
+                    {openDropdown === 'quotation' && (
+                      <div className={styles.dropdownMenu}>
+                        <button
+                          className={styles.dropdownItem}
+                          onClick={() => {
+                            setOpenDropdown(null);
+                            handleGenerateQuotation('excel');
+                          }}
+                        >
+                          Excel
+                        </button>
+                        <button
+                          className={styles.dropdownItem}
+                          onClick={() => {
+                            setOpenDropdown(null);
+                            handleGenerateQuotation('pdf');
+                          }}
+                        >
+                          PDF
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                  <div className={styles.exportDropdown}>
+                    <button
+                      onClick={() => setOpenDropdown((prev) => (prev === 'bom' ? null : 'bom'))}
+                      disabled={isGeneratingBOM || displayData.length === 0}
+                      className={styles.viewDetailsButton}
+                      style={{ marginRight: '1rem', backgroundColor: '#392579', color: 'white' }}
+                    >
+                      BOM Data ▾
+                    </button>
+                    {openDropdown === 'bom' && (
+                      <div className={styles.dropdownMenu}>
+                        <button
+                          className={styles.dropdownItem}
+                          onClick={() => {
+                            setOpenDropdown(null);
+                            handleGenerateBOM('excel');
+                          }}
+                        >
+                          Excel
+                        </button>
+                        <button
+                          className={styles.dropdownItem}
+                          onClick={() => {
+                            setOpenDropdown(null);
+                            handleGenerateBOM('pdf');
+                          }}
+                        >
+                          PDF
+                        </button>
+                      </div>
+                    )}
+                  </div>
                   <button
                     onClick={async () => {
                       if (xmlDownloadInFlightRef.current) return;

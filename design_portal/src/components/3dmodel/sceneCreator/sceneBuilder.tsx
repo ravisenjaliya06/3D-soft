@@ -5,6 +5,7 @@ import { TransformControls } from 'three/examples/jsm/controls/TransformControls
 import { ThreeDView } from '../design/interface';
 import { loadSinkModel } from '../design/scene';
 import { MoveHandler } from '../handler/moveHandler';
+import { BACKGROUND_COLOR } from './constants';
 import { SceneBuilderConfig } from './interface';
 import { SelectObjectController } from './tools/selectTool';
 import { ZoomSelectionController } from './tools/zoomTools';
@@ -99,15 +100,14 @@ export class SceneBuilder {
   }
 
   private createPerspectiveCamera(): THREE.PerspectiveCamera {
-    const cameraConfig = this.config.cameraConfig || {};
     const camera = new THREE.PerspectiveCamera(
-      75,
+      50,
       window.innerWidth / window.innerHeight,
       0.1,
       1000
     );
 
-    const position = cameraConfig.position || new THREE.Vector3(0, 3, 15);
+    const position = new THREE.Vector3(0, 4, 10);
     camera.position.copy(position);
     camera.lookAt(0, 0, 0);
 
@@ -118,13 +118,20 @@ export class SceneBuilder {
     const renderer = new THREE.WebGLRenderer({
       antialias: true,
       alpha: true,
-      logarithmicDepthBuffer: true,
+      logarithmicDepthBuffer: false,
       preserveDrawingBuffer: true,
+      powerPreference: 'high-performance',
     });
 
     renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.setPixelRatio(1);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2)); // Cap at 2 for performance
     renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap; // Softer shadows
+
+    // Modern color management
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
+    renderer.toneMapping = THREE.NoToneMapping;
+    renderer.toneMappingExposure = 1.0;
 
     this.mount.appendChild(renderer.domElement);
     return renderer;
@@ -135,13 +142,22 @@ export class SceneBuilder {
     directionalLight: THREE.DirectionalLight;
     hemiLight: THREE.HemisphereLight | null;
   } {
-    // Ambient light
-    const ambientLight = new THREE.AmbientLight(0xffffff, 1.9);
-
-    // Directional light
-    const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
-    directionalLight.position.set(5, 8, 5);
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.35);
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 0.6);
+    directionalLight.position.set(8, 12, 8);
     directionalLight.castShadow = true;
+
+    // Optimize shadow map
+    directionalLight.shadow.mapSize.width = 2048;
+    directionalLight.shadow.mapSize.height = 2048;
+    directionalLight.shadow.camera.near = 0.5;
+    directionalLight.shadow.camera.far = 50;
+    directionalLight.shadow.camera.left = -20;
+    directionalLight.shadow.camera.right = 20;
+    directionalLight.shadow.camera.top = 20;
+    directionalLight.shadow.camera.bottom = -20;
+    directionalLight.shadow.bias = -0.0001;
+
     return { ambientLight, directionalLight, hemiLight: null };
   }
 
@@ -177,14 +193,38 @@ export class SceneBuilder {
     // Add grid
     // this.scene.add(this.grid);
 
-    this.scene.background = new THREE.Color(0xdddddd);
+    this.scene.background = new THREE.Color(BACKGROUND_COLOR);
 
     // Add lighting
     this.scene.add(this.ambientLight);
     this.scene.add(this.directionalLight);
 
+    // Setup Environment Map for reflections
+    this.setupEnvironment();
+
     // Add transform controls to scene
     this.scene.add(this.transformControls.getHelper());
+  }
+
+  private setupEnvironment(): void {
+    // We'll use a neutral neutral environment for realistic material reflections
+    // without needing external HDR files immediately.
+    const pmremGen = new THREE.PMREMGenerator(this.renderer);
+    pmremGen.compileEquirectangularShader();
+
+    // Create a simple procedural environment if no HDR is provided
+    // This makes MeshStandardMaterial/MeshPhysicalMaterial look much better
+    const scene = new THREE.Scene();
+    const mesh = new THREE.Mesh(
+      new THREE.SphereGeometry(100, 32, 32),
+      new THREE.MeshBasicMaterial({ color: 0xffffff, side: THREE.BackSide })
+    );
+    scene.add(mesh);
+
+    const envMap = pmremGen.fromScene(scene).texture;
+    this.scene.environment = envMap;
+
+    pmremGen.dispose();
   }
 
   private setupEventListeners(): void {
@@ -218,7 +258,11 @@ export class SceneBuilder {
   public toggleSky(): void {}
 
   private initSelector() {
-    this.selector = new SelectObjectController(this.camera as THREE.PerspectiveCamera, this.scene);
+    this.selector = new SelectObjectController(
+      this.camera as THREE.PerspectiveCamera,
+      this.scene,
+      this.config.dispatch
+    );
   }
 
   private initMoveHandler() {

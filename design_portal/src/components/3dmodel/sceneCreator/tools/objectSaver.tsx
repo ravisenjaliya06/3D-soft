@@ -5,7 +5,7 @@ import { toast } from 'react-toastify';
 import * as THREE from 'three';
 import { getThreeDViewOnly } from '../../design/sceneSingleton';
 import { parseDesignIdsFromPathname } from '../../utils/routeIds';
-import { MeshObjectData } from '../interface';
+import { FLOOR_PLAN_TYPES, MeshObjectData } from '../interface';
 import { convertKeysToSnake, CustomToast } from '../utils';
 
 /**
@@ -70,7 +70,11 @@ export class ObjectsSaver {
 
     // Process each root object and its children
     rootObjects.forEach((rootObject) => {
-      this.payloadData.push({ ...rootObject, isMain: true });
+      // Only treat it as isMain if it's not a wall or floor (to allow wireframes on those)
+      const isActuallyMain =
+        rootObject.type !== FLOOR_PLAN_TYPES.WALL && rootObject.type !== FLOOR_PLAN_TYPES.FLOOR;
+
+      this.payloadData.push({ ...rootObject, isMain: isActuallyMain });
       this._findAllChildObjects(rootObject.id, objects);
     });
 
@@ -86,10 +90,14 @@ export class ObjectsSaver {
       return false;
     }
 
+    const isActuallyMain =
+      selectedObjectData.type !== FLOOR_PLAN_TYPES.WALL &&
+      selectedObjectData.type !== FLOOR_PLAN_TYPES.FLOOR;
+
     this.payloadData.push({
       ...selectedObjectData,
       name: name || selectedObjectData.name,
-      isMain: true,
+      isMain: isActuallyMain,
       image: this._takeScreenshot(),
     });
     this._findAllChildObjects(this.selectedObjectId, objects);

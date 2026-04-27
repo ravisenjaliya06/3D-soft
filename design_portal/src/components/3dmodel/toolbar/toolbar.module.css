@@ -423,7 +423,7 @@
   height: 1.6rem;
   padding: 0rem 0rem 0rem 2.5rem;
   background: var(--designpage-background-color);
-  border-radius: 4rem;
+  border-radius: 0.5rem;
   font-size: 0.5rem;
   font-family: var(--font-family);
   color: var(--primary-color);
@@ -445,11 +445,11 @@
 .secondpart {
   display: flex;
   width: auto;
-  height: 10rem;
-  gap: 1rem;
+  height: 42.3333mm;
+  gap: 4.2333mm;
   align-items: start;
   text-align: center;
-  padding-right: 1rem;
+  padding-right: 4.2333mm;
   overflow: auto;
 }
 
@@ -698,30 +698,318 @@
 
 .popupContent {
   background-color: white;
-  padding: 1rem;
-  border-radius: 0.3rem;
-  width: 15rem;
+  padding: 1.5rem;
+  border-radius: 1rem;
+  width: min(90vw, 74rem);
+  max-width: 74rem;
 }
 
-.popupHeader {
+.uploadPopupOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(23, 15, 73, 0.4);
+  backdrop-filter: blur(0.5rem);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 1rem;
+  z-index: 2000;
+  animation: fadeIn 0.3s ease;
+}
+
+.premiumUploadPopup {
+  width: 100%;
+  max-width: 68rem;
+  max-height: 90vh;
+  background: #ffffff;
+  border-radius: 1.5rem;
+  border: 0.063rem solid rgba(224, 231, 255, 0.6);
+  box-shadow: 0 1.5rem 3.75rem rgba(15, 23, 42, 0.12);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(1.25rem);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.uploadHeader {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 1.5rem;
+  padding: 1.25rem 2rem;
+  border-bottom: 0.0625rem solid var(--border-color);
+}
+
+.headerTitleGroup {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  width: 24rem;
+}
+
+.headerTitleGroup h2 {
+  font-size: 1.3rem;
+  margin: 0;
+  letter-spacing: -0.02em;
+  white-space: nowrap;
+}
+
+/* Removed previewHeaderLabel */
+
+.uploadCloseBtn {
+  width: 1.25rem;
+  height: 1.25rem;
+  cursor: pointer;
+  opacity: 0.7;
+  transition:
+    opacity 0.2s ease,
+    transform 0.2s ease;
+}
+
+.uploadCloseBtn:hover {
+  opacity: 1;
+  transform: rotate(90deg);
+}
+
+.uploadBody {
+  display: grid;
+  grid-template-columns: 26rem 1fr;
+  gap: 0;
+  align-items: stretch;
+  padding: 0;
+  flex: 1;
+  min-height: 0;
+}
+
+.detailsContainer {
+  background: var(--primary-white);
+  padding: 1.5rem 2rem;
+  display: flex;
+  flex-direction: column;
+  border-right: 0.063rem solid var(--border-color);
+  min-width: 20rem;
+}
+
+.previewContainer {
+  background: var(--designpage-background-color);
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  flex: 1;
+  min-width: 20rem;
+  padding: 1.5rem 2rem;
+}
+
+.previewHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
   margin-bottom: 1rem;
 }
 
-.popupHeader h3 {
+.previewHeader h3 {
   font-family: var(--font-family);
-  font-size: 0.8rem;
-  letter-spacing: 0.02rem;
-  font-weight: 0;
+  font-size: 1.05rem;
+  margin: 0;
   color: var(--primary-color);
+}
+
+.formGrid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 1.5rem 1.25rem;
+}
+
+/* Force override global InputField width for this specific form */
+.formGrid :global(.MuiInputBase-root),
+.formGrid :global(.MuiTextField-root),
+.formGrid :global(.MuiFormControl-root) {
+  width: 100% !important;
+  min-width: 0 !important;
+  max-width: none !important;
+}
+
+/* Ensure the wrapper div from InputField also doesn't force width */
+.formGrid > div[class*='main'] {
+  width: 100% !important;
+  max-width: none !important;
+  margin: 0 !important;
+}
+
+.formRowFull {
+  grid-column: span 6;
+}
+
+.formRowHalf {
+  grid-column: span 3;
+}
+
+.formRowThird {
+  grid-column: span 2;
+}
+
+.uploadLabel {
+  display: block;
+  font-family: var(--font-family);
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--primary-color);
+  margin-bottom: 0.65rem;
+}
+
+.fileUploadBox {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 6rem;
+  padding: 1rem;
+  border: 0.125rem dashed rgba(148, 163, 184, 0.3);
+  border-radius: 0.2rem;
+  background: #fcfdfe;
+  color: var(--primary-color);
+  transition: all 0.2s ease;
+  cursor: pointer;
+  gap: 0.5rem;
+}
+
+.fileUploadBox:hover {
+  border-color: var(--primary-color);
+  background: rgba(79, 70, 229, 0.02);
+}
+
+.fileBoxLabel {
+  width: 100%;
+  color: var(--primary-color);
+  font-size: 0.85rem;
+  font-weight: 500;
+  text-align: center;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fileBoxHint {
+  font-size: 0.75rem;
+  color: var(--text-gray);
   margin: 0;
 }
 
-.popupHeader img {
-  width: 1rem;
-  height: 1rem;
+.hiddenInput {
+  display: none;
+}
+
+.uploadForm {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.popupFooter {
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+  margin-top: auto;
+  padding-top: 2rem;
+  padding-bottom: 0.5rem;
+}
+
+.btnSecondary,
+.btnPrimary {
+  min-width: 8rem;
+  height: 2.5rem;
+  border-radius: 0.2rem;
+  border: none;
+  font-family: var(--font-family);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.02rem;
+  cursor: pointer;
+}
+
+.btnSecondary {
+  background: var(--primary-white);
+  color: var(--primary-color);
+  border: 0.2667mm solid var(--border-color);
+}
+
+.btnSecondary:hover {
+  background: rgba(79, 70, 229, 0.06);
+}
+
+.btnPrimary {
+  background: var(--primary-color);
+  color: white;
+}
+
+.btnPrimary:hover:not(:disabled) {
+  opacity: 0.95;
+}
+
+.btnPrimary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.modelViewerContainer {
+  width: 100%;
+  height: 100%;
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #ffffff;
+  border: 0.063rem solid var(--border-color);
+  border-radius: 0.2rem;
+  overflow: hidden;
+}
+
+.noModelPlaceholder {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+}
+
+.noModelPlaceholder p {
+  font-size: 1.1rem;
+  font-weight: 500;
+  margin: 0;
+  color: var(--text-gray);
+  opacity: 0.7;
+  letter-spacing: -0.01em;
+}
+
+.modelViewerPreview {
+  width: 100%;
+  height: 100%;
+  flex: 1;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  border-radius: 0;
+  display: flex;
+}
+
+.modelViewerPreview canvas {
+  width: 100% !important;
+  height: 100% !important;
+  display: block;
 }
 
 .closeButton {
@@ -813,7 +1101,7 @@
 }
 
 .alignDropdownItem {
-  padding: 8px 12px;
+  padding: 0.5rem 0.75rem;
   cursor: pointer;
 }
 
@@ -1004,7 +1292,18 @@
 .submenuHeaderTitle {
   display: flex;
   align-items: center;
+  justify-content: center;
   margin-top: 0.65rem;
+  width: 100%;
+  position: relative;
+}
+
+.closeIcon {
+  width: 0.9rem;
+  height: 0.9rem;
+  cursor: pointer;
+  position: absolute;
+  right: 0.8rem;
 }
 
 .backArrow {
@@ -1032,10 +1331,10 @@
 }
 
 .searchWrapper {
-  position: relative;
   display: flex;
   align-items: center;
-  margin: 0rem 0.5rem;
+  margin: 0.25rem 0.5rem 0;
+  gap: 0.5rem;
 }
 
 .searchIcon {
@@ -1046,16 +1345,17 @@
 }
 
 .searchInput {
-  width: 100%;
+  flex: 1;
   height: 0.1rem;
-  padding: 0.5rem 1rem 0.5rem 2rem;
+  padding: 0.5rem 0.75rem 0.5rem 2rem;
   background: var(--designpage-background-color);
   border: 0.063rem solid var(--text-gray);
-  border-radius: 4rem;
+  border-radius: 0.5rem;
   font-size: 0.6rem;
   font-family: var(--font-family);
   color: var(--primary-color);
   letter-spacing: 0.03rem;
+  min-width: 0;
 
   &:focus {
     outline: none;
@@ -1068,6 +1368,30 @@
     font-size: 0.6rem;
     letter-spacing: 0.03rem;
   }
+}
+
+.searchAddBtn {
+  background: var(--primary-color);
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.25rem;
+  border-radius: 0.5rem;
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
+
+.searchAddBtn:hover {
+  opacity: 0.9;
+  transform: scale(1.05);
+}
+
+.searchAddBtn img {
+  width: 0.8rem;
+  height: 0.8rem;
+  filter: brightness(0) invert(1);
 }
 
 .toolbar {

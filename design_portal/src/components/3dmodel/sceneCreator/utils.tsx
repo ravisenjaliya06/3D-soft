@@ -4,14 +4,15 @@ import commonService from '@/services/CommonService';
 import * as THREE from 'three';
 import { WallPoint } from '../2dmodel/interface';
 import { TEXTURE_CACHE_NAME } from '../constants';
-import { gettingDesignID } from '../design';
 import { ThreeDView } from '../design/interface';
 import { UpdateDimensionsParams } from '../handler/interface';
 import { prefetchTexture } from '../helper/glbLoader';
 import { Dimensions } from '../interface';
 import { store } from '../store';
 import { addPoint, setWalls } from '../store/dataSlice';
-import { EDGES, FLOOR_PLAN_TYPES, MeshObjectData, PART_TYPES } from './interface';
+import { gettingDesignID } from '../utils/routeIds';
+import { WALL_POINT_MATCH_TOLERANCE } from './constants';
+import { EDGES, FLOOR_PLAN_TYPES, MeshObjectData, OBJECT_TYPES, PART_TYPES } from './interface';
 import { SyncManager } from './syncState';
 import { ObjectsRemoverFromScene } from './tools/deleteOrClearTool';
 import { ObjectsSaver } from './tools/objectSaver';
@@ -132,6 +133,10 @@ export const textureLoader = (
         texture.wrapS = THREE.RepeatWrapping;
         texture.wrapT = THREE.RepeatWrapping;
         texture.repeat.set(repeatX, repeatY);
+        texture.anisotropy = 8;
+        texture.colorSpace = THREE.SRGBColorSpace;
+        texture.minFilter = THREE.LinearMipmapLinearFilter;
+        texture.magFilter = THREE.LinearFilter;
         resolve(texture);
       },
       undefined,
@@ -256,7 +261,7 @@ export function computeWallOffsetSignForNewWall(
   refEnd: WallPoint,
   existingWalls: MeshObjectData[]
 ): number {
-  const tol = 0.75;
+  const tol = WALL_POINT_MATCH_TOLERANCE;
   const near = (a: WallPoint, b: WallPoint) =>
     Math.abs(a.x - b.x) < tol && Math.abs(a.y - b.y) < tol;
 
@@ -271,6 +276,45 @@ export function computeWallOffsetSignForNewWall(
     }
   }
   return 1;
+}
+
+/**
+ * Resolve effective wall side from a Coohom-style location line.
+ *
+ * - `center`: thickness is symmetric around the drawn reference edge
+ * - `external`: uses attachment-first baseline side
+ * - `internal`: mirrored side of external
+ *
+ * Baseline side comes from `computeWallOffsetSignForNewWall` so when a segment starts
+ * from an existing wall endpoint, continuity is preserved for chained drawing.
+ */
+export function resolveWallOffsetSign(
+  refStart: WallPoint,
+  refEnd: WallPoint,
+  mode: 'internal' | 'center' | 'external',
+  existingWalls: MeshObjectData[]
+): number | undefined {
+  if (mode === 'center') {
+    return undefined;
+  }
+  const baselineSign = computeWallOffsetSignForNewWall(refStart, refEnd, existingWalls);
+
+  // For connected chains, keep location-line continuity with the attached segment.
+  // For a brand-new segment (no attachment), keep internal/external mirrored around center.
+  const tol = WALL_POINT_MATCH_TOLERANCE;
+  const near = (a: WallPoint, b: WallPoint) =>
+    Math.abs(a.x - b.x) < tol && Math.abs(a.y - b.y) < tol;
+
+  const attachedWall = existingWalls.find((w) => {
+    const { startPoint: rs, endPoint: re } = getWallReferenceEdgePoints(w);
+    return near(refStart, rs) || near(refStart, re);
+  });
+
+  if (attachedWall && attachedWall.wallLocationLine && attachedWall.wallLocationLine !== 'center') {
+    return attachedWall.wallLocationLine === mode ? baselineSign : -baselineSign;
+  }
+
+  return mode === 'internal' ? -baselineSign : baselineSign;
 }
 
 /** Footprint from reference edge endpoints (shared by preview and placed walls). */
@@ -836,4 +880,50 @@ export function mapAxis(
   }
 
   return { nextSize, nextCenter };
+}
+
+// update edges of the mesh
+export function updateEdges(mesh: THREE.Mesh, geometry: THREE.BufferGeometry) {
+  const type = mesh.userData.type;
+  if (
+    type === OBJECT_TYPES.SINK ||
+    type === OBJECT_TYPES.MODEL ||
+    type === FLOOR_PLAN_TYPES.FLOOR ||
+    mesh.userData.isInvisibleBox ||
+    mesh.userData.isMain
+  ) {
+    return;
+  }
+
+  const existingEdges = mesh.children.find((child) => child.userData.isWireframeEdge);
+  if (existingEdges) {
+    mesh.remove(existingEdges);
+    if ((existingEdges as THREE.LineSegments).geometry) {
+      (existingEdges as THREE.LineSegments).geometry.dispose();
+    }
+    if ((existingEdges as THREE.LineSegments).material) {
+      ((existingEdges as THREE.LineSegments).material as THREE.Material).dispose();
+    }
+  }
+
+  const wireframeColor = store.getState().data.wireframeColor;
+
+  const edges = new THREE.EdgesGeometry(geometry);
+  const edgesMaterial = new THREE.LineBasicMaterial({
+    color: wireframeColor,
+    polygonOffset: true,
+    polygonOffsetFactor: -5,
+    polygonOffsetUnits: -5,
+    depthTest: true,
+    depthWrite: true,
+  });
+  const edgeLines = new THREE.LineSegments(edges, edgesMaterial);
+  edgeLines.userData.isWireframeEdge = true;
+  edgeLines.renderOrder = 1;
+
+  // Respect the wireframe visibility setting from Redux
+  const isWireframeVisible = store.getState().data.isWireframeVisible;
+  edgeLines.visible = isWireframeVisible;
+
+  mesh.add(edgeLines);
 }

@@ -40,6 +40,8 @@
     "immutablepatch": "^0.5.0",
     "js-cookie": "^3.0.5",
     "jsdom": "^27.2.0",
+    "jspdf": "^4.2.1",
+    "jspdf-autotable": "^5.0.7",
     "konva": "^10.0.9",
     "next": "16.0.3",
     "polylabel": "^2.0.1",

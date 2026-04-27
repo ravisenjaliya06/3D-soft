@@ -37,3 +37,12 @@ export const GridRecordFactory = Record<GridData>({
   type: 'horizontal-streak',
   properties: { step: 30.48 },
 });
+
+export const FEET_CHANGE = 30.48;
+
+// Minimum count of wall/floor polygon points required for valid room/floor generation.
+export const MAXIMUM_WALL_OBJECT = 3;
+
+// Floor polygon tolerance/snap constants used across wall drawing/adjustment logic.
+export const FLOOR_POINT_SNAP = 1;
+export const FLOOR_POINT_MERGE_TOLERANCE = 3;

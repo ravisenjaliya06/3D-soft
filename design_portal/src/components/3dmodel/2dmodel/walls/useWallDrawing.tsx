@@ -10,11 +10,11 @@ import {
 } from '../../sceneCreator/interface';
 import { SyncManager } from '../../sceneCreator/syncState';
 import {
-  computeWallOffsetSignForNewWall,
   convertPosition2DTo3D,
   findRotation,
   getWallReferenceEdgePoints,
   referenceEdgeToCenterline,
+  resolveWallOffsetSign,
   WALL_THICKNESS_2D_UNITS,
 } from '../../sceneCreator/utils';
 import { RootState } from '../../store';
@@ -26,6 +26,7 @@ import {
   setWalls,
   updateObjects,
 } from '../../store/dataSlice';
+import { MAXIMUM_WALL_OBJECT } from '../constants';
 import { WallPoint } from '../interface';
 import { snapToGrid } from '../utils';
 import { findRoomsFromWalls, getFloorPolygon } from './wallFloor';
@@ -39,6 +40,7 @@ export function useWallDrawing(svgWidth: number, svgHeight: number) {
   const walls = objects.filter((obj) => obj.type === FLOOR_PLAN_TYPES.WALL);
   const isWallDrawingActive = storeSelector.isWallDrawingActive;
   const startPointId = storeSelector.wallDrawStartPointId;
+  const wallPointMode = storeSelector.wallPointMode;
 
   const [previewEnd, setPreviewEnd] = useState<{ x: number; y: number } | null>(null);
   const [inputLength, setInputLength] = useState<number | null>(null);
@@ -137,7 +139,7 @@ export function useWallDrawing(svgWidth: number, svgHeight: number) {
     }
 
     const thickness = WALL_THICKNESS_2D_UNITS;
-    const wallOffsetSign = computeWallOffsetSignForNewWall(startPoint, clickedPoint, walls);
+    const wallOffsetSign = resolveWallOffsetSign(startPoint, clickedPoint, wallPointMode, walls);
 
     const { startPoint: centerStart, endPoint: centerEnd } = referenceEdgeToCenterline(
       startPoint,
@@ -153,7 +155,7 @@ export function useWallDrawing(svgWidth: number, svgHeight: number) {
       id: crypto.randomUUID(),
       name: `Wall`,
       type: FLOOR_PLAN_TYPES.WALL,
-      isMain: true,
+      isMain: false,
       geometryType: GEOMETRY.BOX_GEOMETRY,
       dimensions: {
         width: wallLength,
@@ -161,6 +163,7 @@ export function useWallDrawing(svgWidth: number, svgHeight: number) {
         depth: thickness,
       },
       wallOffsetSign,
+      wallLocationLine: wallPointMode,
       position: convertPosition2DTo3D({ startPoint: centerStart, endPoint: centerEnd }),
       rotation: findRotation({ startPoint: centerStart, endPoint: centerEnd }),
       scale: { x: 0.01, y: 0.001, z: 0.01 },
@@ -216,6 +219,9 @@ export function useWallDrawing(svgWidth: number, svgHeight: number) {
         });
 
         const points = getFloorPolygon(room);
+        if (points.length < MAXIMUM_WALL_OBJECT) {
+          return;
+        }
 
         // Calculate bounding box for floor dimensions
         const xs = points.map((p) => p.x);
@@ -360,9 +366,29 @@ export function useWallDrawing(svgWidth: number, svgHeight: number) {
     createWallSegment(startPoint, finalCoords);
   };
 
+  const getConnectedWallAngle = (startPoint: WallPoint) => {
+    const connectedWall = walls.find((wall) => {
+      const { startPoint: s, endPoint: e } = getWallReferenceEdgePoints(wall);
+
+      return (
+        (Math.round(s.x) === Math.round(startPoint.x) &&
+          Math.round(s.y) === Math.round(startPoint.y)) ||
+        (Math.round(e.x) === Math.round(startPoint.x) &&
+          Math.round(e.y) === Math.round(startPoint.y))
+      );
+    });
+
+    if (!connectedWall) return null;
+
+    const { startPoint: s, endPoint: e } = getWallReferenceEdgePoints(connectedWall);
+
+    return Math.atan2(e.y - s.y, e.x - s.x);
+  };
+
   // We explicitly add the generic <T> here because react-svg-pan-zoom defines
   // <T,> makes this function generic so it can handle any event payload type.
   // The comma prevents TypeScript from parsing it as JSX.
+
   const handleViewerMouseMove = <T,>(event: ViewerMouseEvent<T>) => {
     if (!isWallDrawingActive || !startPointId) {
       setPreviewEnd(null);
@@ -371,7 +397,50 @@ export function useWallDrawing(svgWidth: number, svgHeight: number) {
 
     const localCoordinates = getLogicalCoords(event, offsetX, offsetY);
     const snapped = snapToGrid(localCoordinates.x, localCoordinates.y);
-    setPreviewEnd(snapped);
+
+    const start = points.find((p) => p.id === startPointId);
+    if (!start) return;
+
+    const baseAngle = getConnectedWallAngle(start);
+
+    if (baseAngle === null) {
+      setPreviewEnd(snapped);
+      return;
+    }
+
+    const dx = snapped.x - start.x;
+    const dy = snapped.y - start.y;
+
+    const distance = Math.hypot(dx, dy);
+    const currentAngle = Math.atan2(dy, dx);
+
+    // Possible snap angles
+    const angles = [baseAngle, baseAngle + Math.PI / 2, baseAngle - Math.PI / 2];
+
+    let bestAngle = angles[0];
+    let minDiff = Infinity;
+
+    angles.forEach((angle) => {
+      const diff = Math.abs(currentAngle - angle);
+      if (diff < minDiff) {
+        minDiff = diff;
+        bestAngle = angle;
+      }
+    });
+
+    const SNAP_THRESHOLD = 15 * (Math.PI / 180);
+
+    if (minDiff < SNAP_THRESHOLD) {
+      // Snap to aligned angle
+      const alignedEnd = {
+        x: start.x + distance * Math.cos(bestAngle),
+        y: start.y + distance * Math.sin(bestAngle),
+      };
+      setPreviewEnd(alignedEnd);
+    } else {
+      // Free movement (any angle like 120°)
+      setPreviewEnd(snapped);
+    }
   };
 
   // this function helps to the preview data of the wall
@@ -397,14 +466,14 @@ export function useWallDrawing(svgWidth: number, svgHeight: number) {
           }
         : previewEnd;
 
-    const offsetSign = computeWallOffsetSignForNewWall(start, effectiveEnd, walls);
+    const resolvedOffsetSign = resolveWallOffsetSign(start, effectiveEnd, wallPointMode, walls);
 
     return {
       start,
       length: effectiveLength,
       angle: angleDeg,
       effectiveEnd,
-      offsetSign,
+      offsetSign: resolvedOffsetSign,
       thickness: WALL_THICKNESS_2D_UNITS,
     };
   };

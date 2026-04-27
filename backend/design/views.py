@@ -333,6 +333,7 @@ class NestAPIViewset(ModelViewSet):
                 "depth": float(item["depth"]),
                 "grooves": item.get("grooves", []),
                 "minifix_holes": item.get("minifix_holes", []),
+                "panel_design": item.get("panel_design", {}),
                 "position": item.get("position", {}),
                 "rotation": item.get("rotation", {}),
                 "edge_banding": item.get("edge_banding", {}),

@@ -22,6 +22,9 @@ const initialState: DataState = {
   points: [],
   floor: [],
   globalDoorsOpen: false,
+  isWireframeVisible: false,
+  wireframeColor: '#000000',
+  wallPointMode: 'internal',
 };
 
 const dataSlice = createSlice({
@@ -185,6 +188,9 @@ const dataSlice = createSlice({
     setWallDrawStartPointId: (state, action: PayloadAction<string | null>) => {
       state.wallDrawStartPointId = action.payload;
     },
+    setWallPointMode: (state, action: PayloadAction<'external' | 'internal' | 'center'>) => {
+      state.wallPointMode = action.payload;
+    },
     setUnitType: (state, action: PayloadAction<'mm' | 'cm' | 'in'>) => {
       state.currentUnitType = action.payload;
     },
@@ -197,6 +203,12 @@ const dataSlice = createSlice({
         state.isQuickHideActive = false;
         state.isMeasurementActive = false;
       }
+    },
+    toggleWireframe: (state, action: PayloadAction<boolean>) => {
+      state.isWireframeVisible = action.payload;
+    },
+    setWireframeColor: (state, action: PayloadAction<string>) => {
+      state.wireframeColor = action.payload;
     },
     setHoverdMesh: (state, action: PayloadAction<THREE.Mesh | null>) => {
       state.hoverdMesh = action.payload;
@@ -254,10 +266,13 @@ export const {
   toggleMeasurement,
   toggleWallDrawing,
   setWallDrawStartPointId,
+  setWallPointMode,
   setUnitType,
   setCreationCancelHint,
   togglAlignment,
   setGlobalDoorsOpen,
+  toggleWireframe,
+  setWireframeColor,
 } = dataSlice.actions;
 
 export const {
