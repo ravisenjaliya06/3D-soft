@@ -11,6 +11,7 @@ import { prefetchTexture } from '../helper/glbLoader';
 import { Dimensions } from '../interface';
 import { store } from '../store';
 import { addPoint, setWalls } from '../store/dataSlice';
+import { WALL_POINT_MATCH_TOLERANCE } from './constants';
 import { EDGES, FLOOR_PLAN_TYPES, MeshObjectData, OBJECT_TYPES, PART_TYPES } from './interface';
 import { SyncManager } from './syncState';
 import { ObjectsRemoverFromScene } from './tools/deleteOrClearTool';
@@ -260,7 +261,7 @@ export function computeWallOffsetSignForNewWall(
   refEnd: WallPoint,
   existingWalls: MeshObjectData[]
 ): number {
-  const tol = 0.75;
+  const tol = WALL_POINT_MATCH_TOLERANCE;
   const near = (a: WallPoint, b: WallPoint) =>
     Math.abs(a.x - b.x) < tol && Math.abs(a.y - b.y) < tol;
 
@@ -300,7 +301,7 @@ export function resolveWallOffsetSign(
 
   // For connected chains, keep location-line continuity with the attached segment.
   // For a brand-new segment (no attachment), keep internal/external mirrored around center.
-  const tol = 0.75;
+  const tol = WALL_POINT_MATCH_TOLERANCE;
   const near = (a: WallPoint, b: WallPoint) =>
     Math.abs(a.x - b.x) < tol && Math.abs(a.y - b.y) < tol;
 
