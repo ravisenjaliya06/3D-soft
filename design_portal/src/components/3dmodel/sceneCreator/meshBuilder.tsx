@@ -954,7 +954,13 @@ export class MeshBuilder {
       mesh.geometry = geometry;
       await this._handleMaterial();
       this._createGrooving();
-      updateEdges(mesh, geometry);
+      updateEdges(mesh, geometry, {
+        panelHoles: this.meshData.panelDesign?.holes,
+        curveControls: this.meshData.panelDesign?.curveControls,
+        panelOutline: this.meshData.panelDesign?.outline,
+        panelCornerRadius: this.meshData.panelDesign?.cornerRadius,
+        panelCornerTypes: this.meshData.panelDesign?.cornerTypes,
+      });
     });
 
     this._setName(mesh);
@@ -1252,7 +1258,13 @@ export class MeshBuilder {
       mesh.geometry.dispose();
       const geometry = await this._getGeometry();
       mesh.geometry = geometry;
-      updateEdges(mesh, geometry);
+      updateEdges(mesh, geometry, {
+        panelHoles: this.meshData.panelDesign?.holes,
+        curveControls: this.meshData.panelDesign?.curveControls,
+        panelOutline: this.meshData.panelDesign?.outline,
+        panelCornerRadius: this.meshData.panelDesign?.cornerRadius,
+        panelCornerTypes: this.meshData.panelDesign?.cornerTypes,
+      });
     }
   }
 
