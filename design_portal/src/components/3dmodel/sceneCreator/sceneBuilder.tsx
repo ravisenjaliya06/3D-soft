@@ -118,7 +118,7 @@ export class SceneBuilder {
     const renderer = new THREE.WebGLRenderer({
       antialias: true,
       alpha: true,
-      logarithmicDepthBuffer: true,
+      logarithmicDepthBuffer: false,
       preserveDrawingBuffer: true,
       powerPreference: 'high-performance',
     });

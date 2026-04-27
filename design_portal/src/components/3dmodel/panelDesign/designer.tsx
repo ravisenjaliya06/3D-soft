@@ -26,7 +26,7 @@ import {
 } from './utils/geometryUtils';
 import { getSnappedPosition } from './utils/snappingUtils';
 
-import { normalizeUVs } from '../sceneCreator/utils';
+import { normalizeUVs, updateEdges } from '../sceneCreator/utils';
 import { DimensionHighlighter } from './components/DimensionHighlighter';
 import { HoleOffsetInputs } from './components/HoleOffsetInputs';
 import { PanelHeader } from './components/PanelHeader';
@@ -117,6 +117,48 @@ export default function PanelDesigner({ state }: PanelDesignerProps) {
   ];
 
   const clamp = (v: number, min: number, max: number) => Math.max(min, Math.min(max, v));
+
+  const toTopRightPoint = (p: Point, panelB: { minY: number; maxX: number }): Point => ({
+    x: panelB.maxX - p.x,
+    y: p.y - panelB.minY,
+  });
+
+  const fromTopRightPoint = (p: Point, panelB: { minY: number; maxX: number }): Point => ({
+    x: panelB.maxX - p.x,
+    y: panelB.minY + p.y,
+  });
+
+  const holeFromStoredOutput = (hole: Hole, panelB: { minY: number; maxX: number }): Hole => {
+    const ref = (hole as any)?.coord_ref;
+    if (ref !== 'top_right') return hole;
+
+    const transformed: Hole = {
+      ...hole,
+      x: panelB.maxX - hole.x,
+      y: panelB.minY + hole.y,
+    };
+
+    if (hole.points?.length) {
+      transformed.points = hole.points.map((p) => fromTopRightPoint(p, panelB));
+    }
+
+    return transformed;
+  };
+
+  const holeToTopRightOutput = (hole: Hole, panelB: { minY: number; maxX: number }): Hole => {
+    const transformed: any = {
+      ...hole,
+      // Keep existing local x/y untouched for current 3D/editor logic.
+      x_top_right: panelB.maxX - hole.x,
+      y_top_right: hole.y - panelB.minY,
+    };
+
+    if (hole.points?.length) {
+      transformed.points_top_right = hole.points.map((p) => toTopRightPoint(p, panelB));
+    }
+
+    return transformed as Hole;
+  };
 
   const commitSelectedHoleOffsets = (nextLeftMm: number, nextTopMm: number) => {
     if (selectedHoleIndex === null) return;
@@ -268,11 +310,16 @@ export default function PanelDesigner({ state }: PanelDesignerProps) {
         const objectData = state?.data?.objects?.find((obj: any) => obj.id === selectedChildObject);
         if (objectData?.panelDesign) {
           const pd = objectData.panelDesign;
+          const loadedOutline =
+            pd.outline?.length > 0 ? (pd.outline as Point[]) : (defaultPanelPoints as Point[]);
           if (pd.outline?.length > 0) setShapePoints(pd.outline);
           if (pd.cornerRadius?.length > 0) setcornerRadius(pd.cornerRadius);
           if (pd.cornerTypes?.length > 0) setCornerTypes(pd.cornerTypes);
           if (pd.curveControls) setCurveControls(pd.curveControls);
-          if (pd.holes?.length > 0) setHoles(pd.holes);
+          if (pd.holes?.length > 0) {
+            const panelB = getPanelBounds(loadedOutline, defaultPanelPoints);
+            setHoles(pd.holes.map((h: Hole) => holeFromStoredOutput(h, panelB)));
+          }
         } else {
           setShapePoints([]);
           setcornerRadius([]);
@@ -442,6 +489,9 @@ export default function PanelDesigner({ state }: PanelDesignerProps) {
     mesh.geometry.dispose();
     mesh.geometry = finalGeometry;
 
+    // Update wireframe edges
+    updateEdges(mesh, finalGeometry);
+
     // --- Cleanup Old Slotting Plugs (if any) ---
     const oldPlugs = mesh.children.filter((c) => c.name === 'slottingPlug');
     oldPlugs.forEach((p) => {
@@ -523,16 +573,20 @@ export default function PanelDesigner({ state }: PanelDesignerProps) {
 
     const selectedChildObject = state?.data?.selectedChildObject;
     if (selectedChildObject) {
+      const panelOutline = shapePoints.length > 0 ? shapePoints : defaultPanelPoints;
+      const panelB = getPanelBounds(panelOutline, defaultPanelPoints);
+      const holesForOutput = holes.map((hole) => holeToTopRightOutput(hole, panelB));
+
       dispatch(
         updateObject({
           id: selectedChildObject,
           geometryType: GEOMETRY.EXTRUDE_GEOMETRY,
           panelDesign: {
-            outline: shapePoints.length > 0 ? shapePoints : defaultPanelPoints,
+            outline: panelOutline,
             cornerRadius,
             cornerTypes,
             curveControls,
-            holes,
+            holes: holesForOutput,
           },
         })
       );

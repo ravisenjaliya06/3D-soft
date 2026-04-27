@@ -234,6 +234,7 @@ export const addVerticalPlanksToBox = async (
       dimensions: dims,
       position: localPosInParent,
       parent: parent.userData.objectId,
+      isMain: false,
     });
   }
 
@@ -320,6 +321,7 @@ export const addHorizontalPlanksInsideBox = async (
       parent: parent.userData.objectId, // Link to parent cupboard
       dimensions: dims,
       position: parentLocalPos,
+      isMain: false,
     });
   }
   for (const plank of plankList) {
