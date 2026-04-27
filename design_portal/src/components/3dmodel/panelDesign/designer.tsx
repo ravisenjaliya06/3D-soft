@@ -26,7 +26,7 @@ import {
 } from './utils/geometryUtils';
 import { getSnappedPosition } from './utils/snappingUtils';
 
-import { normalizeUVs } from '../sceneCreator/utils';
+import { normalizeUVs, updateEdges } from '../sceneCreator/utils';
 import { DimensionHighlighter } from './components/DimensionHighlighter';
 import { HoleOffsetInputs } from './components/HoleOffsetInputs';
 import { PanelHeader } from './components/PanelHeader';
@@ -441,6 +441,9 @@ export default function PanelDesigner({ state }: PanelDesignerProps) {
 
     mesh.geometry.dispose();
     mesh.geometry = finalGeometry;
+
+    // Update wireframe edges
+    updateEdges(mesh, finalGeometry);
 
     // --- Cleanup Old Slotting Plugs (if any) ---
     const oldPlugs = mesh.children.filter((c) => c.name === 'slottingPlug');

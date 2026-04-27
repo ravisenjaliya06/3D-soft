@@ -23,6 +23,7 @@ const initialState: DataState = {
   floor: [],
   globalDoorsOpen: false,
   isWireframeVisible: false,
+  wireframeColor: '#000000',
 };
 
 const dataSlice = createSlice({
@@ -202,6 +203,9 @@ const dataSlice = createSlice({
     toggleWireframe: (state, action: PayloadAction<boolean>) => {
       state.isWireframeVisible = action.payload;
     },
+    setWireframeColor: (state, action: PayloadAction<string>) => {
+      state.wireframeColor = action.payload;
+    },
     setHoverdMesh: (state, action: PayloadAction<THREE.Mesh | null>) => {
       state.hoverdMesh = action.payload;
     },
@@ -263,6 +267,7 @@ export const {
   togglAlignment,
   setGlobalDoorsOpen,
   toggleWireframe,
+  setWireframeColor,
 } = dataSlice.actions;
 
 export const {

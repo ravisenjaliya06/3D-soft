@@ -385,7 +385,7 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
     // Convert MeshObjectData back to Floor format for FloorManager
     const floorData = floorObjects.map((obj) => {
       // Extract texture URL from floor material
-      let textureUrl = '/textures/wood_7.jpg'; // Default
+      let textureUrl = '/textures/floor_white.jpg'; // Default
       if (obj.material && Array.isArray(obj.material)) {
         const floorMaterial = obj.material.find((mat) => mat.type === MATERIAL_TYPES.MISCELLANEOUS);
         if (floorMaterial?.textures && floorMaterial.textures.length > 0) {

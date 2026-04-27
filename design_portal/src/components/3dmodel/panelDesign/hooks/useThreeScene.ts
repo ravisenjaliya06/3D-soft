@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef } from 'react';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
-import { normalizeUVs } from '../../sceneCreator/utils';
+import { normalizeUVs, updateEdges } from '../../sceneCreator/utils';
 import { CornerType, CurveControls, Hole, Point } from '../types';
 import { buildThreeShape, createHolePath } from '../utils/geometryUtils';
 
@@ -197,6 +197,8 @@ export function useThreeScene(
         scene.add(targetMesh);
         meshRef.current = targetMesh;
       }
+
+      updateEdges(targetMesh, finalGeometry);
 
       // --- Cleanup Old Plugs ---
       const oldPlugs = targetMesh.children.filter((c) => c.name === 'slottingPlug');
