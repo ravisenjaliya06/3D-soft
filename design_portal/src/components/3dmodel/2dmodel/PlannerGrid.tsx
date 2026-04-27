@@ -5,7 +5,7 @@ import { ReactSVGPanZoom, Tool, TOOL_AUTO, Value } from 'react-svg-pan-zoom';
 import { FLOOR_PLAN_TYPES, MeshObjectData } from '../sceneCreator/interface';
 import { getFootprintQuadFromReferenceEdge, perpLeft2D } from '../sceneCreator/utils';
 import { RootState } from '../store';
-import { setobjectSelected, toggleWallDrawing } from '../store/dataSlice';
+import { setobjectSelected, setWallPointMode, toggleWallDrawing } from '../store/dataSlice';
 import { FEET_CHANGE, GRID_SIZE, REACTSVGPANZOOM_INITIAL_VALUE } from './constants';
 import { Grids } from './grid';
 import { TwoDSidebar } from './TwoDSidebar';
@@ -38,6 +38,7 @@ export default function PlannerGrid() {
   const selectedObjectId = useSelector((state: RootState) => state.data.selectedObject);
   const objects = useSelector((state: RootState) => state.data.objects);
   const isDrawingActive = useSelector((state: RootState) => state.data.isWallDrawingActive);
+  const wallPointMode = useSelector((state: RootState) => state.data.wallPointMode);
 
   const selectedWall = objects.find(
     (obj: MeshObjectData) => obj.id === selectedObjectId && obj.type === FLOOR_PLAN_TYPES.WALL
@@ -90,23 +91,52 @@ export default function PlannerGrid() {
   let previewWallLayer: ReactNode = null;
   if (preview && preview.length > 0.5) {
     const t = preview.thickness ?? 30;
-    const sign = preview.offsetSign ?? 1;
-    const [rs, re, oppRe, oppRs] = getFootprintQuadFromReferenceEdge(
-      preview.start,
-      preview.effectiveEnd,
-      sign,
-      t
-    );
+    const isCentered = preview.offsetSign == null;
+    const getCenteredFootprint = () => {
+      const dx = preview.effectiveEnd.x - preview.start.x;
+      const dy = preview.effectiveEnd.y - preview.start.y;
+      const len = Math.hypot(dx, dy);
+      if (len < 1e-6) {
+        return [preview.start, preview.effectiveEnd, preview.effectiveEnd, preview.start] as const;
+      }
+      const ux = dx / len;
+      const uy = dy / len;
+      const pl = perpLeft2D(ux, uy);
+      const half = t / 2;
+      const startRef = { x: preview.start.x - pl.x * half, y: preview.start.y - pl.y * half };
+      const endRef = {
+        x: preview.effectiveEnd.x - pl.x * half,
+        y: preview.effectiveEnd.y - pl.y * half,
+      };
+      const endOpp = {
+        x: preview.effectiveEnd.x + pl.x * half,
+        y: preview.effectiveEnd.y + pl.y * half,
+      };
+      const startOpp = { x: preview.start.x + pl.x * half, y: preview.start.y + pl.y * half };
+      return [startRef, endRef, endOpp, startOpp] as const;
+    };
+
+    const [rs, re, oppRe, oppRs] = isCentered
+      ? getCenteredFootprint()
+      : getFootprintQuadFromReferenceEdge(
+          preview.start,
+          preview.effectiveEnd,
+          preview.offsetSign ?? 1,
+          t
+        );
     const footprintPts = `${rs.x},${rs.y} ${re.x},${re.y} ${oppRe.x},${oppRe.y} ${oppRs.x},${oppRs.y}`;
     const midRef = { x: (rs.x + re.x) / 2, y: (rs.y + re.y) / 2 };
     const midOpp = { x: (oppRe.x + oppRs.x) / 2, y: (oppRe.y + oppRs.y) / 2 };
+    const markerStart = isCentered ? preview.start : rs;
+    const markerEnd = isCentered ? preview.effectiveEnd : re;
     const dx = preview.effectiveEnd.x - preview.start.x;
     const dy = preview.effectiveEnd.y - preview.start.y;
     const plen = Math.hypot(dx, dy) || 1;
     const pl = perpLeft2D(dx / plen, dy / plen);
     const labelLift = 36;
-    const labelX = midRef.x - pl.x * sign * labelLift - 90;
-    const labelY = midRef.y - pl.y * sign * labelLift - 14;
+    const labelDirection = isCentered ? 1 : (preview.offsetSign ?? 1);
+    const labelX = midRef.x - pl.x * labelDirection * labelLift - 90;
+    const labelY = midRef.y - pl.y * labelDirection * labelLift - 14;
     previewWallLayer = (
       <g>
         <polygon points={footprintPts} fill="url(#wallDoubleHatch)" opacity="0.6" stroke="none" />
@@ -134,8 +164,22 @@ export default function PlannerGrid() {
           strokeDasharray="6 4"
         />
 
-        <circle cx={rs.x} cy={rs.y} r={6} fill="#1290ff" stroke="#fff" strokeWidth={2} />
-        <circle cx={re.x} cy={re.y} r={6} fill="#1290ff" stroke="#fff" strokeWidth={2} />
+        <circle
+          cx={markerStart.x}
+          cy={markerStart.y}
+          r={6}
+          fill="#1290ff"
+          stroke="#fff"
+          strokeWidth={2}
+        />
+        <circle
+          cx={markerEnd.x}
+          cy={markerEnd.y}
+          r={6}
+          fill="#1290ff"
+          stroke="#fff"
+          strokeWidth={2}
+        />
 
         <foreignObject
           x={labelX}
@@ -282,6 +326,17 @@ export default function PlannerGrid() {
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === ' ' && isDrawingActive) {
+        event.preventDefault();
+        const nextMode =
+          wallPointMode === 'internal'
+            ? 'center'
+            : wallPointMode === 'center'
+              ? 'external'
+              : 'internal';
+        dispatch(setWallPointMode(nextMode));
+        return;
+      }
       if (event.key === 'Escape') {
         dispatch(toggleWallDrawing(false));
         resetDrawing();
@@ -292,7 +347,7 @@ export default function PlannerGrid() {
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [resetDrawing, dispatch]);
+  }, [resetDrawing, dispatch, isDrawingActive, wallPointMode]);
 
   const onViewerClick = (event: any) => {
     if (isDrawingActive) {
@@ -335,10 +390,6 @@ export default function PlannerGrid() {
           <g transform={`translate(${GRID_SIZE.WIDTH / 2}, ${GRID_SIZE.HEIGHT / 2})`}>
             <Grids width={GRID_SIZE.WIDTH} height={GRID_SIZE.HEIGHT} />
 
-            {walls.map((wall) => (
-              <Wall2D key={wall.id} wall={wall} />
-            ))}
-
             {rooms.map((room, i) => {
               const floorPoints = getFloorPolygon(room);
               return (
@@ -352,6 +403,10 @@ export default function PlannerGrid() {
                 />
               );
             })}
+
+            {walls.map((wall) => (
+              <Wall2D key={wall.id} wall={wall} />
+            ))}
 
             <defs>
               <pattern
@@ -383,11 +438,13 @@ export default function PlannerGrid() {
         </svg>
       </ReactSVGPanZoom>
 
-      {selectedWall && (
+      {isDrawingActive && (
         <TwoDSidebar
-          object={selectedWall}
+          object={selectedWall ?? null}
           pos={sidebarPos}
           onDragStart={() => setIsDraggingSidebar(true)}
+          pointMode={wallPointMode}
+          onPointModeChange={(mode) => dispatch(setWallPointMode(mode))}
         />
       )}
     </div>

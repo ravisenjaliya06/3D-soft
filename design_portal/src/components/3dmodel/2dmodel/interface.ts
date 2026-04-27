@@ -62,7 +62,9 @@ export interface Floor {
 }
 
 export interface TwoDSidebarProps {
-  object: MeshObjectData;
+  object: MeshObjectData | null;
   pos: { x: number; y: number };
   onDragStart: () => void;
+  pointMode: 'external' | 'internal' | 'center';
+  onPointModeChange: (mode: 'external' | 'internal' | 'center') => void;
 }

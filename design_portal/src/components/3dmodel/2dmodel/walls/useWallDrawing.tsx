@@ -10,11 +10,11 @@ import {
 } from '../../sceneCreator/interface';
 import { SyncManager } from '../../sceneCreator/syncState';
 import {
-  computeWallOffsetSignForNewWall,
   convertPosition2DTo3D,
   findRotation,
   getWallReferenceEdgePoints,
   referenceEdgeToCenterline,
+  resolveWallOffsetSign,
   WALL_THICKNESS_2D_UNITS,
 } from '../../sceneCreator/utils';
 import { RootState } from '../../store';
@@ -26,6 +26,7 @@ import {
   setWalls,
   updateObjects,
 } from '../../store/dataSlice';
+import { MAXIMUM_WALL_OBJECT } from '../constants';
 import { WallPoint } from '../interface';
 import { snapToGrid } from '../utils';
 import { findRoomsFromWalls, getFloorPolygon } from './wallFloor';
@@ -39,6 +40,7 @@ export function useWallDrawing(svgWidth: number, svgHeight: number) {
   const walls = objects.filter((obj) => obj.type === FLOOR_PLAN_TYPES.WALL);
   const isWallDrawingActive = storeSelector.isWallDrawingActive;
   const startPointId = storeSelector.wallDrawStartPointId;
+  const wallPointMode = storeSelector.wallPointMode;
 
   const [previewEnd, setPreviewEnd] = useState<{ x: number; y: number } | null>(null);
   const [inputLength, setInputLength] = useState<number | null>(null);
@@ -137,7 +139,7 @@ export function useWallDrawing(svgWidth: number, svgHeight: number) {
     }
 
     const thickness = WALL_THICKNESS_2D_UNITS;
-    const wallOffsetSign = computeWallOffsetSignForNewWall(startPoint, clickedPoint, walls);
+    const wallOffsetSign = resolveWallOffsetSign(startPoint, clickedPoint, wallPointMode, walls);
 
     const { startPoint: centerStart, endPoint: centerEnd } = referenceEdgeToCenterline(
       startPoint,
@@ -161,6 +163,7 @@ export function useWallDrawing(svgWidth: number, svgHeight: number) {
         depth: thickness,
       },
       wallOffsetSign,
+      wallLocationLine: wallPointMode,
       position: convertPosition2DTo3D({ startPoint: centerStart, endPoint: centerEnd }),
       rotation: findRotation({ startPoint: centerStart, endPoint: centerEnd }),
       scale: { x: 0.01, y: 0.001, z: 0.01 },
@@ -216,6 +219,9 @@ export function useWallDrawing(svgWidth: number, svgHeight: number) {
         });
 
         const points = getFloorPolygon(room);
+        if (points.length < MAXIMUM_WALL_OBJECT) {
+          return;
+        }
 
         // Calculate bounding box for floor dimensions
         const xs = points.map((p) => p.x);
@@ -460,14 +466,14 @@ export function useWallDrawing(svgWidth: number, svgHeight: number) {
           }
         : previewEnd;
 
-    const offsetSign = computeWallOffsetSignForNewWall(start, effectiveEnd, walls);
+    const resolvedOffsetSign = resolveWallOffsetSign(start, effectiveEnd, wallPointMode, walls);
 
     return {
       start,
       length: effectiveLength,
       angle: angleDeg,
       effectiveEnd,
-      offsetSign,
+      offsetSign: resolvedOffsetSign,
       thickness: WALL_THICKNESS_2D_UNITS,
     };
   };

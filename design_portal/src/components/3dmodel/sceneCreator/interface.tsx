@@ -188,6 +188,8 @@ export interface MeshObjectData {
   connectedTo?: string[];
   /** +1 / -1: which side of the wall centerline the drawn reference edge lies on (undefined = legacy centerline drawing). */
   wallOffsetSign?: number;
+  /** Location-line mode used when this wall was drawn (Coohom-style: internal/center/external). */
+  wallLocationLine?: 'internal' | 'center' | 'external';
   thickness?: number;
   selected?: boolean;
   drawerType?: string;
