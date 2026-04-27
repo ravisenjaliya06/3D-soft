@@ -594,7 +594,10 @@ class NestingService:
         def _is_round_corner(corner_type: str | None) -> bool:
             return str(corner_type or "").strip().lower() == "round"
 
-        def _safe_radius(radius_value: int | float | None, max_radius: float) -> float:
+        def _is_chamfer_corner(corner_type: str | None) -> bool:
+            return str(corner_type or "").strip().lower() == "chamfer"
+
+        def _safe_radius(radius_value: float | None, max_radius: float) -> float:
             radius = self._safe_float(radius_value, 0.0)
             if radius <= 0:
                 return 0.0
@@ -866,7 +869,7 @@ class NestingService:
                     logger.warning(f"Error processing hole: {e}")
                     continue
 
-            # 2. Corner Curves (Type=3)
+            # 2. Corner Profiles (Type=3): round + chamfer
             # Uses panel_design.corner_types / corner_radius arrays in index order:
             # [left-top, right-top, right-bottom, left-bottom]
             try:
@@ -895,7 +898,9 @@ class NestingService:
                         else 0
                     )
 
-                    if not _is_round_corner(corner_type):
+                    is_round = _is_round_corner(corner_type)
+                    is_chamfer = _is_chamfer_corner(corner_type)
+                    if not is_round and not is_chamfer:
                         continue
 
                     radius = _safe_radius(radius_value, max_curve_radius)
@@ -927,25 +932,41 @@ class NestingService:
                     )
                     lines_el = ET.SubElement(curve_machining, "Lines")
 
-                    # Match reference density closely:
-                    # R100 -> 1569, R50 -> 784, R150 -> 2355
-                    line_count = max(8, int(radius * math.pi * 5) - 1)
-                    for line_id in range(1, line_count + 1):
-                        theta = (line_id / line_count) * (math.pi / 2)
+                    if is_chamfer:
+                        # Chamfer is represented as a single straight segment to the
+                        # quarter-profile endpoint used by the CNC XML schema.
                         end_x, end_y = _curve_point(
-                            corner_index, radius, length_val, width_val, theta
+                            corner_index, radius, length_val, width_val, math.pi / 2
                         )
                         ET.SubElement(
                             lines_el,
                             "Line",
-                            LineID=str(line_id),
+                            LineID="1",
                             EndX=f"{end_x:.6f}",
                             EndY=f"{end_y:.6f}",
                             EndZ="0.000000",
                             Angle="0.000000",
                         )
+                    else:
+                        # Match reference density closely:
+                        # R100 -> 1569, R50 -> 784, R150 -> 2355
+                        line_count = max(8, int(radius * math.pi * 5) - 1)
+                        for line_id in range(1, line_count + 1):
+                            theta = (line_id / line_count) * (math.pi / 2)
+                            end_x, end_y = _curve_point(
+                                corner_index, radius, length_val, width_val, theta
+                            )
+                            ET.SubElement(
+                                lines_el,
+                                "Line",
+                                LineID=str(line_id),
+                                EndX=f"{end_x:.6f}",
+                                EndY=f"{end_y:.6f}",
+                                EndZ="0.000000",
+                                Angle="0.000000",
+                            )
             except Exception as e:  # noqa: BLE001
-                logger.warning(f"Error processing corner curves: {e}")
+                logger.warning(f"Error processing corner profiles: {e}")
 
             # 3. Grooves / Slots
             grooves = item.get("grooves", [])
