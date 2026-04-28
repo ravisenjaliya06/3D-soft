@@ -1,3 +1,7 @@
+import { FLOOR_PLAN_TYPES, MeshObjectData } from '@/components/3dmodel/sceneCreator/interface';
+import { store } from '@/components/3dmodel/store';
+import { ArchitecturalSceneData, DEFAULT_ROOM } from '@/components/rendering/interface';
+import { toMm, toNumber, toText } from '@/components/rendering/utils';
 import { API_ENDPOINT } from '@/services/ApiEndPoints';
 import commonService from '@/services/CommonService';
 import { assets } from '@/svgPaths';
@@ -9,6 +13,106 @@ interface RenderImage {
   id: string;
   image: string;
 }
+
+const inferHex = (material: any): string => {
+  return (
+    material?.hex ||
+    material?.color ||
+    material?.value ||
+    material?.properties?.hex ||
+    material?.properties?.color ||
+    '#FFFFFF'
+  );
+};
+
+const getRoomData = (designData: any): ArchitecturalSceneData['room'] => {
+  const rawScene = designData?.scene_data_json;
+  let parsedScene: any = null;
+
+  if (typeof rawScene === 'string') {
+    try {
+      parsedScene = JSON.parse(rawScene);
+    } catch {
+      parsedScene = null;
+    }
+  } else if (rawScene && typeof rawScene === 'object') {
+    parsedScene = rawScene;
+  }
+
+  const roomType =
+    parsedScene?.room?.type || designData?.room_type || designData?.roomType || DEFAULT_ROOM.type;
+  const floorMaterial =
+    parsedScene?.room?.floor?.material ||
+    designData?.floor_material ||
+    designData?.floorMaterial ||
+    DEFAULT_ROOM.floor.material;
+  const floorHex =
+    parsedScene?.room?.floor?.hex ||
+    designData?.floor_hex ||
+    designData?.floorHex ||
+    DEFAULT_ROOM.floor.hex;
+
+  return {
+    type: toText(roomType, DEFAULT_ROOM.type),
+    floor: {
+      material: toText(floorMaterial, DEFAULT_ROOM.floor.material),
+      hex: toText(floorHex, DEFAULT_ROOM.floor.hex),
+    },
+  };
+};
+
+const buildSceneDataPayload = (
+  objects: MeshObjectData[],
+  designData: any,
+  unitType: 'mm' | 'cm' | 'in'
+) => {
+  const walls = objects
+    .filter((obj) => obj.type === FLOOR_PLAN_TYPES.WALL)
+    .map((wall, index) => ({
+      id: toText(wall.id, `wall_${index + 1}`),
+      type: toText(wall.type, String(FLOOR_PLAN_TYPES.WALL)),
+      length: toMm(toNumber((wall as any).length ?? wall.dimensions?.width), unitType),
+      height: toMm(toNumber(wall.dimensions?.height), unitType),
+      position: {
+        x: toNumber(wall.position?.x),
+        y: toNumber(wall.position?.y),
+        z: toNumber(wall.position?.z),
+      },
+    }));
+
+  const catalogs = objects
+    .filter((obj) => obj.type !== FLOOR_PLAN_TYPES.WALL)
+    .map((obj, index) => ({
+      name: toText(obj.name || obj.type || obj.id, `catalog_${index + 1}`),
+      type: toText(obj.type, 'catalog'),
+      dimensions: {
+        width: toMm(toNumber(obj.dimensions?.width), unitType),
+        height: toMm(toNumber(obj.dimensions?.height), unitType),
+        depth: toMm(toNumber(obj.dimensions?.depth), unitType),
+      },
+      position: {
+        x: toNumber(obj.position?.x),
+        y: toNumber(obj.position?.y),
+        z: toNumber(obj.position?.z),
+      },
+      rotation: {
+        y: toNumber(obj.rotation?.y),
+      },
+      material: (obj.material || []).map((mat) => ({
+        name: toText(mat.name, 'Material'),
+        type: toText(mat.type, 'material'),
+        hex: toText(inferHex(mat), '#FFFFFF'),
+      })),
+    }));
+
+  const payload: ArchitecturalSceneData = {
+    room: getRoomData(designData),
+    walls,
+    catalogs,
+  };
+
+  return payload;
+};
 
 export default function RenderingPage() {
   const router = useRouter();
@@ -52,10 +156,17 @@ export default function RenderingPage() {
         // Fetch 1st image as file
         const firstImageRes = await fetch(fetchedImages[0].image);
         const firstImageBlob = await firstImageRes.blob();
+        const state = store.getState();
+        const scene_data = buildSceneDataPayload(
+          state.data.objects,
+          designData,
+          state.data.currentUnitType
+        );
 
         const projectFormData = new FormData();
         projectFormData.append('name', `Design ${id}`);
         projectFormData.append('file', firstImageBlob, '1.png');
+        projectFormData.append('scene_data_json', JSON.stringify(scene_data));
 
         const projectRes = await fetch(`${process.env.NEXT_PUBLIC_RENDER_URL}/api/v1/projects/`, {
           method: 'POST',

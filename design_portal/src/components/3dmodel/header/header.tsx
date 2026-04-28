@@ -364,7 +364,11 @@ const Header: React.FC<HeaderProps> = ({ router, design3D }) => {
         toast(({ closeToast }) => (
           <CustomToast
             appearance="error"
-            message={response?.data?.message || response?.data?.error + '. Please create a design first before generate nesting.' || 'Error occurred while generating nesting data.'}
+            message={
+              response?.data?.message ||
+              response?.data?.error + '. Please create a design first before generate nesting.' ||
+              'Error occurred while generating nesting data.'
+            }
             closeToast={closeToast}
           />
         ));
