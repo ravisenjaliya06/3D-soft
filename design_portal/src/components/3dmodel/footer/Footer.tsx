@@ -12,34 +12,23 @@ const Footer: React.FC<FooterProps> = ({ viewMode, onViewModeChange }) => {
   const isWireframeVisible = useSelector((state: RootState) => state.data.isWireframeVisible);
   const wireframeColor = useSelector((state: RootState) => state.data.wireframeColor);
   const scene = useSelector((state: RootState) => state.scene.scene);
-  const [showColorPicker, setShowColorPicker] = useState(false);
-  const popoverRef = useRef<HTMLDivElement>(null);
+  const [showModeDropdown, setShowModeDropdown] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
-  // Close popover when clicking outside
+  // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (popoverRef.current && !popoverRef.current.contains(event.target as Node)) {
-        setShowColorPicker(false);
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setShowModeDropdown(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const handleWireframeButtonClick = () => {
-    if (!isWireframeVisible) {
-      // If turning ON, also show the picker
-      handleWireframeToggle(true);
-      setShowColorPicker(true);
-    } else {
-      // If already ON, toggle the picker visibility
-      setShowColorPicker(!showColorPicker);
-    }
-  };
-
-  const handleWireframeToggle = (forcedValue?: boolean) => {
-    const newValue = forcedValue !== undefined ? forcedValue : !isWireframeVisible;
+  const handleWireframeToggle = (newValue: boolean) => {
     dispatch(toggleWireframe(newValue));
+    setShowModeDropdown(false);
 
     if (!scene) return;
 
@@ -65,11 +54,6 @@ const Footer: React.FC<FooterProps> = ({ viewMode, onViewModeChange }) => {
     });
   };
 
-  const handleDisableWireframe = () => {
-    handleWireframeToggle(false);
-    setShowColorPicker(false);
-  };
-
   const handleColorChange = (color: string) => {
     dispatch(setWireframeColor(color));
 
@@ -89,124 +73,96 @@ const Footer: React.FC<FooterProps> = ({ viewMode, onViewModeChange }) => {
   };
 
   return (
-    <footer className="fixed right-0 right-[15.5rem] bottom-[0.5rem] z-50">
-      {/* temporary button created */}
-      <div className="relative flex items-center justify-start gap-2 rounded-[0.4rem] bg-[#ffffff] p-[0.3rem]">
-        <button
-          onClick={() => onViewModeChange('2d')}
-          className={`m-[0.3rem] h-10 w-28 rounded-lg border-none font-medium transition-all duration-200 ${
-            viewMode === '2d' ? 'bg-[#DEEBF9] hover:bg-gray-200' : 'bg-[#ffffff] hover:bg-[#DEEBF9]'
-          } `}
-        >
-          <img src={assets.icon_2d || '/placeholder.svg'} alt="2d Icon" />
-        </button>
-
-        <button
-          onClick={() => onViewModeChange('3d')}
-          className={`m-[0.3rem] h-10 w-28 rounded-lg border-none font-medium transition-all duration-200 ${
-            viewMode === '3d' ? 'bg-[#DEEBF9] hover:bg-gray-200' : 'bg-[#ffffff] hover:bg-[#DEEBF9]'
-          } `}
-        >
-          <img alt="3d Icon" src={assets.icon_3d || '/placeholder.svg'} />
-        </button>
-
-        {/* Wireframe Toggle and Popover */}
-        <div className="relative flex items-center" ref={popoverRef}>
-          <div className="mx-[0.15rem] h-[1.5rem] w-[1px] bg-[#E0E0E0]" />
-          <button
-            onClick={handleWireframeButtonClick}
-            title="Wireframe Options"
-            className={`m-[0.3rem] flex h-10 w-10 items-center justify-center rounded-lg border-none font-medium transition-all duration-200 ${
-              isWireframeVisible
-                ? 'bg-[#DEEBF9] hover:bg-gray-200'
-                : 'bg-[#ffffff] hover:bg-[#DEEBF9]'
-            }`}
+    <div className="fixed right-[15.1rem] bottom-[0rem] z-[10] flex h-[3rem] items-center justify-center gap-[0.5rem] border-none select-none">
+      {/* 2. Color Toggle Pill */}
+      {isWireframeVisible && (
+        <div className="flex h-[1.5rem] items-center rounded-[1rem] bg-[#FFFFFF] p-[0.35rem]">
+          {/* BLACK OPTION */}
+          <div
+            onClick={() => handleColorChange('#000000')}
+            className={`flex h-full cursor-pointer items-center gap-[0.4rem] rounded-[1rem] px-[0.6rem] transition-all duration-200 ${wireframeColor === '#000000' ? 'bg-[#DCE6F2]' : 'hover:bg-[#DCE6F2]'}`}
           >
-            <svg
-              width="20"
-              height="20"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke={isWireframeVisible ? '#2563EB' : '#6B7280'}
-              strokeWidth="1.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
+            <div className="h-[0.7rem] w-[0.7rem] rounded-full bg-[#000000]"></div>
+            <p className="text-[0.8rem] font-medium text-[#3B3B6D]">Black</p>
+          </div>
+
+          {/* WHITE OPTION */}
+          <div
+            onClick={() => handleColorChange('#FFFFFF')}
+            className={`flex h-full cursor-pointer items-center gap-[0.4rem] rounded-[1rem] px-[0.6rem] transition-all duration-200 ${wireframeColor === '#FFFFFF' ? 'bg-[#DCE6F2]' : 'hover:bg-[#DCE6F2]'}`}
+          >
+            <div className="h-[0.7rem] w-[0.7rem] rounded-full border border-[#3B3B6D] bg-[#FFFFFF]"></div>
+            <p className="text-[0.8rem] font-medium text-[#3B3B6D]">White</p>
+          </div>
+        </div>
+      )}
+      {/* 1. Wireframe Mode Dropdown Pill */}
+      <div
+        className="relative flex h-[1.5rem] w-[7.5rem] items-center rounded-[1rem] bg-[#FFFFFF] p-[0.35rem]"
+        ref={dropdownRef}
+      >
+        {showModeDropdown && (
+          <div className="absolute right-0 bottom-[2.2rem] left-0 z-[10001] overflow-hidden rounded-[0.4rem] border-none bg-[#FFFFFF]">
+            <button
+              onClick={() => handleWireframeToggle(false)}
+              className="flex h-[2rem] w-[7.5rem] items-center justify-center border-none bg-[#FFFFFF] bg-white text-[0.75rem] font-medium text-[#3B3B6D] transition-colors hover:bg-[#DCE6F2]"
             >
-              <path d="M12 2L2 7L12 12L22 7L12 2Z" />
-              <path d="M2 17L12 22L22 17" />
-              <path d="M2 12L12 17L22 12" />
-              <path d="M2 7V17" />
-              <path d="M22 7V17" />
-              <path d="M12 12V22" />
-            </svg>
-          </button>
+              Solid
+            </button>
+            <div className="mx-2 h-[1px] bg-[#F1F5F9]" />
+            <button
+              onClick={() => handleWireframeToggle(true)}
+              className="flex h-[2rem] w-[7.5rem] items-center justify-center border-none bg-[#ffffff] bg-white text-[0.75rem] font-medium text-[#3B3B6D] transition-colors hover:bg-[#DCE6F2]"
+            >
+              Solid + Edge
+            </button>
+          </div>
+        )}
+        <div
+          onClick={() => setShowModeDropdown(!showModeDropdown)}
+          className="flex h-full w-full cursor-pointer items-center justify-center gap-[0.4rem] rounded-[1rem] transition-all duration-200 hover:bg-[#D2DEED]"
+        >
+          <img src={assets.circle_footer_icon} alt="" className="h-[0.7rem] w-[0.8rem]" />
 
-          {/* Popover - Box type design as requested */}
-          {showColorPicker && (
-            <div className="animate-in fade-in zoom-in-95 slide-in-from-bottom-2 absolute bottom-full left-1/2 mb-3 w-48 -translate-x-1/2 duration-200">
-              <div className="relative overflow-hidden rounded-xl border border-gray-100 bg-white p-3 shadow-[0_10px_25px_-5px_rgba(0,0,0,0.1),0_8px_10px_-6px_rgba(0,0,0,0.1)]">
-                <div className="mb-2 flex items-center justify-between">
-                  <span className="text-[11px] font-bold tracking-wider text-gray-500 uppercase">
-                    Wireframe
-                  </span>
-                  <button
-                    onClick={handleDisableWireframe}
-                    className="text-[10px] font-medium text-red-500 hover:text-red-600"
-                  >
-                    Disable
-                  </button>
-                </div>
+          <p className="w-[4.8rem] text-center text-[0.75rem] font-medium tracking-wide whitespace-nowrap text-[#3B3B6D]">
+            {isWireframeVisible ? 'Solid + Edge' : 'Solid'}
+          </p>
 
-                <div className="flex flex-col gap-2">
-                  <button
-                    onClick={() => handleColorChange('#000000')}
-                    className={`flex items-center gap-3 rounded-lg p-2 transition-colors ${
-                      wireframeColor === '#000000' ? 'bg-gray-50' : 'hover:bg-gray-50'
-                    }`}
-                  >
-                    <div
-                      className="h-5 w-5 rounded-full border border-gray-200 shadow-inner"
-                      style={{ backgroundColor: '#000000' }}
-                    />
-                    <span
-                      className={`text-sm ${wireframeColor === '#000000' ? 'font-semibold text-gray-900' : 'text-gray-600'}`}
-                    >
-                      Black
-                    </span>
-                    {wireframeColor === '#000000' && (
-                      <div className="ml-auto h-1.5 w-1.5 rounded-full bg-blue-500" />
-                    )}
-                  </button>
-
-                  <button
-                    onClick={() => handleColorChange('#FFFFFF')}
-                    className={`flex items-center gap-3 rounded-lg p-2 transition-colors ${
-                      wireframeColor === '#FFFFFF' ? 'bg-gray-50' : 'hover:bg-gray-50'
-                    }`}
-                  >
-                    <div
-                      className="h-5 w-5 rounded-full border border-gray-200 shadow-inner"
-                      style={{ backgroundColor: '#FFFFFF' }}
-                    />
-                    <span
-                      className={`text-sm ${wireframeColor === '#FFFFFF' ? 'font-semibold text-gray-900' : 'text-gray-600'}`}
-                    >
-                      White
-                    </span>
-                    {wireframeColor === '#FFFFFF' && (
-                      <div className="ml-auto h-1.5 w-1.5 rounded-full bg-blue-500" />
-                    )}
-                  </button>
-                </div>
-
-                {/* Arrow at bottom of popover */}
-                <div className="absolute -bottom-1 left-1/2 h-2 w-2 -translate-x-1/2 rotate-45 border-r border-b border-gray-100 bg-white" />
-              </div>
-            </div>
-          )}
+          <img
+            src={assets.dropdown}
+            alt=""
+            className={`h-[0.8rem] w-[0.8rem] transition-transform duration-200 ${showModeDropdown ? 'rotate-180' : ''}`}
+          />
         </div>
       </div>
-    </footer>
+
+      {/* 3. View Mode Toggle Pill */}
+      <div className="flex h-[1.5rem] items-center rounded-[1rem] bg-[#FFFFFF] p-[0.35rem]">
+        {/* 2D */}
+        <button
+          onClick={() => onViewModeChange('2d')}
+          className={`flex h-full items-center justify-center gap-[0.4rem] rounded-[1rem] border-none px-[0.4rem] transition-all duration-200 ${viewMode === '2d' ? 'bg-[#DCE6F2]' : 'bg-transparent hover:bg-[#DCE6F2]'}`}
+        >
+          <img
+            src={viewMode === '2d' ? assets.active_2d : assets.icon_2d}
+            alt="2d"
+            className="h-[0.8rem] w-auto"
+          />
+        </button>
+
+        {/* 3D */}
+        <button
+          onClick={() => onViewModeChange('3d')}
+          className={`flex h-full items-center justify-center gap-[0.4rem] rounded-[1rem] border-none px-[0.5rem] transition-all duration-200 ${viewMode === '3d' ? 'bg-[#DCE6F2]' : 'bg-transparent hover:bg-[#DCE6F2]'}`}
+        >
+          <img
+            src={viewMode === '3d' ? assets.active_3d : assets.icon_3d}
+            alt="3d"
+            className="h-[0.8rem] w-auto"
+          />
+        </button>
+      </div>
+    </div>
   );
 };
 

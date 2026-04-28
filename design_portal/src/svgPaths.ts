@@ -48,6 +48,8 @@ export const _3DMODEL = {
   vrLine: '/assets/3dmodel/sidebar/line 129.svg',
   icon_2d: '/assets/3dmodel/footer/2d.svg',
   icon_3d: '/assets/3dmodel/footer/3d.svg',
+  active_2d: '/assets/3dmodel/footer/active2d.svg',
+  active_3d: '/assets/3dmodel/footer/active3d.svg',
   close_white: '/assets/3dmodel/toolbar/close.svg',
   delete_helper: '/assets/3dmodel/deletehelper.svg',
   copy_helper: '/assets/3dmodel/copyhelper.svg',
@@ -480,6 +482,10 @@ export const FEATURED_ICON = {
   alert: '/assets/alert.svg',
 };
 
+export const FOOTER_ICON = {
+  circle_footer_icon: '/assets/footer/dropdown_footer.svg',
+};
+
 export const assets = {
   ...PROPERTY_IMG,
   ..._3DMODEL,
@@ -524,4 +530,5 @@ export const assets = {
   ...LOAD_MORE,
   ...UP_DOWN_ARROW,
   ...FEATURED_ICON,
+  ...FOOTER_ICON,
 };
