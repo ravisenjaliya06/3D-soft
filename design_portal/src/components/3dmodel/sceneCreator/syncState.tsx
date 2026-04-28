@@ -4,6 +4,7 @@ import { generateCompartmentsFromMesh, updateMinifixesForCupboard } from '../han
 import { MoveHandler } from '../handler/moveHandler';
 import { store } from '../store';
 import { addObjects, updateObjects } from '../store/dataSlice';
+import { beginHistoryTransaction, endHistoryTransaction } from '../store/historySlice';
 import { updatePlatformHolesForSink } from '../utils/holeManager';
 import { updateOrRefreshOutline } from '../utils/outlineHelpers';
 import { DesignBuilder } from './designBuilder';
@@ -70,10 +71,37 @@ export class SyncManager {
     // Initialize Maps for O(1) access
     this._initializeMaps();
     const list = this._normalizeData(this.data);
+    const shouldWrapHistoryTransaction = this._shouldWrapPlacementTransaction(list);
 
-    this._syncState(list);
-    this._sync2D(list);
-    await this._sync3D(list);
+    if (shouldWrapHistoryTransaction) {
+      store.dispatch(beginHistoryTransaction());
+    }
+
+    try {
+      this._syncState(list);
+      this._sync2D(list);
+      await this._sync3D(list);
+    } finally {
+      if (shouldWrapHistoryTransaction) {
+        store.dispatch(endHistoryTransaction());
+      }
+    }
+  }
+
+  /**
+   * Wrap toolbar add + cursor drag placement as one history transaction.
+   * This prevents temporary spawn state (e.g. 0,0,0) from becoming an undo step.
+   */
+  private _shouldWrapPlacementTransaction(list: MeshObjectData[]): boolean {
+    if (this.isAutoSync) return false;
+    if (list.length !== 1) return false;
+
+    const item = list[0];
+    if (!this._isObjectType(item.type)) return false;
+
+    // Only for new object creation flow (existing objects are normal updates).
+    const alreadyExists = this.storeObjectMap.has(item.id);
+    return !alreadyExists;
   }
 
   /**

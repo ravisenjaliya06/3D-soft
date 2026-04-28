@@ -37,6 +37,9 @@ const activeItemSlice = createSlice({
     setActiveItemCamHeight: (state, action: PayloadAction<number>) => {
       state.camHeight = action.payload;
     },
+    restoreActiveItemState: (state, action: PayloadAction<ActiveItemState>) => {
+      return { ...state, ...action.payload };
+    },
     clearActiveItemOverrides: (state) => {
       state.minifixDistance = null;
       state.minifixDiameterHole = null;
@@ -53,6 +56,7 @@ export const {
   setActiveItemCamDepth,
   setActiveItemCamDiameter,
   setActiveItemCamHeight,
+  restoreActiveItemState,
   clearActiveItemOverrides,
 } = activeItemSlice.actions;
 
