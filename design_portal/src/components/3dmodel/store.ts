@@ -72,7 +72,6 @@ const isSignificantHistoryChange = (
 ) => {
   const normalizeObjects = (objects: any[]) =>
     objects
-      .filter((obj) => obj.type !== 'floor')
       .map((obj) => ({
         id: obj.id,
         parent: obj.parent ?? null,

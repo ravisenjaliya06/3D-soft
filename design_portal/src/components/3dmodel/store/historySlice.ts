@@ -1,11 +1,13 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 import { SyncManager } from '../sceneCreator/syncState';
 import { AppThunk, RootState } from '../store';
+import { generateCompartmentsFromMesh } from '../handler/items';
 import { restoreActiveDesignState } from './activeDesignSlice';
 import { restoreActiveItemState } from './activeItemSlice';
 import { restoreDataState } from './dataSlice';
 import { restoreDesignSettingsState } from './designSettingsSlice';
 import * as THREE from 'three';
+import { FloorManager } from '../sceneCreator/floorManager';
 
 const MAX_HISTORY_STEPS = 20;
 
@@ -62,46 +64,6 @@ export function createHistorySnapshot(state: RootState): HistorySnapshot {
     activeItem: deepClone(state.activeItem),
     designSettings: deepClone(state.designSettings),
   };
-}
-
-type VisualComparableObject = {
-  id: string;
-  parent?: string | null;
-  type?: string;
-  position?: unknown;
-  rotation?: unknown;
-  scale?: unknown;
-  dimensions?: unknown;
-  material?: unknown;
-  holes?: unknown;
-  grooves?: unknown;
-  panelDesign?: unknown;
-  floorData?: unknown;
-};
-
-function buildVisualSignature(snapshot: HistorySnapshot): string {
-  const comparable = snapshot.data.objects
-    .filter((obj) => obj.type !== 'floor')
-    .map(
-      (obj) =>
-        ({
-          id: obj.id,
-          parent: obj.parent ?? null,
-          type: obj.type,
-          position: obj.position,
-          rotation: obj.rotation,
-          scale: obj.scale,
-          dimensions: obj.dimensions,
-          material: obj.material,
-          holes: obj.holes,
-          grooves: obj.grooves,
-          panelDesign: obj.panelDesign,
-          floorData: obj.floorData,
-        }) as VisualComparableObject
-    )
-    .sort((a, b) => a.id.localeCompare(b.id));
-
-  return JSON.stringify(comparable);
 }
 
 function clearRuntimeSceneOnly(scene: THREE.Scene) {
@@ -224,6 +186,31 @@ const restoreSnapshot =
     // Rebuild 3D scene from restored Redux object data to keep 2D/3D/Redux in sync.
     const syncManager = new SyncManager(snapshot.data.objects, undefined, true);
     await syncManager.syncData();
+
+    // Rebuild floors deterministically from restored floor objects.
+    // This avoids cases where Redux restore recreated floor data but the floor
+    // render pipeline skipped due to memoization in other components.
+    const floorObjects = snapshot.data.objects.filter((obj: any) => obj.type === 'floor');
+    const floorData = floorObjects
+      .map((obj: any) => ({
+        id: obj.id,
+        points: obj.floorData?.points ?? [],
+        walls: obj.floorData?.walls ?? [],
+      }))
+      .filter((f: any) => f.points?.length >= 3);
+
+    const floorManager = new FloorManager(getState().scene.scene, floorData);
+    await floorManager.syncData();
+
+    // Safety pass: ensure invisible compartments always exist after undo/redo restore.
+    // This covers grouped restore paths and async hierarchy rebuild edge-cases.
+    const scene = getState().scene.scene;
+    scene.traverse((node) => {
+      if (!(node instanceof THREE.Mesh)) return;
+      if (!node.userData?.isMain) return;
+      if (typeof node.name === 'string' && node.name.toLowerCase().includes('drawer')) return;
+      generateCompartmentsFromMesh(node);
+    });
   };
 
 export const undoAction = (): AppThunk => async (dispatch, getState) => {
@@ -232,21 +219,9 @@ export const undoAction = (): AppThunk => async (dispatch, getState) => {
   if (beforeUndo.history.past.length === 0 || beforeUndo.history.isApplying) return;
 
   const currentSnapshot = createHistorySnapshot(beforeUndo);
-  const currentVisualSignature = buildVisualSignature(currentSnapshot);
-  let steps = 1;
-  let targetIndex = beforeUndo.history.past.length - 1;
+  const targetSnapshot = beforeUndo.history.past[beforeUndo.history.past.length - 1];
 
-  for (let i = beforeUndo.history.past.length - 1; i >= 0; i--) {
-    const signature = buildVisualSignature(beforeUndo.history.past[i]);
-    if (signature !== currentVisualSignature || i === 0) {
-      targetIndex = i;
-      steps = beforeUndo.history.past.length - i;
-      break;
-    }
-  }
-  const targetSnapshot = beforeUndo.history.past[targetIndex];
-
-  dispatch(movePastToFutureSteps({ current: currentSnapshot, steps }));
+  dispatch(movePastToFuture(currentSnapshot));
   await dispatch(restoreSnapshot(targetSnapshot) as any);
   dispatch(finishApplyingHistory());
 };
@@ -257,21 +232,9 @@ export const redoAction = (): AppThunk => async (dispatch, getState) => {
   if (beforeRedo.history.future.length === 0 || beforeRedo.history.isApplying) return;
 
   const currentSnapshot = createHistorySnapshot(beforeRedo);
-  const currentVisualSignature = buildVisualSignature(currentSnapshot);
-  let steps = 1;
-  let targetIndex = beforeRedo.history.future.length - 1;
+  const targetSnapshot = beforeRedo.history.future[beforeRedo.history.future.length - 1];
 
-  for (let i = beforeRedo.history.future.length - 1; i >= 0; i--) {
-    const signature = buildVisualSignature(beforeRedo.history.future[i]);
-    if (signature !== currentVisualSignature || i === 0) {
-      targetIndex = i;
-      steps = beforeRedo.history.future.length - i;
-      break;
-    }
-  }
-  const targetSnapshot = beforeRedo.history.future[targetIndex];
-
-  dispatch(moveFutureToPastSteps({ current: currentSnapshot, steps }));
+  dispatch(moveFutureToPast(currentSnapshot));
   await dispatch(restoreSnapshot(targetSnapshot) as any);
   dispatch(finishApplyingHistory());
 };
@@ -280,8 +243,6 @@ export const {
   pushSnapshot,
   movePastToFuture,
   moveFutureToPast,
-  movePastToFutureSteps,
-  moveFutureToPastSteps,
   finishApplyingHistory,
   flushPendingHistory,
   beginHistoryTransaction,

@@ -94,14 +94,15 @@ export class SyncManager {
    */
   private _shouldWrapPlacementTransaction(list: MeshObjectData[]): boolean {
     if (this.isAutoSync) return false;
-    if (list.length !== 1) return false;
+    if (list.length === 0) return false;
 
-    const item = list[0];
-    if (!this._isObjectType(item.type)) return false;
+    const listIds = new Set(list.map((i) => i.id));
+    const rootItem = list.find((i) => !i.parent || !listIds.has(i.parent)) || list[0];
+    if (!rootItem || !this._isObjectType(rootItem.type)) return false;
 
-    // Only for new object creation flow (existing objects are normal updates).
-    const alreadyExists = this.storeObjectMap.has(item.id);
-    return !alreadyExists;
+    // Only wrap when the root object is newly created.
+    const rootAlreadyExists = this.storeObjectMap.has(rootItem.id);
+    return !rootAlreadyExists;
   }
 
   /**
@@ -771,6 +772,15 @@ export class SyncManager {
     } else {
       this._attachToParentOrScene(root, rootItem?.parent);
     }
+
+    // Recreate invisible compartments for every main mesh after hierarchy rebuild.
+    // This is critical for undo/redo restore, where grouped roots may not trigger
+    // single-mesh compartment generation paths.
+    root.traverse((node) => {
+      if (node instanceof THREE.Mesh && node.userData?.isMain) {
+        generateCompartmentsFromMesh(node);
+      }
+    });
 
     // After banding is applied, detect and sync banding state to Redux
     this._syncBandingFromScene(list);
