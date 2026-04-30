@@ -224,6 +224,8 @@ export default function PlannerGrid() {
                   setLocalInputFt(null);
                   setLocalInputMm(null);
                 } else if (e.key === 'Escape') {
+                  e.preventDefault();
+                  e.stopPropagation();
                   dispatch(toggleWallDrawing(false));
                   resetDrawing();
                   setLocalInputFt(null);
@@ -277,6 +279,8 @@ export default function PlannerGrid() {
                   setLocalInputFt(null);
                   setLocalInputMm(null);
                 } else if (e.key === 'Escape') {
+                  e.preventDefault();
+                  e.stopPropagation();
                   dispatch(toggleWallDrawing(false));
                   resetDrawing();
                   setLocalInputFt(null);
@@ -338,14 +342,31 @@ export default function PlannerGrid() {
         return;
       }
       if (event.key === 'Escape') {
+        event.preventDefault();
+        event.stopPropagation();
         dispatch(toggleWallDrawing(false));
         resetDrawing();
         dispatch(setobjectSelected(null));
       }
     };
-    window.addEventListener('keydown', handleKeyDown);
+
+    const handleFullscreenChange = () => {
+      // If we've just exited fullscreen while drawing was active, stop the drawing.
+      // This handles the case where the browser consumes the Escape key to exit fullscreen
+      // and doesn't fire the keydown event to the page.
+      if (!document.fullscreenElement && isDrawingActive) {
+        dispatch(toggleWallDrawing(false));
+        resetDrawing();
+        dispatch(setobjectSelected(null));
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown, true);
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+
     return () => {
-      window.removeEventListener('keydown', handleKeyDown);
+      document.removeEventListener('keydown', handleKeyDown, true);
+      document.removeEventListener('fullscreenchange', handleFullscreenChange);
     };
   }, [resetDrawing, dispatch, isDrawingActive, wallPointMode]);
 

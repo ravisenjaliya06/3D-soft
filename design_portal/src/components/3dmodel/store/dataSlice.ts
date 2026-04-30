@@ -22,7 +22,7 @@ const initialState: DataState = {
   points: [],
   floor: [],
   globalDoorsOpen: false,
-  isWireframeVisible: false,
+  isWireframeVisible: true,
   wireframeColor: '#000000',
   wallPointMode: 'internal',
 };

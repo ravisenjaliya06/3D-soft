@@ -17,7 +17,7 @@ export const createLineObjects = (obj: THREE.Mesh, color: number): THREE.LineSeg
   const mat = new THREE.LineBasicMaterial({
     color: color,
     linewidth: 4,
-    depthTest: false,
+    depthTest: true,
     opacity: 1,
     transparent: true,
   });
