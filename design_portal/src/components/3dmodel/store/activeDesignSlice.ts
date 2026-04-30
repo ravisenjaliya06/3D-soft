@@ -42,6 +42,9 @@ const activeDesignSlice = createSlice({
     setIsLatestVersion: (state, action: PayloadAction<boolean>) => {
       state.isLatestVersion = action.payload;
     },
+    restoreActiveDesignState: (state, action: PayloadAction<ActiveDesignState>) => {
+      return { ...state, ...action.payload };
+    },
     clearActiveDesignOverrides: (state) => {
       state.minifixDistance = null;
       state.minifixDiameterHole = null;
@@ -60,6 +63,7 @@ export const {
   setActiveDesignCamDiameter,
   setActiveDesignCamHeight,
   setIsLatestVersion,
+  restoreActiveDesignState,
   clearActiveDesignOverrides,
 } = activeDesignSlice.actions;
 

@@ -11,6 +11,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { toast } from 'react-toastify';
 import * as THREE from 'three';
+import { UnknownAction } from 'redux';
 import { Design, HeaderProps } from '../interface';
 import { ObjectsSaver } from '../sceneCreator/tools/objectSaver';
 import { CabinetMotionController } from '../sceneCreator/tools/openCloseTool';
@@ -33,6 +34,7 @@ import {
   selectHeaderMinifixDistance,
   selectIsLatestVersion,
 } from '../store/selectors';
+import { redoAction, undoAction } from '../store/historySlice';
 import { CustomToast } from '../utils/CustomToast';
 import { parseDesignIdsFromPathname } from '../utils/routeIds';
 import styles from './header.module.css';
@@ -40,6 +42,7 @@ import styles from './header.module.css';
 const Header: React.FC<HeaderProps> = ({ router, design3D }) => {
   const dispatch = useDispatch();
   const globalDoorsOpen = useSelector((state: RootState) => state.data.globalDoorsOpen);
+  const history = useSelector((state: RootState) => state.history);
 
   // Use selectors to get values with fallback to design settings
   const resolvedMinifixDistance = useSelector(selectHeaderMinifixDistance);
@@ -628,20 +631,20 @@ const Header: React.FC<HeaderProps> = ({ router, design3D }) => {
   };
 
   const headerTools = [
-    // {
-    //   option: 'undo',
-    //   name: 'Undo',
-    //   icon: assets.newundo,
-    //   disabled: !history?.past?.length,
-    //   onClick: () => dispatch(undoAction() as unknown as UnknownAction),
-    // },
-    // {
-    //   option: 'redo',
-    //   name: 'Redo',
-    //   icon: assets.newredu,
-    //   disabled: !history?.future?.length,
-    //   onClick: () => dispatch(redoAction() as unknown as UnknownAction),
-    // },
+    {
+      option: 'undo',
+      name: 'Undo',
+      icon: assets.newundo,
+      disabled: !isLatestVersion || !history?.past?.length || history?.isApplying,
+      onClick: () => dispatch(undoAction() as unknown as UnknownAction),
+    },
+    {
+      option: 'redo',
+      name: 'Redo',
+      icon: assets.newredu,
+      disabled: !isLatestVersion || !history?.future?.length || history?.isApplying,
+      onClick: () => dispatch(redoAction() as unknown as UnknownAction),
+    },
     {
       option: 'clear',
       name: 'Clear',

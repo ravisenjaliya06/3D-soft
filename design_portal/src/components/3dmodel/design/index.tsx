@@ -4,7 +4,7 @@ import * as THREE from 'three';
 import { MoveHandler } from '../handler/moveHandler';
 import { useAppDispatch, useAppSelector } from '../hooks';
 import { FloorManager } from '../sceneCreator/floorManager';
-import { MATERIAL_TYPES } from '../sceneCreator/interface';
+import { FLOOR_PLAN_TYPES, MATERIAL_TYPES } from '../sceneCreator/interface';
 import { SaveToLibraryPopup } from '../sceneCreator/popup/SaveToLibraryPopup';
 import HelperTool from '../sceneCreator/tools/HelperTool';
 import { ObjectsSaver } from '../sceneCreator/tools/objectSaver';
@@ -371,7 +371,7 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
     if (!design3D?.scene) return;
 
     // Filter floor objects from data.objects array
-    const floorObjects = objects.filter((obj) => obj.type === 'floor');
+    const floorObjects = objects.filter((obj) => obj.type === FLOOR_PLAN_TYPES.FLOOR);
 
     if (floorObjects.length === 0) {
       if (prevFloorDataRef.current !== '') {

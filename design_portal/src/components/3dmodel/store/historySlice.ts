@@ -1,256 +1,252 @@
-import { API_ENDPOINT } from '@/services/ApiEndPoints';
-import commonService from '@/services/CommonService';
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
+import { SyncManager } from '../sceneCreator/syncState';
+import { AppThunk, RootState } from '../store';
+import { generateCompartmentsFromMesh } from '../handler/items';
+import { restoreActiveDesignState } from './activeDesignSlice';
+import { restoreActiveItemState } from './activeItemSlice';
+import { restoreDataState } from './dataSlice';
+import { restoreDesignSettingsState } from './designSettingsSlice';
 import * as THREE from 'three';
-import { ResponseStatus } from '../interface';
-import { AppThunk } from '../store';
-import { convertObjectData } from '../utils/convertData';
-import { gettingDesignID } from '../utils/routeIds';
-import { removeObject } from './dataSlice';
-import { HistoryAction, HistoryState, Object3D } from './interface';
-import { addElement, removeElement } from './sceneSlice';
+import { FloorManager } from '../sceneCreator/floorManager';
 
-// Helper functions (unchanged)
-const isMainObject = (object: Object3D): boolean => {
-  return !object.parent || object.parent === null;
-};
+const MAX_HISTORY_STEPS = 20;
+
+export interface HistorySnapshot {
+  data: ReturnType<typeof buildDataSnapshot>;
+  activeDesign: RootState['activeDesign'];
+  activeItem: RootState['activeItem'];
+  designSettings: RootState['designSettings'];
+}
+
+interface HistoryState {
+  past: HistorySnapshot[];
+  future: HistorySnapshot[];
+  isApplying: boolean;
+}
 
 const initialState: HistoryState = {
   past: [],
   future: [],
+  isApplying: false,
 };
+
+function deepClone<T>(value: T): T {
+  return structuredClone(value);
+}
+
+function buildDataSnapshot(state: RootState['data']) {
+  return {
+    objects: deepClone(state.objects),
+    selectedObject: state.selectedObject,
+    selectedChildObject: state.selectedChildObject,
+    selectedInvisibleBox: state.selectedInvisibleBox,
+    mainCupboardId: state.mainCupboardId,
+    isQuickHideActive: state.isQuickHideActive,
+    isMeasurementActive: state.isMeasurementActive,
+    currentUnitType: state.currentUnitType,
+    showCreationCancelHint: state.showCreationCancelHint,
+    isAlignmentActive: state.isAlignmentActive,
+    isWallDrawingActive: state.isWallDrawingActive,
+    wallDrawStartPointId: state.wallDrawStartPointId,
+    points: deepClone(state.points),
+    floor: deepClone(state.floor),
+    globalDoorsOpen: state.globalDoorsOpen ?? false,
+    isWireframeVisible: state.isWireframeVisible,
+    wireframeColor: state.wireframeColor,
+    wallPointMode: state.wallPointMode,
+  };
+}
+
+export function createHistorySnapshot(state: RootState): HistorySnapshot {
+  return {
+    data: buildDataSnapshot(state.data),
+    activeDesign: deepClone(state.activeDesign),
+    activeItem: deepClone(state.activeItem),
+    designSettings: deepClone(state.designSettings),
+  };
+}
+
+function clearRuntimeSceneOnly(scene: THREE.Scene) {
+  const disposableObjects: THREE.Object3D[] = [];
+  scene.children.forEach((child) => {
+    const type = child.userData?.type;
+    if (type === 'ambient_light' || type === 'directional_light' || type === 'transform_controls') {
+      return;
+    }
+    disposableObjects.push(child);
+  });
+
+  disposableObjects.forEach((object) => {
+    scene.remove(object);
+    object.traverse((node) => {
+      if (node instanceof THREE.Mesh) {
+        node.geometry?.dispose();
+        if (Array.isArray(node.material)) {
+          node.material.forEach((mat) => mat.dispose());
+        } else {
+          node.material?.dispose();
+        }
+      }
+    });
+  });
+}
 
 const historySlice = createSlice({
   name: 'history',
   initialState,
   reducers: {
-    addToHistory: (state, action: PayloadAction<HistoryAction>) => {
-      const { type, data } = action.payload;
-      if (type === 'REMOVE' && data.objects && data.meshes) {
-        state.past.push(action.payload);
-        state.future = [];
-      } else if (data.object && isMainObject(data.object) && data.mesh) {
-        state.past.push(action.payload);
-        state.future = [];
+    pushSnapshot: (state, action: PayloadAction<HistorySnapshot>) => {
+      state.past.push(action.payload);
+      if (state.past.length > MAX_HISTORY_STEPS) {
+        state.past.shift();
       }
+      state.future = [];
     },
-    undo: (state) => {
-      if (state.past.length > 0) {
-        const lastAction = state.past.pop()!;
-        state.future.push(lastAction);
+    movePastToFuture: (state, action: PayloadAction<HistorySnapshot>) => {
+      if (state.past.length === 0) return;
+      const current = action.payload;
+      state.past.pop();
+      state.future.push(current);
+      if (state.future.length > MAX_HISTORY_STEPS) {
+        state.future.shift();
       }
+      state.isApplying = true;
     },
-    redo: (state) => {
-      if (state.future.length > 0) {
-        const lastAction = state.future.pop()!;
-        state.past.push(lastAction);
+    moveFutureToPast: (state, action: PayloadAction<HistorySnapshot>) => {
+      if (state.future.length === 0) return;
+      const current = action.payload;
+      state.future.pop();
+      state.past.push(current);
+      if (state.past.length > MAX_HISTORY_STEPS) {
+        state.past.shift();
       }
+      state.isApplying = true;
+    },
+    movePastToFutureSteps: (
+      state,
+      action: PayloadAction<{ current: HistorySnapshot; steps: number }>
+    ) => {
+      if (state.past.length === 0 || action.payload.steps <= 0) return;
+      const steps = Math.min(action.payload.steps, state.past.length);
+      for (let i = 0; i < steps; i++) {
+        state.past.pop();
+      }
+      state.future.push(action.payload.current);
+      if (state.future.length > MAX_HISTORY_STEPS) {
+        state.future.shift();
+      }
+      state.isApplying = true;
+    },
+    moveFutureToPastSteps: (
+      state,
+      action: PayloadAction<{ current: HistorySnapshot; steps: number }>
+    ) => {
+      if (state.future.length === 0 || action.payload.steps <= 0) return;
+      const steps = Math.min(action.payload.steps, state.future.length);
+      for (let i = 0; i < steps; i++) {
+        state.future.pop();
+      }
+      state.past.push(action.payload.current);
+      if (state.past.length > MAX_HISTORY_STEPS) {
+        state.past.shift();
+      }
+      state.isApplying = true;
+    },
+    finishApplyingHistory: (state) => {
+      state.isApplying = false;
+    },
+    flushPendingHistory: () => {
+      // Middleware-driven action: reducer intentionally no-op.
+    },
+    beginHistoryTransaction: () => {
+      // Middleware-driven action: reducer intentionally no-op.
+    },
+    endHistoryTransaction: () => {
+      // Middleware-driven action: reducer intentionally no-op.
     },
     clearHistory: (state) => {
       state.past = [];
       state.future = [];
-    },
-    updateHistory: (
-      state,
-      action: PayloadAction<{ past: HistoryAction[]; future: HistoryAction[] }>
-    ) => {
-      state.past = action.payload.past;
-      state.future = action.payload.future;
+      state.isApplying = false;
     },
   },
 });
 
-export const trackPropertyChange =
-  (
-    object: Object3D,
-    property: string,
-    oldValue: number,
-    newValue: number,
-    mesh?: THREE.Mesh
-  ): AppThunk =>
-  (dispatch) => {
-    const action: HistoryAction = {
-      id: object.id,
-      type: 'PROPERTY_CHANGE',
-      data: {
-        object,
-        mesh,
-        propertyChanges: [{ property, oldValue, newValue }],
-      },
-    };
-    dispatch(addToHistory(action));
-  };
-
-export const undoAction = (): AppThunk => (dispatch, getState) => {
-  const state = getState();
-  const history = state.history;
-
-  if (history.past.length > 0) {
-    const lastAction = history.past[history.past.length - 1];
-
-    switch (lastAction.type) {
-      case 'ADD':
-        if (lastAction.data.mesh && lastAction.data.object) {
-          dispatch(deleteObject(lastAction.data.mesh, lastAction.data.object.id));
-        }
-        if (lastAction.data.object) {
-          dispatch(removeObject(lastAction.data.object.id));
-        }
-        if (lastAction.data.mesh) {
-          dispatch(removeElement(lastAction.data.mesh));
-        }
-        if (lastAction.data.childObjects) {
-          lastAction.data.childObjects.forEach((child) => dispatch(removeObject(child.id)));
-        }
-        break;
-
-      case 'PROPERTY_CHANGE':
-        break;
-    }
-    dispatch(undo());
-  }
-};
-
-export const redoAction = (): AppThunk => (dispatch, getState) => {
-  const state = getState();
-  const history = state.history;
-
-  if (history.future.length > 0) {
-    const nextAction = history.future[history.future.length - 1];
-
-    switch (nextAction.type) {
-      case 'ADD':
-        if (nextAction.data.mesh && nextAction.data.object) {
-          dispatch(
-            createObject(nextAction.data.object, nextAction.data.mesh, nextAction.data.childObjects)
-          );
-        }
-        if (nextAction.data.mesh) {
-          dispatch(addElement(nextAction.data.mesh));
-        }
-        break;
-
-      case 'REMOVE':
-        // Handle bulk removal (removeAllObjects case)
-        if (nextAction.data.objects && nextAction.data.meshes) {
-          // Remove all main objects and meshes
-          nextAction.data.objects.forEach((obj, index) => {
-            const mesh = nextAction.data.meshes![index];
-            dispatch(deleteObject(mesh, obj.id));
-            dispatch(removeElement(mesh));
-          });
-          nextAction.data.objects.forEach((obj) => {
-            dispatch(removeObject(obj.id));
-          });
-
-          // Remove all child objects
-          if (nextAction.data.childObjects) {
-            nextAction.data.childObjects.forEach((child) => dispatch(removeObject(child.id)));
-          }
-        } else {
-          // Handle single object removal
-          if (nextAction.data.mesh && nextAction.data.object) {
-            dispatch(deleteObject(nextAction.data.mesh, nextAction.data.object.id));
-          }
-          if (nextAction.data.object) {
-            dispatch(removeObject(nextAction.data.object.id));
-          }
-          if (nextAction.data.mesh) {
-            dispatch(removeElement(nextAction.data.mesh));
-          }
-          if (nextAction.data.childObjects) {
-            nextAction.data.childObjects.forEach((child) => dispatch(removeObject(child.id)));
-          }
-        }
-        break;
-
-      case 'PROPERTY_CHANGE':
-        break;
-    }
-
-    dispatch(redo());
-  }
-};
-
-export const createObject =
-  (object: Object3D, mesh: THREE.Mesh, childObjects?: Object3D[]): AppThunk =>
+const restoreSnapshot =
+  (snapshot: HistorySnapshot): AppThunk =>
   async (dispatch, getState) => {
-    const designId = gettingDesignID();
-    if (!designId) {
-      console.error('No design ID found');
-      return;
-    }
-    const convertedData = convertObjectData(object, childObjects);
-    const data = {
-      data: {
-        catalog: {
-          ...convertedData.object,
-        },
-        items: convertedData?.items || [],
-        child_catalogs: convertedData?.child_catalogs || [],
-      },
-    };
+    // Clear only runtime scene graph; do not mutate Redux via delete tools.
+    clearRuntimeSceneOnly(getState().scene.scene);
 
-    const response = await commonService.post(API_ENDPOINT.CREATE_DESIGN_OBJECT(designId), data);
+    dispatch(restoreDataState(snapshot.data));
+    dispatch(restoreActiveDesignState(snapshot.activeDesign));
+    dispatch(restoreActiveItemState(snapshot.activeItem));
+    dispatch(restoreDesignSettingsState(snapshot.designSettings));
 
-    if (response.status === 200 || response.status === 201) {
-      const state = getState();
-      const history = state.history;
+    // Rebuild 3D scene from restored Redux object data to keep 2D/3D/Redux in sync.
+    const syncManager = new SyncManager(snapshot.data.objects, undefined, true);
+    await syncManager.syncData();
 
-      const updateHistory = (actions: HistoryAction[]) => {
-        actions.map((action) => {
-          if (action.id === object.id) {
-            return {
-              ...action,
-              data: {
-                ...action.data,
-                object: {
-                  ...action.data.object,
-                },
-                childObjects: action.data.childObjects,
-              },
-            };
-          }
-          return action;
-        });
-      };
-      const updatedPast = updateHistory(history.past);
-      const updatedFuture = updateHistory(history.future);
+    // Rebuild floors deterministically from restored floor objects.
+    // This avoids cases where Redux restore recreated floor data but the floor
+    // render pipeline skipped due to memoization in other components.
+    const floorObjects = snapshot.data.objects.filter((obj: any) => obj.type === 'floor');
+    const floorData = floorObjects
+      .map((obj: any) => ({
+        id: obj.id,
+        points: obj.floorData?.points ?? [],
+        walls: obj.floorData?.walls ?? [],
+      }))
+      .filter((f: any) => f.points?.length >= 3);
 
-      dispatch({
-        type: 'history/updateHistory',
-        payload: {
-          past: updatedPast,
-          future: updatedFuture,
-        },
-      });
-    } else {
-      throw new Error('Failed to create object');
-    }
+    const floorManager = new FloorManager(getState().scene.scene, floorData);
+    await floorManager.syncData();
+
+    // Safety pass: ensure invisible compartments always exist after undo/redo restore.
+    // This covers grouped restore paths and async hierarchy rebuild edge-cases.
+    const scene = getState().scene.scene;
+    scene.traverse((node) => {
+      if (!(node instanceof THREE.Mesh)) return;
+      if (!node.userData?.isMain) return;
+      if (typeof node.name === 'string' && node.name.toLowerCase().includes('drawer')) return;
+      generateCompartmentsFromMesh(node);
+    });
   };
 
-export const deleteObject =
-  (threeDObject: THREE.Mesh, objectId: string): AppThunk =>
-  async () => {
-    const formData = new FormData();
-    formData.append('ids', objectId);
-    const designId = gettingDesignID();
-    if (!designId) return;
+export const undoAction = (): AppThunk => async (dispatch, getState) => {
+  dispatch(flushPendingHistory());
+  const beforeUndo = getState();
+  if (beforeUndo.history.past.length === 0 || beforeUndo.history.isApplying) return;
 
-    formData.append('design', designId);
+  const currentSnapshot = createHistorySnapshot(beforeUndo);
+  const targetSnapshot = beforeUndo.history.past[beforeUndo.history.past.length - 1];
 
-    const response = (await commonService.delete(
-      API_ENDPOINT.DELETE_OBJECT(designId),
-      formData
-    )) as ResponseStatus;
+  dispatch(movePastToFuture(currentSnapshot));
+  await dispatch(restoreSnapshot(targetSnapshot) as any);
+  dispatch(finishApplyingHistory());
+};
 
-    if (response && response.status === 200) {
-    } else {
-      throw new Error('Failed to delete object');
-    }
-  };
+export const redoAction = (): AppThunk => async (dispatch, getState) => {
+  dispatch(flushPendingHistory());
+  const beforeRedo = getState();
+  if (beforeRedo.history.future.length === 0 || beforeRedo.history.isApplying) return;
 
-export const quickHideAction = (): AppThunk => () => {};
+  const currentSnapshot = createHistorySnapshot(beforeRedo);
+  const targetSnapshot = beforeRedo.history.future[beforeRedo.history.future.length - 1];
 
-export const { addToHistory, undo, redo, clearHistory, updateHistory } = historySlice.actions;
+  dispatch(moveFutureToPast(currentSnapshot));
+  await dispatch(restoreSnapshot(targetSnapshot) as any);
+  dispatch(finishApplyingHistory());
+};
+
+export const {
+  pushSnapshot,
+  movePastToFuture,
+  moveFutureToPast,
+  finishApplyingHistory,
+  flushPendingHistory,
+  beginHistoryTransaction,
+  endHistoryTransaction,
+  clearHistory,
+} = historySlice.actions;
 export default historySlice.reducer;

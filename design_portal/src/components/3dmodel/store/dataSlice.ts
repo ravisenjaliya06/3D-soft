@@ -255,6 +255,9 @@ const dataSlice = createSlice({
         }
       });
     },
+    restoreDataState: (state, action: PayloadAction<Partial<DataState>>) => {
+      return { ...state, ...action.payload, hoverdMesh: null };
+    },
     resetData: () => {
       return { ...initialState };
     },
@@ -294,6 +297,7 @@ export const {
   setFloor,
   setPoints,
   updatePoints,
+  restoreDataState,
   updateWall,
   removeWall,
   clearWalls,

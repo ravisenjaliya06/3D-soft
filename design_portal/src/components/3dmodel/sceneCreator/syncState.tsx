@@ -4,6 +4,7 @@ import { generateCompartmentsFromMesh, updateMinifixesForCupboard } from '../han
 import { MoveHandler } from '../handler/moveHandler';
 import { store } from '../store';
 import { addObjects, updateObjects } from '../store/dataSlice';
+import { beginHistoryTransaction, endHistoryTransaction } from '../store/historySlice';
 import { updatePlatformHolesForSink } from '../utils/holeManager';
 import { updateOrRefreshOutline } from '../utils/outlineHelpers';
 import { DesignBuilder } from './designBuilder';
@@ -70,10 +71,38 @@ export class SyncManager {
     // Initialize Maps for O(1) access
     this._initializeMaps();
     const list = this._normalizeData(this.data);
+    const shouldWrapHistoryTransaction = this._shouldWrapPlacementTransaction(list);
 
-    this._syncState(list);
-    this._sync2D(list);
-    await this._sync3D(list);
+    if (shouldWrapHistoryTransaction) {
+      store.dispatch(beginHistoryTransaction());
+    }
+
+    try {
+      this._syncState(list);
+      this._sync2D(list);
+      await this._sync3D(list);
+    } finally {
+      if (shouldWrapHistoryTransaction) {
+        store.dispatch(endHistoryTransaction());
+      }
+    }
+  }
+
+  /**
+   * Wrap toolbar add + cursor drag placement as one history transaction.
+   * This prevents temporary spawn state (e.g. 0,0,0) from becoming an undo step.
+   */
+  private _shouldWrapPlacementTransaction(list: MeshObjectData[]): boolean {
+    if (this.isAutoSync) return false;
+    if (list.length === 0) return false;
+
+    const listIds = new Set(list.map((i) => i.id));
+    const rootItem = list.find((i) => !i.parent || !listIds.has(i.parent)) || list[0];
+    if (!rootItem || !this._isObjectType(rootItem.type)) return false;
+
+    // Only wrap when the root object is newly created.
+    const rootAlreadyExists = this.storeObjectMap.has(rootItem.id);
+    return !rootAlreadyExists;
   }
 
   /**
@@ -743,6 +772,15 @@ export class SyncManager {
     } else {
       this._attachToParentOrScene(root, rootItem?.parent);
     }
+
+    // Recreate invisible compartments for every main mesh after hierarchy rebuild.
+    // This is critical for undo/redo restore, where grouped roots may not trigger
+    // single-mesh compartment generation paths.
+    root.traverse((node) => {
+      if (node instanceof THREE.Mesh && node.userData?.isMain) {
+        generateCompartmentsFromMesh(node);
+      }
+    });
 
     // After banding is applied, detect and sync banding state to Redux
     this._syncBandingFromScene(list);
