@@ -1,5 +1,5 @@
 import { assets } from '@/svgPaths';
-import { useRouter } from 'next/navigation';
+import { useRouter } from 'next/router';
 
 import React, { useCallback, useEffect, useRef } from 'react';
 import * as THREE from 'three';

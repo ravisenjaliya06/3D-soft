@@ -251,8 +251,10 @@ const Header: React.FC<HeaderProps> = ({ router, design3D }) => {
 
   const handleClick = (route: string) => {
     /** Handles navigation to a specific route. Fullscreen state is preserved. */
+    /** Handles navigation to a specific route. Fullscreen state is preserved. */
 
     setIsLoading(true);
+    router.push(route).then(() => setIsLoading(false));
     router.push(route).then(() => setIsLoading(false));
   };
 
@@ -306,6 +308,16 @@ const Header: React.FC<HeaderProps> = ({ router, design3D }) => {
     };
   }, []);
 
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullscreen(!!document.fullscreenElement);
+    };
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    return () => {
+      document.removeEventListener('fullscreenchange', handleFullscreenChange);
+    };
+  }, []);
+
   const toggleFullscreen = () => {
     /** Toggles fullscreen mode for the browser view. */
 
@@ -313,13 +325,23 @@ const Header: React.FC<HeaderProps> = ({ router, design3D }) => {
       document.documentElement.requestFullscreen().then(() => {
         // Attempt to lock the Escape key so it can be used for app logic (like stopping wall drawing)
         // instead of exiting fullscreen. The user can still exit by holding Escape or clicking the button.
-        if (typeof navigator !== 'undefined' && (navigator as any).keyboard && (navigator as any).keyboard.lock) {
-          (navigator as any).keyboard.lock(['Escape']).catch((e: any) => console.debug('Keyboard lock not supported', e));
+        if (
+          typeof navigator !== 'undefined' &&
+          (navigator as any).keyboard &&
+          (navigator as any).keyboard.lock
+        ) {
+          (navigator as any).keyboard
+            .lock(['Escape'])
+            .catch((e: any) => console.debug('Keyboard lock not supported', e));
         }
       });
     } else {
       if (document.exitFullscreen) {
-        if (typeof navigator !== 'undefined' && (navigator as any).keyboard && (navigator as any).keyboard.unlock) {
+        if (
+          typeof navigator !== 'undefined' &&
+          (navigator as any).keyboard &&
+          (navigator as any).keyboard.unlock
+        ) {
           (navigator as any).keyboard.unlock();
         }
         document.exitFullscreen();
@@ -722,11 +744,10 @@ const Header: React.FC<HeaderProps> = ({ router, design3D }) => {
                   {designDetail.versions.map((v, index) => (
                     <div
                       key={v.id}
-                      className={`${styles.versionItem} ${
-                        v.id === versionIdFromUrl || (!versionIdFromUrl && index === 0)
+                      className={`${styles.versionItem} ${v.id === versionIdFromUrl || (!versionIdFromUrl && index === 0)
                           ? styles.active
                           : ''
-                      }`}
+                        }`}
                       onClick={() => handleVersionSelect(v.id)}
                     >
                       <div className={styles.versionInfo}>

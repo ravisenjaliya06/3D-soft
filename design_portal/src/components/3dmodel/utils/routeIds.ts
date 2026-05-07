@@ -6,15 +6,31 @@ export function parseDesignIdsFromPathname(pathname: string): DesignRouteIds {
   // Expected routes (examples):
   // - /design/<designId>
   // - /design/<designId>/<versionId>
+  // - /design/<designId>/paneldesign
+  // - /design/<designId>/<versionId>/paneldesign
   // - /lab/design/<designId>
   // - /lab/design/<designId>/<versionId>
+
   const designIdx = parts.findIndex((p) => p.toLowerCase() === 'design');
   if (designIdx >= 0) {
-    return { designId: parts[designIdx + 1], versionId: parts[designIdx + 2] };
+    const designId = parts[designIdx + 1];
+    let versionId: string | undefined = parts[designIdx + 2];
+
+    // If the next part is 'paneldesign', it's not a versionId
+    if (versionId?.toLowerCase() === 'paneldesign') {
+      versionId = undefined;
+    }
+
+    return { designId, versionId };
   }
 
   // Fallback (legacy/unknown shapes).
-  return { designId: parts[1], versionId: parts[2] };
+  let designId = parts[1];
+  let versionId: string | undefined = parts[2];
+  if (versionId?.toLowerCase() === 'paneldesign') {
+    versionId = undefined;
+  }
+  return { designId, versionId };
 }
 
 export function gettingDesignID(pathname?: string): string | undefined {

@@ -7,10 +7,9 @@ import { store } from '../store';
  * Wraps the PanelDesigner with a Redux Provider to ensure state accessibility.
  */
 const CustomDesignRootComponent = () => {
-  const state = store.getState();
   return (
     <Provider store={store}>
-      <PanelDesigner state={state} />
+      <PanelDesigner />
     </Provider>
   );
 };

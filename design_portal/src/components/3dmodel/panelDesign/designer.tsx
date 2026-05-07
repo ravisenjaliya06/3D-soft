@@ -4,7 +4,7 @@ import { useRouter } from 'next/router';
 import React, { useEffect, useRef, useState } from 'react';
 import { FaExclamationTriangle } from 'react-icons/fa';
 import { Circle, Layer, Line, Path, Rect, Stage, Transformer } from 'react-konva';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import * as THREE from 'three';
 import { detectPlankByBoundingBox } from '../../utils/plankUtils';
 import { GEOMETRY } from '../sceneCreator/interface';
@@ -32,11 +32,6 @@ import { HoleOffsetInputs } from './components/HoleOffsetInputs';
 import { PanelHeader } from './components/PanelHeader';
 import { HorizontalRuler, VerticalRuler } from './components/Rulers';
 import { PreviewSidebar, PropertiesSidebar } from './components/Sidebars';
-
-interface PanelDesignerProps {
-  state: RootState;
-}
-
 /**
  * PanelDesigner Component
  *
@@ -49,9 +44,24 @@ interface PanelDesignerProps {
  *
  * @param state Global application state (RootState)
  */
-export default function PanelDesigner({ state }: PanelDesignerProps) {
+export default function PanelDesigner() {
   const router = useRouter();
   const dispatch = useDispatch();
+
+  // Use live selectors instead of static prop
+  const selectedObject = useSelector((state: RootState) => state.data.selectedObject);
+  const selectedChildObject = useSelector((state: RootState) => state.data.selectedChildObject);
+  const scene = useSelector((state: RootState) => state.scene.scene);
+  const objects = useSelector((state: RootState) => state.data.objects);
+  // Select only the parts of state needed by hooks to avoid unnecessary re-renders
+  const stateSubset = useSelector((state: RootState) => ({
+    scene: { scene: state.scene.scene },
+    data: {
+      selectedObject: state.data.selectedObject,
+      selectedChildObject: state.data.selectedChildObject,
+    },
+  }));
+
   const { designId = '', versionId = '' } = getDesignIdsFromRouter(router);
   const transformerRef = useRef<Konva.Transformer | null>(null);
 
@@ -241,7 +251,7 @@ export default function PanelDesigner({ state }: PanelDesignerProps) {
     curveControls,
     plankThickness,
     isRotated2D,
-    state
+    stateSubset
   );
 
   useEffect(() => {
@@ -275,25 +285,42 @@ export default function PanelDesigner({ state }: PanelDesignerProps) {
 
   // Handle selection changes and initialize dimensions
   useEffect(() => {
-    const selectedObject = state?.data?.selectedObject;
-    const selectedChildObject = state?.data?.selectedChildObject;
-    const scene = state?.scene?.scene;
-
-    if (!scene || !selectedObject || !selectedChildObject) {
+    if (!scene || !selectedChildObject) {
       selectedChildMeshRef.current = null;
-      if (designId && versionId) {
-        router.push(`/design/${designId}/${versionId}`);
+      if (designId) {
+        if (versionId) {
+          router.push(`/design/${designId}/${versionId}`);
+        } else {
+          router.push(`/design/${designId}`);
+        }
       }
       return;
     }
 
     // Find the mesh in the scene
-    const selectedMesh = scene.children.find((obj) => obj.userData?.objectId === selectedObject);
-    const mesh = selectedMesh?.children.find(
-      (obj) => obj.userData?.objectId === selectedChildObject
-    ) as THREE.Mesh | undefined;
+    let mesh: THREE.Mesh | undefined;
+
+    // 1. Try finding within the selectedObject group (if provided)
+    if (selectedObject) {
+      const selectedMesh = scene.children.find((obj) => obj.userData?.objectId === selectedObject);
+      if (selectedMesh) {
+        mesh = selectedMesh.children.find(
+          (obj) => obj.userData?.objectId === selectedChildObject
+        ) as THREE.Mesh | undefined;
+      }
+    }
+
+    // 2. Fallback: Search the entire scene for the child object ID
+    if (!mesh) {
+      scene.traverse((child) => {
+        if (child instanceof THREE.Mesh && child.userData?.objectId === selectedChildObject) {
+          mesh = child;
+        }
+      });
+    }
 
     if (!mesh) {
+      // We still don't redirect yet to allow for async loading/syncing
       selectedChildMeshRef.current = null;
       return;
     }
@@ -307,7 +334,7 @@ export default function PanelDesigner({ state }: PanelDesignerProps) {
           setOriginalGeometry(mesh.geometry.clone());
         }
 
-        const objectData = state?.data?.objects?.find((obj: any) => obj.id === selectedChildObject);
+        const objectData = objects?.find((obj: any) => obj.id === selectedChildObject);
         if (objectData?.panelDesign) {
           const pd = objectData.panelDesign;
           const loadedOutline =
@@ -372,7 +399,11 @@ export default function PanelDesigner({ state }: PanelDesignerProps) {
         }
       }
     }
-  }, [state?.scene?.scene, state?.data?.selectedObject, state?.data?.selectedChildObject]);
+  }, [
+    stateSubset?.scene?.scene,
+    stateSubset?.data?.selectedObject,
+    stateSubset?.data?.selectedChildObject,
+  ]);
 
   /**
    * Generates and applies a new 3D geometry to the selected plank.
@@ -548,10 +579,12 @@ export default function PanelDesigner({ state }: PanelDesignerProps) {
    * Reverts changes by restoring the original geometry and navigates back to the design view.
    */
   const confirmExit = () => {
-    const scene = state?.scene?.scene;
+    const scene = stateSubset?.scene?.scene;
     const selectedChildMesh = scene?.children
-      .find((obj: any) => obj.userData?.objectId === state?.data?.selectedObject)
-      ?.children.find((obj: any) => obj.userData?.objectId === state?.data?.selectedChildObject);
+      .find((obj: any) => obj.userData?.objectId === stateSubset?.data?.selectedObject)
+      ?.children.find(
+        (obj: any) => obj.userData?.objectId === stateSubset?.data?.selectedChildObject
+      );
     if (selectedChildMesh instanceof THREE.Mesh && originalGeometry) {
       (selectedChildMesh as THREE.Mesh).geometry.dispose();
       (selectedChildMesh as THREE.Mesh).geometry = originalGeometry;
@@ -577,7 +610,7 @@ export default function PanelDesigner({ state }: PanelDesignerProps) {
   const handleComplete = () => {
     updateMeshGeometry();
 
-    const selectedChildObject = state?.data?.selectedChildObject;
+    const selectedChildObject = stateSubset?.data?.selectedChildObject;
     if (selectedChildObject) {
       const panelOutline = shapePoints.length > 0 ? shapePoints : defaultPanelPoints;
       const panelB = getPanelBounds(panelOutline, defaultPanelPoints);
