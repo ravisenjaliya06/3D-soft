@@ -523,6 +523,19 @@ class ScenePayloadSerializer(serializers.Serializer):
             if not isinstance(item, dict):
                 continue
 
+            is_main = item.get("is_main", item.get("isMain", False))
+            if isinstance(is_main, str):
+                is_main = is_main.lower() == "true"
+            else:
+                is_main = bool(is_main)
+
+            parent = item.get("parent")
+            if parent in ["null", "None"]:
+                parent = None
+
+            if not is_main or parent:
+                continue
+
             name = item.get("name")
             if not name:
                 continue
