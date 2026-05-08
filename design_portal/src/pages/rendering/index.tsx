@@ -165,7 +165,7 @@ export default function RenderingPage() {
 
         const projectFormData = new FormData();
         projectFormData.append('name', `Design ${id}`);
-        projectFormData.append('file', firstImageBlob, '1.png');
+        projectFormData.append('files', firstImageBlob, '1.png');
         projectFormData.append('scene_data_json', JSON.stringify(scene_data));
 
         const projectRes = await fetch(`${process.env.NEXT_PUBLIC_RENDER_URL}/api/v1/projects/`, {
