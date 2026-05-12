@@ -587,6 +587,12 @@ class MaterialTextureSerializer(serializers.ModelSerializer):
             "texture": {"required": True},
         }
 
+    def to_representation(self: "MaterialTextureSerializer", instance: MaterialTexture) -> dict:
+        data = super().to_representation(instance)
+        if not data.get("name"):
+            data["name"] = "First"
+        return data
+
 
 class MaterialPropertySerializer(serializers.ModelSerializer):
     class Meta:
@@ -736,7 +742,7 @@ class MaterialSerializer(serializers.ModelSerializer):
         for t in textures_data:
             MaterialTexture.objects.create(
                 material=material,
-                name=t.get("name", ""),
+                name="First",
                 texture=t["texture"],
             )
 
@@ -797,11 +803,11 @@ class MaterialSerializer(serializers.ModelSerializer):
                 updated_texture = texture.get("texture") or texture_id
 
                 updated_count = MaterialTexture.objects.filter(id=texture_id).update(
-                    texture=updated_texture
+                    texture=updated_texture, name="First"
                 )
                 if updated_count == 0 and updated_texture:
                     MaterialTexture.objects.create(
-                        material=instance, texture_id=updated_texture
+                        material=instance, texture_id=updated_texture, name="First"
                     )
         instance.save()
         return instance

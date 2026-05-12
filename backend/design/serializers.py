@@ -139,7 +139,7 @@ class SceneGetSerializer(serializers.Serializer):
             m_data["textures"] = [
                 {
                     "id": str(t.id),
-                    "name": t.name,
+                    "name": t.name or "First",
                     "texture": str(t.texture_id),
                     "texture_detail": (
                         self._serialize_finish_library(t.texture) if t.texture else None
