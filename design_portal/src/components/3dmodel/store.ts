@@ -4,6 +4,7 @@ import activeDesignReducer, {
 import activeItemReducer, {
   clearActiveItemOverrides,
 } from '@/components/3dmodel/store/activeItemSlice';
+import backendStatusReducer from '@/components/3dmodel/store/backendStatusSlice';
 import catalogReducer, { resetCatalog } from '@/components/3dmodel/store/catalogSlice';
 import dataReducer, { resetData } from '@/components/3dmodel/store/dataSlice';
 import designSettingsReducer from '@/components/3dmodel/store/designSettingsSlice';
@@ -170,6 +171,7 @@ export const store = configureStore({
     designSettings: designSettingsReducer,
     activeDesign: activeDesignReducer,
     activeItem: activeItemReducer,
+    backendStatus: backendStatusReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({

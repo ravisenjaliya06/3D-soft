@@ -9,6 +9,7 @@ import { Provider } from 'react-redux';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import '../styles/globals.css';
+import BackendStatusGate from '@/components/maintenance/BackendStatusGate';
 
 const geistSans = localFont({
   src: '../../public/fonts/GeistVF.woff',
@@ -48,32 +49,34 @@ export default function MyApp({ Component, pageProps }: AppProps) {
   return (
     <>
       <Provider store={store}>
-        <MaintenanceGate showBannerOnPages={showMaintenanceBanner}>
-          <main
-            className={`${geistSans?.variable || ''} ${geistMono?.variable || ''} ${poppins?.variable || ''} ${poppinsBold?.variable || ''} ${poppinsSemiBold?.variable || ''} antialiased`}
-          >
-            <Component {...pageProps} />
-            <ToastContainer
-              containerId="global"
-              position="top-right"
-              autoClose={3500}
-              closeOnClick
-              pauseOnHover
-              draggable
-              newestOnTop
-              theme="dark"
-              className="bravento-toast-container"
-              toastClassName="bravento-toast"
-              progressClassName="bravento-toast-progress"
-              style={{ zIndex: 2147483647 }}
-            />
-            {!isDesignPage && !isMaterialPage && !isCatalogPage && is2dPage && (
-              <div className="fixed-image">
-                <img src={assets.brevento_background_logo} alt="Background" />
-              </div>
-            )}
-          </main>
-        </MaintenanceGate>
+        <BackendStatusGate>
+          <MaintenanceGate showBannerOnPages={showMaintenanceBanner}>
+            <main
+              className={`${geistSans?.variable || ''} ${geistMono?.variable || ''} ${poppins?.variable || ''} ${poppinsBold?.variable || ''} ${poppinsSemiBold?.variable || ''} antialiased`}
+            >
+              <Component {...pageProps} />
+              <ToastContainer
+                containerId="global"
+                position="top-right"
+                autoClose={3500}
+                closeOnClick
+                pauseOnHover
+                draggable
+                newestOnTop
+                theme="dark"
+                className="bravento-toast-container"
+                toastClassName="bravento-toast"
+                progressClassName="bravento-toast-progress"
+                style={{ zIndex: 2147483647 }}
+              />
+              {!isDesignPage && !isMaterialPage && !isCatalogPage && is2dPage && (
+                <div className="fixed-image">
+                  <img src={assets.brevento_background_logo} alt="Background" />
+                </div>
+              )}
+            </main>
+          </MaintenanceGate>
+        </BackendStatusGate>
       </Provider>
     </>
   );

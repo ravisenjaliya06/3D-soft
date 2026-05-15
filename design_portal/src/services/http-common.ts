@@ -1,3 +1,5 @@
+import { store } from '@/components/3dmodel/store';
+import { setBackendDown } from '@/components/3dmodel/store/backendStatusSlice';
 import { CustomToast } from '@/components/3dmodel/utils/CustomToast';
 import { getTokenDetail } from '@/components/helper/helper';
 import axios from 'axios';
@@ -32,8 +34,23 @@ http.interceptors.request.use(
 );
 
 http.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    // If we get a successful response, we can assume the backend is up
+    // (Optional: reset backend status if it was down)
+    const state = store.getState();
+    if (state.backendStatus.isDown) {
+      store.dispatch(setBackendDown(false));
+    }
+    return response;
+  },
   (error) => {
+    const isNetworkError = !error.response || error.code === 'ERR_NETWORK' || error.code === 'ECONNABORTED';
+    const isServerError = error.response && [502, 503, 504].includes(error.response.status);
+
+    if (isNetworkError || isServerError) {
+      store.dispatch(setBackendDown(true));
+    }
+
     const message = error?.response?.data?.error || error?.response?.data?.detail;
     if (
       typeof window !== 'undefined' &&

@@ -745,8 +745,8 @@ const Header: React.FC<HeaderProps> = ({ router, design3D }) => {
                     <div
                       key={v.id}
                       className={`${styles.versionItem} ${v.id === versionIdFromUrl || (!versionIdFromUrl && index === 0)
-                          ? styles.active
-                          : ''
+                        ? styles.active
+                        : ''
                         }`}
                       onClick={() => handleVersionSelect(v.id)}
                     >
