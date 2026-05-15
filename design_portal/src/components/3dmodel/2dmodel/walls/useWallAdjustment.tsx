@@ -9,10 +9,11 @@ import {
   WALL_THICKNESS_2D_UNITS,
 } from '../../sceneCreator/utils';
 import { RootState } from '../../store';
-import { updatePoints } from '../../store/dataSlice';
-import { MAXIMUM_WALL_OBJECT } from '../constants';
+import { pointsNear } from '../utils';
 import { WallPoint } from '../interface';
 import { getFloorPolygon } from './wallFloor';
+import { updateObjects, updatePoints } from '../../store/dataSlice';
+import { MAXIMUM_WALL_OBJECT } from '../constants';
 
 export function useWallAdjustment() {
   const dispatch = useDispatch();
@@ -31,7 +32,7 @@ export function useWallAdjustment() {
     const isVertical = Math.abs(endPoint.x - startPoint.x) < Math.abs(endPoint.y - startPoint.y);
 
     const isSamePt = (p1: { x: number; y: number }, p2: { x: number; y: number }) =>
-      Math.round(p1.x) === Math.round(p2.x) && Math.round(p1.y) === Math.round(p2.y);
+      pointsNear(p1, p2);
 
     // Count connections to decide pivot point
     const startConnections = objects.filter((obj) => {
@@ -103,10 +104,7 @@ export function useWallAdjustment() {
 
     // 2. Update dots (points) that share coordinates with the moving point
     points.forEach((p) => {
-      const isSamePoint =
-        Math.round(p.x) === Math.round(canonicalMoving.x) &&
-        Math.round(p.y) === Math.round(canonicalMoving.y);
-      if (isSamePoint) {
+      if (pointsNear(p, canonicalMoving)) {
         pointUpdates.push({ ...p, x: newMovingPoint.x, y: newMovingPoint.y });
       }
     });
@@ -127,7 +125,7 @@ export function useWallAdjustment() {
       const { startPoint: otherStart, endPoint: otherEnd } = getWallReferenceEdgePoints(obj);
 
       const isSamePoint = (p1: { x: number; y: number }, p2: { x: number; y: number }) =>
-        Math.round(p1.x) === Math.round(p2.x) && Math.round(p1.y) === Math.round(p2.y);
+        pointsNear(p1, p2);
 
       let changed = false;
       let nextStart = otherStart;
@@ -191,6 +189,10 @@ export function useWallAdjustment() {
     // 6. Apply updates to Redux
     if (pointUpdates.length > 0) {
       dispatch(updatePoints(pointUpdates));
+    }
+
+    if (objectUpdates.length > 0) {
+      dispatch(updateObjects(objectUpdates));
     }
 
     // 7. Sync changes to 3D scene

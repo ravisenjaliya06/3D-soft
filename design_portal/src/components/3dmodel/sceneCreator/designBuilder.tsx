@@ -24,6 +24,18 @@ export class DesignBuilder {
     this.meshMap = new Map<string, THREE.Mesh>();
     this.builderMap = new Map<string, MeshBuilder>();
     this.dataMap = new Map(this.data.map((item) => [item.id, item]));
+    this._propagateHandleMode();
+  }
+
+  private _propagateHandleMode() {
+    this.data.forEach((item) => {
+      if (item.parent) {
+        const parent = this.dataMap.get(item.parent);
+        if (parent && parent.handleMode && !item.handleMode) {
+          item.handleMode = parent.handleMode;
+        }
+      }
+    });
   }
 
   private _sortDataHierarchically(data: MeshObjectData[]): MeshObjectData[] {

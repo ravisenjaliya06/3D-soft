@@ -212,15 +212,15 @@ export class MeshBuilder {
         const wallTexture = this._createTexture(materialData);
         createdMaterial = wallTexture
           ? new THREE.MeshStandardMaterial({
-              map: wallTexture,
-              roughness: 0.9,
-              metalness: 0,
-            })
+            map: wallTexture,
+            roughness: 0.9,
+            metalness: 0,
+          })
           : new THREE.MeshStandardMaterial({
-              color: 0xe8e6e1,
-              roughness: 0.95,
-              metalness: 0,
-            });
+            color: 0xe8e6e1,
+            roughness: 0.95,
+            metalness: 0,
+          });
       } else if (materialData.type === MATERIAL_TYPES.MISCELLANEOUS) {
         // Support floor material type - use same texture loading as Panel Stock
         createdMaterial = this._createTextureMaterial(materialData);
@@ -886,7 +886,7 @@ export class MeshBuilder {
     const promises: Promise<void>[] = [];
 
     materialArray.forEach((materialData) => {
-      if (materialData?.type === MATERIAL_TYPES.PULL) {
+      if (materialData?.type === MATERIAL_TYPES.PULL && this.meshData.handleMode !== 'handleless') {
         this._loadHandle(this.mesh!, materialData.properties);
       } else if (materialData?.type === MATERIAL_TYPES.HINGE) {
         this._loadHinge(this.mesh!, materialData.properties);
@@ -903,8 +903,8 @@ export class MeshBuilder {
                   this.mesh,
                   materialData,
                   this.meshData.edgeBanding ||
-                    (this.meshData as any).edge_banding ||
-                    (this.meshData as any).edgebands,
+                  (this.meshData as any).edge_banding ||
+                  (this.meshData as any).edgebands,
                   this.parentMesh,
                   { material: this.meshData.material, id: this.meshData.id }
                 )
@@ -1082,7 +1082,7 @@ export class MeshBuilder {
 
     const pullMaterial = materialArray.find((mat) => mat?.type === MATERIAL_TYPES.PULL);
 
-    if (pullMaterial) {
+    if (pullMaterial && this.meshData.handleMode !== 'handleless') {
       await this._loadHandle(mesh, pullMaterial.properties);
     }
   }

@@ -89,7 +89,7 @@ export default function PlannerGrid() {
   const rooms = findRoomsFromWalls(walls);
 
   let previewWallLayer: ReactNode = null;
-  if (preview && preview.length > 0.5) {
+  if (preview && preview.length > 0.01) {
     const t = preview.thickness ?? 30;
     const isCentered = preview.offsetSign == null;
     const getCenteredFootprint = () => {
