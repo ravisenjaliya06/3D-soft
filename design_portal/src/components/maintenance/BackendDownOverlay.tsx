@@ -33,7 +33,8 @@ const BackendDownOverlay = () => {
         </div>
         <h1>Connection Lost</h1>
         <p>
-          We're having trouble connecting to our servers. This usually happens when the backend service is restarting or temporarily unavailable.
+          We're having trouble connecting to our servers. This usually happens when the backend
+          service is restarting or temporarily unavailable.
         </p>
         <button onClick={handleRefresh} className="refresh-button">
           Refresh Page
@@ -64,8 +65,12 @@ const BackendDownOverlay = () => {
         }
 
         @keyframes fadeIn {
-          from { opacity: 0; }
-          to { opacity: 1; }
+          from {
+            opacity: 0;
+          }
+          to {
+            opacity: 1;
+          }
         }
 
         .container {
@@ -105,9 +110,18 @@ const BackendDownOverlay = () => {
         }
 
         @keyframes pulse {
-          0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(144, 120, 221, 0.4); }
-          70% { transform: scale(1.05); box-shadow: 0 0 0 20px rgba(144, 120, 221, 0); }
-          100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(144, 120, 221, 0); }
+          0% {
+            transform: scale(1);
+            box-shadow: 0 0 0 0 rgba(144, 120, 221, 0.4);
+          }
+          70% {
+            transform: scale(1.05);
+            box-shadow: 0 0 0 20px rgba(144, 120, 221, 0);
+          }
+          100% {
+            transform: scale(1);
+            box-shadow: 0 0 0 0 rgba(144, 120, 221, 0);
+          }
         }
 
         h1 {

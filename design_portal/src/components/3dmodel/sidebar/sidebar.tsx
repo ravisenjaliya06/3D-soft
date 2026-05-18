@@ -69,8 +69,8 @@ import { findMesh, formatEnumLabel } from '../sceneCreator/utils';
 import { DistanceInput } from './DistanceInput';
 import { Axis, Field, TextureGrain } from './interface';
 import { MaterialChangePopup } from './MaterialChangePopup';
-import { TextureAddPopup } from './TextureAddPopup';
 import SidebarInputWithSuffix from './SidebarInputWithSuffix';
+import { TextureAddPopup } from './TextureAddPopup';
 
 const Sidebar: React.FC = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
@@ -104,11 +104,6 @@ const Sidebar: React.FC = () => {
   const [isMainObject, setIsMainObject] = useState<boolean>(false);
 
   const [isAddTexturePopupOpen, setIsAddTexturePopupOpen] = useState(false);
-  const [newTextureName, setNewTextureName] = useState('');
-  const [newTextureFile, setNewTextureFile] = useState<File | null>(null);
-  const [newTexturePreview, setNewTexturePreview] = useState<string | null>(null);
-  const [isSavingTexture, setIsSavingTexture] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const updateObjectRef = useRef<UpdateObjectInScene | null>(null);
   const bandingToolRef = useRef<BandingTool | null>(null);
@@ -287,78 +282,6 @@ const Sidebar: React.FC = () => {
       setPositionDistances({ left: null, right: null, top: null, bottom: null });
     }
   }, [selectedObject, scene]);
-
-  const handleTextureFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      const file = e.target.files[0];
-      setNewTextureFile(file);
-      setNewTexturePreview(URL.createObjectURL(file));
-    }
-  };
-
-  const closeAddTexturePopup = () => {
-    setIsAddTexturePopupOpen(false);
-    setNewTextureName('');
-    setNewTextureFile(null);
-    setNewTexturePreview(null);
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
-    }
-  };
-
-  const handleSaveNewTexture = async () => {
-    if (!newTextureName || !newTextureFile) {
-      toast(({ closeToast }) => (
-        <CustomToast
-          appearance="error"
-          message="Please provide a texture name and select an image."
-          closeToast={closeToast}
-        />
-      ));
-      return;
-    }
-
-    setIsSavingTexture(true);
-    try {
-      const formData = new FormData();
-      formData.append('name', newTextureName);
-      formData.append('image', newTextureFile);
-      formData.append('type', 'Texture');
-
-      const response = await commonService.post(API_ENDPOINT.CREATE_FINISH, formData);
-
-      if (response.status === 201 || response.status === 200) {
-        toast(({ closeToast }) => (
-          <CustomToast
-            appearance="success"
-            message="Texture added successfully!"
-            closeToast={closeToast}
-          />
-        ));
-        closeAddTexturePopup();
-        getTextures();
-      } else {
-        toast(({ closeToast }) => (
-          <CustomToast
-            appearance="error"
-            message="Failed to add texture."
-            closeToast={closeToast}
-          />
-        ));
-      }
-    } catch (error: any) {
-      console.error('Error adding texture:', error);
-      toast(({ closeToast }) => (
-        <CustomToast
-          appearance="error"
-          message={error?.response?.data?.message || 'Error occurred while saving texture.'}
-          closeToast={closeToast}
-        />
-      ));
-    } finally {
-      setIsSavingTexture(false);
-    }
-  };
 
   const getTextures = async (url?: string, search?: string) => {
     setIsFetchingTextures(true);
@@ -2117,10 +2040,11 @@ const Sidebar: React.FC = () => {
               {selectedObject?.type !== OBJECT_TYPES.MODEL && (
                 <button
                   onClick={handleSetting}
-                  className={`w-[4rem] border-[0rem] p-[0rem] font-[comfortaa] text-[0.7rem] active:bg-[var(--toolbarhover-color)] ${isSettingOpen
-                    ? 'rounded-[0.1rem] bg-[var(--toolbarhover-color)] px-4 py-2 text-[var(--primary-color)]'
-                    : 'bg-transparent text-[rgba(160,174,192,1)] hover:text-[var(--primary-color)]'
-                    } `}
+                  className={`w-[4rem] border-[0rem] p-[0rem] font-[comfortaa] text-[0.7rem] active:bg-[var(--toolbarhover-color)] ${
+                    isSettingOpen
+                      ? 'rounded-[0.1rem] bg-[var(--toolbarhover-color)] px-4 py-2 text-[var(--primary-color)]'
+                      : 'bg-transparent text-[rgba(160,174,192,1)] hover:text-[var(--primary-color)]'
+                  } `}
                 >
                   Setting
                 </button>
@@ -2128,10 +2052,11 @@ const Sidebar: React.FC = () => {
 
               <button
                 onClick={handleNavigation}
-                className={`w-[4.5rem] border-[0rem] p-[0rem] font-[poppins] text-[0.7rem] active:bg-[var(--toolbarhover-color)] ${isNavOpen
-                  ? 'rounded-[0.1rem] bg-[var(--toolbarhover-color)] px-4 py-2 text-[var(--primary-color)]'
-                  : 'bg-transparent text-[rgba(160,174,192,1)] hover:text-[var(--primary-color)]'
-                  } `}
+                className={`w-[4.5rem] border-[0rem] p-[0rem] font-[poppins] text-[0.7rem] active:bg-[var(--toolbarhover-color)] ${
+                  isNavOpen
+                    ? 'rounded-[0.1rem] bg-[var(--toolbarhover-color)] px-4 py-2 text-[var(--primary-color)]'
+                    : 'bg-transparent text-[rgba(160,174,192,1)] hover:text-[var(--primary-color)]'
+                } `}
               >
                 Navigation
               </button>
@@ -2269,10 +2194,11 @@ const Sidebar: React.FC = () => {
                                     >
                                       {/* Knob */}
                                       <div
-                                        className={`absolute top-[0.15rem] left-[0.1rem] h-[0.6rem] w-[0.6rem] rounded-full border-[0.1rem] border-[var(--toggle-button-border-color)] p-[0rem] ring-[0.1rem] transition-transform duration-300 ease-in-out ${minifixEnabled
-                                          ? 'translate-x-[1rem] bg-[var(--primary-white)] ring-[var(--primary-color)]'
-                                          : 'translate-x-0 bg-[var(--primary-color)] ring-[var(--primary-white)]'
-                                          }`}
+                                        className={`absolute top-[0.15rem] left-[0.1rem] h-[0.6rem] w-[0.6rem] rounded-full border-[0.1rem] border-[var(--toggle-button-border-color)] p-[0rem] ring-[0.1rem] transition-transform duration-300 ease-in-out ${
+                                          minifixEnabled
+                                            ? 'translate-x-[1rem] bg-[var(--primary-white)] ring-[var(--primary-color)]'
+                                            : 'translate-x-0 bg-[var(--primary-color)] ring-[var(--primary-white)]'
+                                        }`}
                                       />
                                     </div>
                                     <p className="mb-[1remrem] text-[0.6rem] font-[700] text-[var(--primary-color)]">
@@ -2398,8 +2324,8 @@ const Sidebar: React.FC = () => {
                                       suffix="MM"
                                       type="number"
                                       disabled={true}
-                                    // value={inside}
-                                    // onChange={(e) => setInside(Number(e.target.value))}
+                                      // value={inside}
+                                      // onChange={(e) => setInside(Number(e.target.value))}
                                     />
                                   </div>
 
@@ -2414,8 +2340,8 @@ const Sidebar: React.FC = () => {
                                       suffix="MM"
                                       type="number"
                                       disabled={true}
-                                    // value={edgeToEnd}
-                                    // onChange={(e) => setEdgeToEnd(Number(e.target.value))}
+                                      // value={edgeToEnd}
+                                      // onChange={(e) => setEdgeToEnd(Number(e.target.value))}
                                     />
                                   </div>
                                 </div>
@@ -2462,7 +2388,10 @@ const Sidebar: React.FC = () => {
                                       setCamDiameterInput(value);
                                       if (selectedObject && isFullCupboard) {
                                         dispatch(
-                                          updateObject({ id: selectedObject.id, camDiameter: value })
+                                          updateObject({
+                                            id: selectedObject.id,
+                                            camDiameter: value,
+                                          })
                                         );
                                       } else {
                                         dispatch(setActiveItemCamDiameter(value));
@@ -2610,12 +2539,12 @@ const Sidebar: React.FC = () => {
                                         onChange={(e) =>
                                           handleBandingToggle(
                                             item.key as
-                                            | 'top'
-                                            | 'bottom'
-                                            | 'left'
-                                            | 'right'
-                                            | 'front'
-                                            | 'back',
+                                              | 'top'
+                                              | 'bottom'
+                                              | 'left'
+                                              | 'right'
+                                              | 'front'
+                                              | 'back',
                                             e.target.checked
                                           )
                                         }
@@ -2705,10 +2634,11 @@ const Sidebar: React.FC = () => {
                                                       onClick={() =>
                                                         handleControlClick(field.name, idx)
                                                       }
-                                                      className={`bg-[rgba(242, 242, 242, 1)] flex h-[1.2rem] w-[1.2rem] items-center justify-center rounded-[0.15rem] border-[0.1rem] p-[0rem] transition-all duration-150 ${isActive
-                                                        ? 'border-[0rem] border-[var(--border-color)] bg-[white]'
-                                                        : 'bg-[rgba(242, 242, 242, 1)] border-[0rem] border-transparent hover:bg-[#eaeaea]'
-                                                        } `}
+                                                      className={`bg-[rgba(242, 242, 242, 1)] flex h-[1.2rem] w-[1.2rem] items-center justify-center rounded-[0.15rem] border-[0.1rem] p-[0rem] transition-all duration-150 ${
+                                                        isActive
+                                                          ? 'border-[0rem] border-[var(--border-color)] bg-[white]'
+                                                          : 'bg-[rgba(242, 242, 242, 1)] border-[0rem] border-transparent hover:bg-[#eaeaea]'
+                                                      } `}
                                                     >
                                                       <img
                                                         src={icon}
@@ -2988,10 +2918,11 @@ const Sidebar: React.FC = () => {
                               >
                                 {/* Knob */}
                                 <div
-                                  className={`absolute top-[0.16rem] left-[0.1rem] h-[0.6rem] w-[0.6rem] rounded-full border-[0.1rem] border-[var(--toggle-border-color)] p-[0rem] ring-[0.1rem] transition-transform duration-300 ease-in-out ${topPlankEnabled
-                                    ? 'translate-x-[1rem] bg-[white] ring-[var(--primary-color)]'
-                                    : 'translate-x-0 bg-[var(--primary-color)] ring-[white]'
-                                    }`}
+                                  className={`absolute top-[0.16rem] left-[0.1rem] h-[0.6rem] w-[0.6rem] rounded-full border-[0.1rem] border-[var(--toggle-border-color)] p-[0rem] ring-[0.1rem] transition-transform duration-300 ease-in-out ${
+                                    topPlankEnabled
+                                      ? 'translate-x-[1rem] bg-[white] ring-[var(--primary-color)]'
+                                      : 'translate-x-0 bg-[var(--primary-color)] ring-[white]'
+                                  }`}
                                 />
                               </div>
                             </div>
@@ -3063,10 +2994,11 @@ const Sidebar: React.FC = () => {
                                       aria-checked={active}
                                       disabled={isDisabled}
                                       onClick={() => handleBaseModeSelect(opt.id)}
-                                      className={`flex h-[1.2rem] min-h-[1.2rem] min-w-0 flex-1 items-center justify-center rounded-[0.25rem] border-[0.1rem] px-[0.2rem] py-0 text-center text-[0.58rem] leading-none font-[600] transition-colors duration-150 ${active
-                                        ? 'border-[var(--primary-color)] bg-[var(--primary-color)] text-[var(--primary-white)]'
-                                        : 'border-[var(--border-color)] bg-[var(--primary-white)] text-[var(--primary-color)] hover:bg-[#f7fafc]'
-                                        } ${isDisabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}`}
+                                      className={`flex h-[1.2rem] min-h-[1.2rem] min-w-0 flex-1 items-center justify-center rounded-[0.25rem] border-[0.1rem] px-[0.2rem] py-0 text-center text-[0.58rem] leading-none font-[600] transition-colors duration-150 ${
+                                        active
+                                          ? 'border-[var(--primary-color)] bg-[var(--primary-color)] text-[var(--primary-white)]'
+                                          : 'border-[var(--border-color)] bg-[var(--primary-white)] text-[var(--primary-color)] hover:bg-[#f7fafc]'
+                                      } ${isDisabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}`}
                                     >
                                       {opt.label}
                                     </button>
@@ -3426,8 +3358,9 @@ const Sidebar: React.FC = () => {
                             <button
                               onClick={toggleTextureList}
                               disabled={isTextureChangeDisabled}
-                              className={`flex h-[1.3rem] w-[5rem] flex-1 cursor-pointer appearance-none items-center justify-between rounded-[0.1rem] border-[0rem] bg-[var(--primary-color)] p-[0rem] px-[0.2rem] text-left font-[comfortaa] text-[0.5rem] font-[var(--font-family)] font-extralight text-[var(--primary-white)] transition-colors duration-200 ease-in-out ${isTextureChangeDisabled ? 'cursor-not-allowed opacity-50' : ''
-                                }`}
+                              className={`flex h-[1.3rem] w-[5rem] flex-1 cursor-pointer appearance-none items-center justify-between rounded-[0.1rem] border-[0rem] bg-[var(--primary-color)] p-[0rem] px-[0.2rem] text-left font-[comfortaa] text-[0.5rem] font-[var(--font-family)] font-extralight text-[var(--primary-white)] transition-colors duration-200 ease-in-out ${
+                                isTextureChangeDisabled ? 'cursor-not-allowed opacity-50' : ''
+                              }`}
                             >
                               Select Texture
                               <img src={assets.down_arrow1} className="h-[0.6rem] w-[0.6rem]" />
@@ -3440,7 +3373,9 @@ const Sidebar: React.FC = () => {
                                 onChange={(e) =>
                                   handleTextureGrainChange(e.target.value as TextureGrain)
                                 }
-                                disabled={isDisabled || !hasTextureMaterial(selectedObject?.material)}
+                                disabled={
+                                  isDisabled || !hasTextureMaterial(selectedObject?.material)
+                                }
                                 className="h-[1rem] w-full border-[0rem] pl-[0.2rem] text-[0.6rem] font-[700] text-[var(--primary-color)] focus:border-[var(--primary-color)] focus:outline-none disabled:opacity-50"
                               >
                                 <option value="None">None</option>
@@ -3480,7 +3415,7 @@ const Sidebar: React.FC = () => {
                                   onClick={() => setIsAddTexturePopupOpen(true)}
                                   className="flex aspect-square w-full cursor-pointer flex-col items-center justify-center gap-[0rem] bg-[var(--primary-color)] transition-transform active:scale-[0.95]"
                                 >
-                                  <button className="flex cursor-pointer flex-col items-center justify-center gap-[0.1rem] border-[0rem] bg-transparent p-[0rem] pointer-events-none">
+                                  <button className="pointer-events-none flex cursor-pointer flex-col items-center justify-center gap-[0.1rem] border-[0rem] bg-transparent p-[0rem]">
                                     <div className="flex h-[1rem] w-[1rem] items-center justify-center rounded border-[0rem]">
                                       <img
                                         src={assets.plusIcon}
@@ -3660,9 +3595,9 @@ const Sidebar: React.FC = () => {
         )}
 
         {isAddTexturePopupOpen && (
-          <TextureAddPopup 
-            onClose={() => setIsAddTexturePopupOpen(false)} 
-            onSuccess={() => getTextures()} 
+          <TextureAddPopup
+            onClose={() => setIsAddTexturePopupOpen(false)}
+            onSuccess={() => getTextures()}
           />
         )}
       </div>

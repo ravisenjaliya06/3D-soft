@@ -1,7 +1,14 @@
 import * as THREE from 'three';
 import { setobjectSelected, setSelectedChildObject } from '../../store/dataSlice';
 import { createLineObjects } from '../../utils/outlineHelpers';
-import { DOUBLE_DOOR_PLANK_TYPES, DRAWER_PLANK_TYPES, FLOOR_PLAN_TYPES, INVISIBLE_BOXES, OBJECT_TYPES, PART_TYPES } from '../interface';
+import {
+  DOUBLE_DOOR_PLANK_TYPES,
+  DRAWER_PLANK_TYPES,
+  FLOOR_PLAN_TYPES,
+  INVISIBLE_BOXES,
+  OBJECT_TYPES,
+  PART_TYPES,
+} from '../interface';
 
 export class SelectObjectController {
   private camera: THREE.PerspectiveCamera;
@@ -512,7 +519,7 @@ export class SelectObjectController {
       mesh.position.copy(center);
     }
 
-    mesh.raycast = () => { };
+    mesh.raycast = () => {};
 
     return mesh;
   }

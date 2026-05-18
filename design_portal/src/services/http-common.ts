@@ -44,7 +44,8 @@ http.interceptors.response.use(
     return response;
   },
   (error) => {
-    const isNetworkError = !error.response || error.code === 'ERR_NETWORK' || error.code === 'ECONNABORTED';
+    const isNetworkError =
+      !error.response || error.code === 'ERR_NETWORK' || error.code === 'ECONNABORTED';
     const isServerError = error.response && [502, 503, 504].includes(error.response.status);
 
     if (isNetworkError || isServerError) {

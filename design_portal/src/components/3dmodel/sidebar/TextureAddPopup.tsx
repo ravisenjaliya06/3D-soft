@@ -1,9 +1,9 @@
-import React, { useRef, useState } from 'react';
-import { createPortal } from 'react-dom';
-import { toast } from 'react-toastify';
 import { API_ENDPOINT } from '@/services/ApiEndPoints';
 import commonService from '@/services/CommonService';
 import { assets } from '@/svgPaths';
+import React, { useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
+import { toast } from 'react-toastify';
 import styles from './TextureAddPopup.module.css';
 
 interface TextureAddPopupProps {
@@ -63,7 +63,11 @@ export const TextureAddPopup: React.FC<TextureAddPopupProps> = ({ onClose, onSuc
       <div className={styles.popup} onClick={(e) => e.stopPropagation()}>
         <div className={styles.header}>
           <div className={styles.headerLeft}>
-            <img src={assets.Setting || '/placeholder.svg'} alt="Settings Icon" className={styles.headerIcon} />
+            <img
+              src={assets.Setting || '/placeholder.svg'}
+              alt="Settings Icon"
+              className={styles.headerIcon}
+            />
             <h2>Add New Texture</h2>
           </div>
           <img

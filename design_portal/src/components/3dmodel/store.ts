@@ -144,7 +144,10 @@ const historyTrackingMiddleware: Middleware = (api) => (next) => (action: any) =
     return result;
   }
 
-  const hasChanged = isSignificantHistoryChange(snapshotBeforeAction, createHistorySnapshot(nextState));
+  const hasChanged = isSignificantHistoryChange(
+    snapshotBeforeAction,
+    createHistorySnapshot(nextState)
+  );
 
   if (hasChanged) {
     if (transactionDepth > 0) {

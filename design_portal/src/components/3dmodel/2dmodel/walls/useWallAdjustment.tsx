@@ -9,11 +9,11 @@ import {
   WALL_THICKNESS_2D_UNITS,
 } from '../../sceneCreator/utils';
 import { RootState } from '../../store';
-import { pointsNear } from '../utils';
-import { WallPoint } from '../interface';
-import { getFloorPolygon } from './wallFloor';
 import { updateObjects, updatePoints } from '../../store/dataSlice';
 import { MAXIMUM_WALL_OBJECT } from '../constants';
+import { WallPoint } from '../interface';
+import { pointsNear } from '../utils';
+import { getFloorPolygon } from './wallFloor';
 
 export function useWallAdjustment() {
   const dispatch = useDispatch();

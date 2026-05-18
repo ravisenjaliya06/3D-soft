@@ -1,4 +1,5 @@
 import { store } from '@/components/3dmodel/store';
+import BackendStatusGate from '@/components/maintenance/BackendStatusGate';
 import MaintenanceGate from '@/components/maintenance/MaintenanceGate';
 import { REDIRECT } from '@/services/CommonStatus';
 import { assets } from '@/svgPaths';
@@ -9,7 +10,6 @@ import { Provider } from 'react-redux';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import '../styles/globals.css';
-import BackendStatusGate from '@/components/maintenance/BackendStatusGate';
 
 const geistSans = localFont({
   src: '../../public/fonts/GeistVF.woff',
