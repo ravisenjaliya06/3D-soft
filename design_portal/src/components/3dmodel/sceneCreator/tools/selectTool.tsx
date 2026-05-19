@@ -1,7 +1,14 @@
 import * as THREE from 'three';
 import { setobjectSelected, setSelectedChildObject } from '../../store/dataSlice';
 import { createLineObjects } from '../../utils/outlineHelpers';
-import { FLOOR_PLAN_TYPES, INVISIBLE_BOXES, OBJECT_TYPES, PART_TYPES } from '../interface';
+import {
+  DOUBLE_DOOR_PLANK_TYPES,
+  DRAWER_PLANK_TYPES,
+  FLOOR_PLAN_TYPES,
+  INVISIBLE_BOXES,
+  OBJECT_TYPES,
+  PART_TYPES,
+} from '../interface';
 
 export class SelectObjectController {
   private camera: THREE.PerspectiveCamera;
@@ -519,9 +526,18 @@ export class SelectObjectController {
 
   private _createOutLine(obj: THREE.Mesh) {
     let outline: THREE.Object3D;
+    const type = obj.userData.type;
+
     if (
-      obj.userData.type === INVISIBLE_BOXES.INVISIBLE_BOX ||
-      obj.userData.type === PART_TYPES.PLANK
+      type === INVISIBLE_BOXES.INVISIBLE_BOX ||
+      type === PART_TYPES.PLANK ||
+      type === PART_TYPES.VERTICAL_PLANK ||
+      type === PART_TYPES.HORIZONTAL_PLANK ||
+      type === PART_TYPES.BACK_PLANK ||
+      type === PART_TYPES.DOOR ||
+      type === PART_TYPES.DOUBLE_DOOR ||
+      Object.values(DRAWER_PLANK_TYPES).includes(type) ||
+      Object.values(DOUBLE_DOOR_PLANK_TYPES).includes(type)
     ) {
       outline = this._createSelectionBox(obj);
     } else {

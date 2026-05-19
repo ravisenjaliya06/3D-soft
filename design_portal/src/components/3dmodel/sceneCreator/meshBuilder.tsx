@@ -886,7 +886,7 @@ export class MeshBuilder {
     const promises: Promise<void>[] = [];
 
     materialArray.forEach((materialData) => {
-      if (materialData?.type === MATERIAL_TYPES.PULL) {
+      if (materialData?.type === MATERIAL_TYPES.PULL && this.meshData.handleMode !== 'handleless') {
         this._loadHandle(this.mesh!, materialData.properties);
       } else if (materialData?.type === MATERIAL_TYPES.HINGE) {
         this._loadHinge(this.mesh!, materialData.properties);
@@ -1082,7 +1082,7 @@ export class MeshBuilder {
 
     const pullMaterial = materialArray.find((mat) => mat?.type === MATERIAL_TYPES.PULL);
 
-    if (pullMaterial) {
+    if (pullMaterial && this.meshData.handleMode !== 'handleless') {
       await this._loadHandle(mesh, pullMaterial.properties);
     }
   }

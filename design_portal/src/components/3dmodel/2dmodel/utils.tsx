@@ -4,8 +4,12 @@ import { WallPoint } from './interface';
 
 const DEFAULT_WALL_THICKNESS = 20;
 
-const sameGridPoint = (p: WallPoint, x: number, y: number) =>
-  Math.round(p.x) === Math.round(x) && Math.round(p.y) === Math.round(y);
+const POINT_TOLERANCE = 0.05; // 0.5mm tolerance for CM units
+
+export const pointsNear = (p1: { x: number; y: number }, p2: { x: number; y: number }) =>
+  Math.abs(p1.x - p2.x) < POINT_TOLERANCE && Math.abs(p1.y - p2.y) < POINT_TOLERANCE;
+
+const sameGridPoint = (p: WallPoint, x: number, y: number) => pointsNear(p, { x, y });
 
 /**
  * After deletes, keep any point that lies on a wall's centerline OR reference edge.

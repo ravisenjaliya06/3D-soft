@@ -1,0 +1,217 @@
+/* TextureAddPopup.module.css */
+
+.popupOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(2px);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  animation: fadeIn 0.2s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+.popup {
+  background: var(--primary-white);
+  width: 25rem;
+  max-width: 95vw;
+  border-radius: 0.6rem;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+  display: flex;
+  flex-direction: column;
+  padding: 1.5rem;
+  animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.headerLeft {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.headerIcon {
+  width: 1.8rem;
+  height: 1.8rem;
+}
+
+.header h2 {
+  font-family: var(--font-family, 'Inter', sans-serif);
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--primary-color);
+  margin: 0;
+}
+
+.closeButton {
+  width: 1rem;
+  height: 1rem;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+.closeButton:hover {
+  transform: scale(1.1);
+}
+
+.mainContent {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.inputGroup {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 9rem;
+}
+
+.inputLabel {
+  margin-bottom: 0.3rem;
+  font-family: var(--font-family, 'Inter', sans-serif);
+  font-size: 0.65rem;
+  font-weight: 600;
+  color: var(--primary-color);
+}
+
+.textInput {
+  border-radius: 0.4rem;
+  border: 1px solid rgba(57, 37, 121, 0.2);
+  background: rgba(255, 255, 255, 0.5);
+  padding: 0.5rem 0.7rem;
+  font-family: var(--font-family, 'Inter', sans-serif);
+  font-size: 0.75rem;
+  color: var(--primary-color);
+  transition: all 0.3s;
+}
+
+.textInput:focus {
+  border-color: var(--primary-color);
+  background: white;
+  outline: none;
+  box-shadow: 0 0 0 1px var(--primary-color);
+}
+
+.uploadRow {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.fileInput {
+  display: none;
+}
+
+.uploadButton {
+  cursor: pointer;
+  border-radius: 0.4rem;
+  border: 1px solid rgba(57, 37, 121, 0.2);
+  background: rgba(255, 255, 255, 0.5);
+  padding: 0.5rem 0.7rem;
+  font-family: var(--font-family, 'Inter', sans-serif);
+  font-size: 0.75rem;
+  color: var(--primary-color);
+  transition: all 0.3s;
+}
+
+.uploadButton:hover {
+  background: var(--primary-color);
+  color: white;
+}
+
+.previewContainer {
+  height: 3rem;
+  width: 3rem;
+  overflow: hidden;
+  border-radius: 0.3rem;
+  border: 1px solid rgba(57, 37, 121, 0.2);
+}
+
+.previewImage {
+  height: 100%;
+  width: 100%;
+  object-fit: cover;
+}
+
+.buttonGroup {
+  margin-top: 1.5rem;
+  display: flex;
+  gap: 1rem;
+}
+
+.saveButton {
+  height: 2.5rem;
+  flex: 1;
+  cursor: pointer;
+  border-radius: 0.4rem;
+  border: none;
+  background: var(--primary-color);
+  font-family: var(--font-family, 'Inter', sans-serif);
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--primary-white);
+  transition: all 0.3s;
+}
+
+.saveButton:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 6px -1px rgba(57, 37, 121, 0.2);
+  filter: brightness(1.1);
+}
+
+.saveButton:disabled {
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.cancelButton {
+  height: 2.5rem;
+  flex: 1;
+  cursor: pointer;
+  border-radius: 0.4rem;
+  border: 1px solid rgba(57, 37, 121, 0.3);
+  background: transparent;
+  font-family: var(--font-family, 'Inter', sans-serif);
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--primary-color);
+  transition: all 0.2s;
+}
+
+.cancelButton:hover {
+  background: rgba(57, 37, 121, 0.05);
+}

@@ -70,6 +70,7 @@ import { DistanceInput } from './DistanceInput';
 import { Axis, Field, TextureGrain } from './interface';
 import { MaterialChangePopup } from './MaterialChangePopup';
 import SidebarInputWithSuffix from './SidebarInputWithSuffix';
+import { TextureAddPopup } from './TextureAddPopup';
 
 const Sidebar: React.FC = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
@@ -101,6 +102,8 @@ const Sidebar: React.FC = () => {
   const [textureSearchQuery, setTextureSearchQuery] = useState('');
   const [visibleCount, setVisibleCount] = useState(LOAD_MORE_INCREMENT);
   const [isMainObject, setIsMainObject] = useState<boolean>(false);
+
+  const [isAddTexturePopupOpen, setIsAddTexturePopupOpen] = useState(false);
 
   const updateObjectRef = useRef<UpdateObjectInScene | null>(null);
   const bandingToolRef = useRef<BandingTool | null>(null);
@@ -2003,115 +2006,1138 @@ const Sidebar: React.FC = () => {
   ];
 
   return (
-    <div
-      ref={sidebarRef}
-      className={
-        isSidebarOpen
-          ? `absolute top-[3.7rem] right-[0] bottom-[0] z-[10] mt-[0.3rem] flex h-[91vh] w-[15rem] flex-col overflow-hidden rounded-t-[0.6rem] bg-[var(--primary-white)]`
-          : `absolute top-[3.7rem] right-[0] bottom-[0] z-[10] mt-[0.3rem] block h-auto w-[15rem] overflow-y-auto rounded-t-[0.6rem] bg-transparent [&::-webkit-scrollbar]:w-[0.3rem] [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-[rgba(57,37,121,0)] hover:[&::-webkit-scrollbar-thumb]:bg-[rgba(57,37,121,0.25)] [&::-webkit-scrollbar-track]:bg-transparent`
-      }
-    >
-      {/* ================= TITLE ================= */}
+    <>
       <div
-        onClick={toggleSidebar}
-        className={`fixed right-[0] z-[20] mt-[0.3rem] flex h-[1.8rem] w-[15rem] cursor-pointer items-center justify-around gap-[1rem] rounded-t-[0.6rem] bg-[var(--primary-color)] ${isSidebarOpen ? 'top-[3.7rem] right-[0]' : 'right-[0] bottom-[0]'} `}
+        ref={sidebarRef}
+        className={
+          isSidebarOpen
+            ? `absolute top-[3.7rem] right-[0] bottom-[0] z-[10] mt-[0.3rem] flex h-[91vh] w-[15rem] flex-col overflow-hidden rounded-t-[0.6rem] bg-[var(--primary-white)]`
+            : `absolute top-[3.7rem] right-[0] bottom-[0] z-[10] mt-[0.3rem] block h-auto w-[15rem] overflow-y-auto rounded-t-[0.6rem] bg-transparent [&::-webkit-scrollbar]:w-[0.3rem] [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-[rgba(57,37,121,0)] hover:[&::-webkit-scrollbar-thumb]:bg-[rgba(57,37,121,0.25)] [&::-webkit-scrollbar-track]:bg-transparent`
+        }
       >
-        <p className="ml-[0rem] text-center text-[0.7rem] leading-[10px] font-[700] tracking-normal text-[var(--primary-white)]">
-          {getSidebarTitle()}
-        </p>
+        {/* ================= TITLE ================= */}
+        <div
+          onClick={toggleSidebar}
+          className={`fixed right-[0] z-[20] mt-[0.3rem] flex h-[1.8rem] w-[15rem] cursor-pointer items-center justify-around gap-[1rem] rounded-t-[0.6rem] bg-[var(--primary-color)] ${isSidebarOpen ? 'top-[3.7rem] right-[0]' : 'right-[0] bottom-[0]'} `}
+        >
+          <p className="ml-[0rem] text-center text-[0.7rem] leading-[10px] font-[700] tracking-normal text-[var(--primary-white)]">
+            {getSidebarTitle()}
+          </p>
 
-        <img
-          src={assets.up_arrow}
-          className={`h-[1rem] w-[1rem] transition-transform duration-200 ${isSidebarOpen ? 'rotate-180' : 'rotate-0'} `}
-          alt="Toggle sidebar"
-        />
-      </div>
+          <img
+            src={assets.up_arrow}
+            className={`h-[1rem] w-[1rem] transition-transform duration-200 ${isSidebarOpen ? 'rotate-180' : 'rotate-0'} `}
+            alt="Toggle sidebar"
+          />
+        </div>
 
-      {!isSidebarOpen && null}
+        {!isSidebarOpen && null}
 
-      {isSidebarOpen && (
-        <>
-          {/* ================= SWITCH ================= */}
-          <div className="mt-[2.1rem] ml-[0.8rem] flex h-[1.5rem] shrink-0 gap-[0.5rem]">
-            {selectedObject?.type !== OBJECT_TYPES.MODEL && (
+        {isSidebarOpen && (
+          <>
+            {/* ================= SWITCH ================= */}
+            <div className="mt-[2.1rem] ml-[0.8rem] flex h-[1.5rem] shrink-0 gap-[0.5rem]">
+              {selectedObject?.type !== OBJECT_TYPES.MODEL && (
+                <button
+                  onClick={handleSetting}
+                  className={`w-[4rem] border-[0rem] p-[0rem] font-[comfortaa] text-[0.7rem] active:bg-[var(--toolbarhover-color)] ${
+                    isSettingOpen
+                      ? 'rounded-[0.1rem] bg-[var(--toolbarhover-color)] px-4 py-2 text-[var(--primary-color)]'
+                      : 'bg-transparent text-[rgba(160,174,192,1)] hover:text-[var(--primary-color)]'
+                  } `}
+                >
+                  Setting
+                </button>
+              )}
+
               <button
-                onClick={handleSetting}
-                className={`w-[4rem] border-[0rem] p-[0rem] font-[comfortaa] text-[0.7rem] active:bg-[var(--toolbarhover-color)] ${
-                  isSettingOpen
+                onClick={handleNavigation}
+                className={`w-[4.5rem] border-[0rem] p-[0rem] font-[poppins] text-[0.7rem] active:bg-[var(--toolbarhover-color)] ${
+                  isNavOpen
                     ? 'rounded-[0.1rem] bg-[var(--toolbarhover-color)] px-4 py-2 text-[var(--primary-color)]'
                     : 'bg-transparent text-[rgba(160,174,192,1)] hover:text-[var(--primary-color)]'
                 } `}
               >
-                Setting
+                Navigation
               </button>
-            )}
+            </div>
 
-            <button
-              onClick={handleNavigation}
-              className={`w-[4.5rem] border-[0rem] p-[0rem] font-[poppins] text-[0.7rem] active:bg-[var(--toolbarhover-color)] ${
-                isNavOpen
-                  ? 'rounded-[0.1rem] bg-[var(--toolbarhover-color)] px-4 py-2 text-[var(--primary-color)]'
-                  : 'bg-transparent text-[rgba(160,174,192,1)] hover:text-[var(--primary-color)]'
-              } `}
-            >
-              Navigation
-            </button>
-          </div>
+            <hr className="my-[0.2rem] shrink-0 opacity-20" />
 
-          <hr className="my-[0.2rem] shrink-0 opacity-20" />
+            <div className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto pb-[0.5rem] [&::-webkit-scrollbar]:w-[0.3rem] [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-[rgba(57,37,121,0)] hover:[&::-webkit-scrollbar-thumb]:bg-[rgba(57,37,121,0.25)] [&::-webkit-scrollbar-track]:bg-transparent">
+              {/* ================= NAV IMAGE ================= */}
+              {isNavOpen && (
+                <div className="mx-auto mt-4 w-[12rem]">
+                  {selectedObject?.type === OBJECT_TYPES.MODEL ? (
+                    <div className="rounded-[0.4rem] border-[0.1rem] border-[var(--primary-color)] bg-[var(--primary-white)] p-[0.6rem] shadow-sm">
+                      <p className="mb-[0.6rem] text-center text-[0.75rem] font-[700] text-[var(--primary-color)]">
+                        Model Tools
+                      </p>
+                      <ul className="space-y-[0.4rem] pl-[0.3rem] text-[0.65rem] text-[var(--primary-color)]">
+                        <li className="flex gap-[0.4rem]">
+                          <b className="w-[3.5rem] text-right">Ctrl + G</b> <span>Position</span>
+                        </li>
+                        <li className="flex gap-[0.4rem]">
+                          <b className="w-[3.5rem] text-right">Ctrl + E</b> <span>Rotation</span>
+                        </li>
+                        <li className="flex gap-[0.4rem]">
+                          <b className="w-[3.5rem] text-right">Ctrl + S</b> <span>Scale</span>
+                        </li>
+                      </ul>
+                    </div>
+                  ) : (
+                    <img src={assets.navigationdetail} className="w-full" />
+                  )}
+                </div>
+              )}
 
-          <div className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto pb-[0.5rem] [&::-webkit-scrollbar]:w-[0.3rem] [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-[rgba(57,37,121,0)] hover:[&::-webkit-scrollbar-thumb]:bg-[rgba(57,37,121,0.25)] [&::-webkit-scrollbar-track]:bg-transparent">
-            {/* ================= NAV IMAGE ================= */}
-            {isNavOpen && (
-              <div className="mx-auto mt-4 w-[12rem]">
-                {selectedObject?.type === OBJECT_TYPES.MODEL ? (
-                  <div className="rounded-[0.4rem] border-[0.1rem] border-[var(--primary-color)] bg-[var(--primary-white)] p-[0.6rem] shadow-sm">
-                    <p className="mb-[0.6rem] text-center text-[0.75rem] font-[700] text-[var(--primary-color)]">
-                      Model Tools
-                    </p>
-                    <ul className="space-y-[0.4rem] pl-[0.3rem] text-[0.65rem] text-[var(--primary-color)]">
-                      <li className="flex gap-[0.4rem]">
-                        <b className="w-[3.5rem] text-right">Ctrl + G</b> <span>Position</span>
-                      </li>
-                      <li className="flex gap-[0.4rem]">
-                        <b className="w-[3.5rem] text-right">Ctrl + E</b> <span>Rotation</span>
-                      </li>
-                      <li className="flex gap-[0.4rem]">
-                        <b className="w-[3.5rem] text-right">Ctrl + S</b> <span>Scale</span>
-                      </li>
-                    </ul>
+              {/* ================= NO SELECTION ================= */}
+              {isSettingOpen && !selectedObject && !isInvisibleBox && (
+                <p className="mt-8 text-center text-[0.8rem] text-[#392579]">No Item Selected</p>
+              )}
+
+              {/* ================= INVISIBLE BOX ================= */}
+              {isSettingOpen && isInvisibleBox && (
+                <p className="mt-8 text-center text-[0.8rem] text-[#392579]">
+                  Add parts to see properties
+                </p>
+              )}
+
+              {/* ================= SETTINGS ================= */}
+              {isSettingOpen && selectedObject && (
+                <>
+                  {/* your existing code – NO CHANGES inside */}
+                  <div className="w-[15rem] bg-white p-3 shadow-sm">
+                    {/* ================= WALL PROPERTIES ================= */}
+                    {isWallSelected && (
+                      <>
+                        {/* Wall – Layout (Dimensions) */}
+                        <div className="mb-[0rem] ml-[1rem] pb-[0rem]">
+                          <div className="mb-[0rem] flex items-center justify-between">
+                            <p className="text-[0.7rem] font-[700] text-[var(--primary-color)]">
+                              Wall Layout
+                            </p>
+                            <button
+                              onClick={() => toggleSection('layout')}
+                              className="mr-[0.75rem] flex h-[0.8rem] w-[0.8rem] flex-shrink-0 items-center justify-center border-0 bg-[var(--primary-white)] p-0"
+                            >
+                              <img
+                                src={collapsed.layout ? assets.plusIcon : assets.minusIcon}
+                                alt={collapsed.layout ? 'Expand' : 'Collapse'}
+                                className="h-[0.8rem] w-[0.8rem]"
+                              />
+                            </button>
+                          </div>
+
+                          {!collapsed.layout && (
+                            <div className="mt-[0rem] mr-[0rem] grid grid-cols-2 gap-[0.4rem]">
+                              {/* Height only for wall */}
+                              <div className="flex flex-col gap-[0.2rem]">
+                                <p className="mb-[0rem] text-[0.6rem] font-[700] text-[var(--primary-color)]">
+                                  Height
+                                </p>
+                                <SidebarInputWithSuffix
+                                  wrapperClassName="relative w-[5rem]"
+                                  inputStyleCSS="h-[1.2rem] w-[5rem] [appearance:textfield] rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                                  suffix="MM"
+                                  type="number"
+                                  min={1}
+                                  step="1"
+                                  value={dimensionsUI.height ?? ''}
+                                  onChange={(e) =>
+                                    handleDimensionChange(
+                                      'height',
+                                      Math.max(1, Number(e.target.value))
+                                    )
+                                  }
+                                  disabled={isDisabled}
+                                />
+                              </div>
+                            </div>
+                          )}
+                        </div>
+
+                        <hr className="mx-[0.2rem] my-[0.3rem] ml-[0rem] w-[15rem] pl-[0rem] opacity-20" />
+                      </>
+                    )}
+                    {/* ================= Minifix & Grooving ================= */}
+                    {!isWallSelected && (
+                      <>
+                        <div className="mb-[0rem] ml-[1rem] pb-[0rem]">
+                          {/* Header */}
+                          <div className="relative mb-[0rem] flex items-center justify-between">
+                            <p className="flex-1 text-[0.7rem] font-[600] text-[var(--primary-color)]">
+                              Minifix & Grooving
+                            </p>
+                            <button
+                              onClick={() => toggleSection('minifix')}
+                              className="absolute top-1/2 right-[0.75rem] flex h-[0.8rem] w-[0.8rem] -translate-y-1/2 items-center justify-center border-0 bg-[var(--primary-white)] p-0"
+                            >
+                              <img
+                                src={collapsed.minifix ? assets.plusIcon : assets.minusIcon}
+                                alt={collapsed.minifix ? 'Expand' : 'Collapse'}
+                                className="h-[0.8rem] w-[0.8rem]"
+                              />
+                            </button>
+                          </div>
+                          {!collapsed.minifix && (
+                            <>
+                              {/* ================= Split Inputs ================= */}
+                              <div className="flex gap-[0.75rem]">
+                                {/* -------- LEFT PART -------- */}
+                                <div className="flex w-[6rem] flex-col">
+                                  {/* Toggle */}
+                                  <div className="ml-[0rem] flex items-center gap-[1rem]">
+                                    <div
+                                      onClick={handleMinifixToggle}
+                                      className={`relative h-[1rem] w-[2rem] cursor-pointer rounded-full border-[0.1rem] border-[var(--toggle-border-color)] p-[0rem] transition-colors duration-300 ${minifixEnabled ? 'bg-[var(--primary-color)]' : 'bg-[var(--primary-white)]'} ${minifixDisabled ? 'pointer-events-none opacity-50' : ''}`}
+                                    >
+                                      {/* Knob */}
+                                      <div
+                                        className={`absolute top-[0.15rem] left-[0.1rem] h-[0.6rem] w-[0.6rem] rounded-full border-[0.1rem] border-[var(--toggle-button-border-color)] p-[0rem] ring-[0.1rem] transition-transform duration-300 ease-in-out ${
+                                          minifixEnabled
+                                            ? 'translate-x-[1rem] bg-[var(--primary-white)] ring-[var(--primary-color)]'
+                                            : 'translate-x-0 bg-[var(--primary-color)] ring-[var(--primary-white)]'
+                                        }`}
+                                      />
+                                    </div>
+                                    <p className="mb-[1remrem] text-[0.6rem] font-[700] text-[var(--primary-color)]">
+                                      Minifix
+                                    </p>
+                                  </div>
+
+                                  {/* Distance */}
+                                  <div className="mt-[0rem]">
+                                    <p className="mt-[0.2rem] mb-[0.2rem] text-[0.6rem] font-[700] text-[var(--primary-color)]">
+                                      Distance
+                                    </p>
+                                    <SidebarInputWithSuffix
+                                      wrapperClassName="relative w-[5rem]"
+                                      inputStyleCSS="h-[1.2rem] w-[5rem] [appearance:textfield] appearance-none rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                                      suffix="MM"
+                                      type="number"
+                                      disabled={isDisabled}
+                                      value={minifixDistanceInput}
+                                      onChange={(e) => {
+                                        const value = Number(e.target.value);
+                                        setMinifixDistanceInput(value);
+
+                                        if (value % 32 !== 0) {
+                                          toast(
+                                            ({ closeToast }) => (
+                                              <CustomToast
+                                                appearance="error"
+                                                message="Distance must be in multiple of 32"
+                                                closeToast={closeToast}
+                                              />
+                                            ),
+                                            {
+                                              position: 'top-center',
+                                              autoClose: 3000,
+                                              hideProgressBar: true, // as per user pref or default
+                                              closeButton: false,
+                                              icon: false,
+                                              className:
+                                                '!overflow-hidden !rounded-[0.75rem] !border !border-[var(--primary-color)] !bg-white !p-0',
+                                              style: { padding: 0, minHeight: 'auto' },
+                                            }
+                                          );
+                                          return;
+                                        }
+
+                                        // Save to cupboard object if it's a full cupboard
+                                        if (selectedObject && isFullCupboard) {
+                                          dispatch(
+                                            updateObject({
+                                              id: selectedObject.id,
+                                              minifixDistance: value,
+                                            })
+                                          );
+                                        } else {
+                                          dispatch(setActiveItemMinifixDistance(value));
+                                        }
+                                      }}
+                                    />
+                                    <p className="mt-[0rem] items-center text-center text-[0.4rem] font-[700] text-[var(--primary-color)]">
+                                      in multiple of 32
+                                    </p>
+                                  </div>
+
+                                  {/* Diameter Hole */}
+                                  <div className="">
+                                    <p className="mt-[0rem] mb-[0.2rem] text-[0.6rem] font-[700] text-[var(--primary-color)]">
+                                      Diameter Hole
+                                    </p>
+                                    <SidebarInputWithSuffix
+                                      wrapperClassName="relative w-[5rem]"
+                                      inputStyleCSS="h-[1.2rem] w-[5rem] [appearance:textfield] appearance-none rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                                      suffix="MM"
+                                      type="number"
+                                      disabled={!minifixEnabled || isDisabled}
+                                      value={minifixDiameterHoleInput}
+                                      onChange={(e) => {
+                                        const value = Number(e.target.value);
+                                        setMinifixDiameterHoleInput(value);
+                                        // Save to cupboard object if it's a full cupboard
+                                        if (selectedObject && isFullCupboard) {
+                                          dispatch(
+                                            updateObject({
+                                              id: selectedObject.id,
+                                              minifixDiameterHole: value,
+                                            })
+                                          );
+                                        } else {
+                                          dispatch(setActiveItemMinifixDiameterHole(value));
+                                        }
+                                      }}
+                                    />
+                                  </div>
+                                </div>
+
+                                {/* -------- VERTICAL DIVIDER -------- */}
+                                <hr className="mr-[0.3rem] ml-[0.2rem] h-[7rem] w-[0.2px] border-[0rem] bg-[var(--table-title-border-color)] p-[0rem]" />
+
+                                {/* -------- RIGHT PART -------- */}
+                                <div className="disabled mr-[0.7rem] flex w-[6rem] flex-col">
+                                  {/* Toggle */}
+                                  <div className="flex items-center gap-[0.5rem]">
+                                    <div
+                                      className={`pointer-events-none relative h-[1rem] w-[2rem] cursor-not-allowed rounded-full border-[0.1rem] border-[var(--toggle-border-color)] bg-[var(--primary-white)] opacity-50`}
+                                    >
+                                      {/* Knob */}
+                                      <div className="absolute top-[0.15rem] left-[0.1rem] h-[0.6rem] w-[0.6rem] rounded-full border-[0.1rem] border-[var(--border-color)] bg-[var(--primary-color)]" />
+                                    </div>
+
+                                    <p className="text-[0.6rem] font-[700] text-[var(--primary-color)] opacity-50">
+                                      Grooving
+                                    </p>
+                                  </div>
+
+                                  {/* Inside */}
+                                  <div>
+                                    <p className="mt-[0.2rem] mb-[0.2rem] text-[0.6rem] font-[700] text-[var(--primary-color)]">
+                                      Inside
+                                    </p>
+                                    <SidebarInputWithSuffix
+                                      wrapperClassName="relative w-[5rem]"
+                                      inputStyleCSS="h-[1.2rem] w-[5rem] [appearance:textfield] appearance-none rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                                      suffix="MM"
+                                      type="number"
+                                      disabled={true}
+                                      // value={inside}
+                                      // onChange={(e) => setInside(Number(e.target.value))}
+                                    />
+                                  </div>
+
+                                  {/* Edge to End */}
+                                  <div>
+                                    <p className="mt-[0.8rem] mb-[0.2rem] text-[0.6rem] font-[500] text-[var(--primary-color)]">
+                                      Edge to End
+                                    </p>
+                                    <SidebarInputWithSuffix
+                                      wrapperClassName="relative w-[5rem]"
+                                      inputStyleCSS="h-[1.2rem] w-[5rem] [appearance:textfield] appearance-none rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                                      suffix="MM"
+                                      type="number"
+                                      disabled={true}
+                                      // value={edgeToEnd}
+                                      // onChange={(e) => setEdgeToEnd(Number(e.target.value))}
+                                    />
+                                  </div>
+                                </div>
+                              </div>
+                            </>
+                          )}
+                        </div>
+                        <hr className="mx-[0.2rem] my-[0.2rem] ml-[0rem] w-[15rem] pl-[0rem] opacity-20" />
+
+                        {/* ================= Camlock Screw Hole ================= */}
+                        <div className="mt-[0] mb-[0.7rem] ml-[1rem] flex flex-col">
+                          <div className="relative flex items-center justify-between gap-[0.5rem]">
+                            <p className="mb-[0] flex flex-1 text-[0.7rem] font-[700] text-[var(--primary-color)]">
+                              Camlock Screw Hole
+                            </p>
+                            <button
+                              onClick={() => toggleSection('camlock')}
+                              className="absolute top-1/2 right-[0.75rem] flex h-[0.8rem] w-[0.8rem] -translate-y-1/2 items-center justify-center border-0 bg-[var(--primary-white)] p-0"
+                            >
+                              <img
+                                src={collapsed.camlock ? assets.plusIcon : assets.minusIcon}
+                                alt={collapsed.camlock ? 'Expand' : 'Collapse'}
+                                className="h-[0.8rem] w-[0.8rem]"
+                              />
+                            </button>
+                          </div>
+                          {!collapsed.camlock && (
+                            <>
+                              <div className="mt-[1rem] mb-[0rem] flex gap-[0.75rem] font-[700]">
+                                {/* Left Column */}
+                                <div className="flex w-[6rem] flex-col">
+                                  <p className="mt-[0rem] mb-[0.2rem] text-[0.6rem] font-[700] text-[var(--primary-color)]">
+                                    Diameter
+                                  </p>
+                                  <SidebarInputWithSuffix
+                                    wrapperClassName="relative w-[5rem]"
+                                    inputStyleCSS="h-[1.2rem] w-[5rem] [appearance:textfield] appearance-none rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                                    suffix="MM"
+                                    type="number"
+                                    disabled={!minifixEnabled || isDisabled}
+                                    value={camDiameterInput}
+                                    onChange={(e) => {
+                                      const value = Number(e.target.value);
+                                      setCamDiameterInput(value);
+                                      if (selectedObject && isFullCupboard) {
+                                        dispatch(
+                                          updateObject({
+                                            id: selectedObject.id,
+                                            camDiameter: value,
+                                          })
+                                        );
+                                      } else {
+                                        dispatch(setActiveItemCamDiameter(value));
+                                      }
+                                    }}
+                                  />
+
+                                  <p className="mt-[0.6rem] mb-[0.2rem] text-[0.6rem] text-[var(--primary-color)]">
+                                    Height
+                                  </p>
+                                  <SidebarInputWithSuffix
+                                    wrapperClassName="relative w-[5rem]"
+                                    inputStyleCSS="h-[1.2rem] w-[5rem] [appearance:textfield] appearance-none rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                                    suffix="MM"
+                                    type="number"
+                                    disabled={!minifixEnabled || isDisabled}
+                                    value={camHeightInput}
+                                    onChange={(e) => {
+                                      const value = Number(e.target.value);
+                                      setCamHeightInput(value);
+                                      if (selectedObject && isFullCupboard) {
+                                        dispatch(
+                                          updateObject({ id: selectedObject.id, camHeight: value })
+                                        );
+                                      } else {
+                                        dispatch(setActiveItemCamHeight(value));
+                                      }
+                                    }}
+                                  />
+                                </div>
+
+                                {/* Divider */}
+                                <div className="mr-[0.3rem] ml-[0.2rem] w-[0.2px] self-stretch bg-[var(--table-title-border-color)]" />
+
+                                {/* Right Column */}
+                                <div className="mr-[0.7rem] flex w-[6rem] flex-col">
+                                  <p className="mt-[0rem] mb-[0.2rem] text-[0.6rem] font-[700] text-[var(--primary-color)]">
+                                    Depth
+                                  </p>
+                                  <SidebarInputWithSuffix
+                                    wrapperClassName="relative w-[5rem]"
+                                    inputStyleCSS="h-[1.2rem] w-[5rem] [appearance:textfield] appearance-none rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                                    suffix="MM"
+                                    type="number"
+                                    disabled={!minifixEnabled || isDisabled}
+                                    value={camDepthInput}
+                                    onChange={(e) => {
+                                      const value = Number(e.target.value);
+                                      setCamDepthInput(value);
+                                      if (selectedObject && isFullCupboard) {
+                                        dispatch(
+                                          updateObject({ id: selectedObject.id, camDepth: value })
+                                        );
+                                      } else {
+                                        dispatch(setActiveItemCamDepth(value));
+                                      }
+                                    }}
+                                  />
+                                </div>
+                              </div>
+                            </>
+                          )}
+                        </div>
+                        <hr className="mx-[0.2rem] my-[0.2rem] ml-[0rem] w-[15rem] pl-[0rem] opacity-20" />
+                      </>
+                    )}
                   </div>
-                ) : (
-                  <img src={assets.navigationdetail} className="w-full" />
-                )}
-              </div>
-            )}
-
-            {/* ================= NO SELECTION ================= */}
-            {isSettingOpen && !selectedObject && !isInvisibleBox && (
-              <p className="mt-8 text-center text-[0.8rem] text-[#392579]">No Item Selected</p>
-            )}
-
-            {/* ================= INVISIBLE BOX ================= */}
-            {isSettingOpen && isInvisibleBox && (
-              <p className="mt-8 text-center text-[0.8rem] text-[#392579]">
-                Add parts to see properties
-              </p>
-            )}
-
-            {/* ================= SETTINGS ================= */}
-            {isSettingOpen && selectedObject && (
-              <>
-                {/* your existing code – NO CHANGES inside */}
-                <div className="w-[15rem] bg-white p-3 shadow-sm">
-                  {/* ================= WALL PROPERTIES ================= */}
-                  {isWallSelected && (
+                  {!isQuickHideActive && isSettingOpen && isPlankSelected && !isWallSelected && (
                     <>
-                      {/* Wall – Layout (Dimensions) */}
-                      <div className="mb-[0rem] ml-[1rem] pb-[0rem]">
-                        <div className="mb-[0rem] flex items-center justify-between">
-                          <p className="text-[0.7rem] font-[700] text-[var(--primary-color)]">
-                            Wall Layout
+                      <div className="mt-[0] mb-[0.7rem] ml-[1rem] flex flex-col gap-[0.5rem]">
+                        <div className="flex items-center justify-between gap-[0.5rem]">
+                          <p className="mb-[0] flex flex-1 text-[0.7rem] font-[700] text-[var(--primary-color)]">
+                            Shelf
+                          </p>
+                          <button
+                            onClick={() => toggleSection('shelf')}
+                            className="mr-[0.75rem] flex h-[0.8rem] w-[0.8rem] flex-shrink-0 items-center justify-center border-0 bg-[var(--primary-white)] p-0"
+                          >
+                            <img
+                              src={collapsed.shelf ? assets.plusIcon : assets.minusIcon}
+                              alt={collapsed.shelf ? 'Expand' : 'Collapse'}
+                              className="h-[0.8rem] w-[0.8rem]"
+                            />
+                          </button>
+                        </div>
+                        {!collapsed.shelf && (
+                          <>
+                            <div className="mr-[1.1rem] flex items-start justify-between gap-[0.75rem]">
+                              <p className="mt-[0rem] mb-[0.2rem] w-[6rem] text-[0.6rem] leading-[1.1] font-[700] text-[var(--primary-color)]">
+                                Shelves Inner Distance
+                              </p>
+                              <SidebarInputWithSuffix
+                                wrapperClassName="relative w-[5rem]"
+                                inputStyleCSS="h-[1.2rem] w-[5rem] [appearance:textfield] appearance-none rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none disabled:opacity-50 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                                suffix="MM"
+                                type="number"
+                                min={0}
+                                max={25}
+                                value={shelvesInnerDistance.toFixed(2)}
+                                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                                  handleShelvesInnerDistanceChange(Number(e.target.value))
+                                }
+                                disabled={isDisabled}
+                              />
+                            </div>
+                          </>
+                        )}
+                      </div>
+                      <hr className="mx-[0.2rem] my-[0.2rem] ml-[0rem] w-[15rem] pl-[0rem] opacity-20" />
+                    </>
+                  )}
+
+                  {/* Edge Banding Controls for Planks */}
+                  {!isQuickHideActive && isSettingOpen && isPlankSelected && !isWallSelected && (
+                    <>
+                      <div className="mt-[0] mb-[0.7rem] ml-[1rem] flex flex-col gap-[0.5rem]">
+                        <div className="flex items-center justify-between gap-[0.5rem]">
+                          <p className="mb-[0] flex flex-1 text-[0.7rem] font-[700] text-[var(--primary-color)]">
+                            Edge Banding
+                          </p>
+                          <button
+                            onClick={() => toggleSection('plankBanding')}
+                            className="mr-[0.75rem] flex h-[0.8rem] w-[0.8rem] flex-shrink-0 items-center justify-center border-0 bg-[var(--primary-white)] p-0"
+                          >
+                            <img
+                              src={collapsed.plankBanding ? assets.plusIcon : assets.minusIcon}
+                              alt={collapsed.plankBanding ? 'Expand' : 'Collapse'}
+                              className="h-[0.8rem] w-[0.8rem]"
+                            />
+                          </button>
+                        </div>
+                        {!collapsed.plankBanding && (
+                          <>
+                            <div className="flex flex-col gap-[0.4rem]">
+                              {edgeBandingOptions.map((row, rowIndex) => (
+                                <div key={rowIndex} className="flex items-center justify-between">
+                                  {row.map((item) => (
+                                    <div
+                                      key={item.key}
+                                      className="flex w-[4rem] items-center gap-[0.1rem]"
+                                    >
+                                      <input
+                                        type="checkbox"
+                                        checked={item.checked}
+                                        onChange={(e) =>
+                                          handleBandingToggle(
+                                            item.key as
+                                              | 'top'
+                                              | 'bottom'
+                                              | 'left'
+                                              | 'right'
+                                              | 'front'
+                                              | 'back',
+                                            e.target.checked
+                                          )
+                                        }
+                                        disabled={isDisabled || item.disabled}
+                                        className="h-[0.9rem] w-[0.9rem] cursor-pointer rounded border-[0.1rem] border-[var(--border-color)] accent-[var(--primary-color)] disabled:opacity-50"
+                                      />
+                                      <p
+                                        className={`text-[0.6rem] font-[700] ${item.disabled ? 'text-[var(--border-color)] opacity-50' : 'text-[var(--primary-color)]'}`}
+                                      >
+                                        {item.label}
+                                      </p>
+                                    </div>
+                                  ))}
+                                </div>
+                              ))}
+                            </div>
+                          </>
+                        )}
+                      </div>
+                      <hr className="mx-[0.2rem] my-[0.2rem] ml-[0rem] w-[15rem] pl-[0rem] opacity-20" />
+                    </>
+                  )}
+
+                  {!isQuickHideActive &&
+                    isSettingOpen &&
+                    isFullCupboardorPlankSelected &&
+                    !isWallSelected && (
+                      <>
+                        {sideBarMenuConfig.map((menu) => (
+                          <div key={menu.subMenu}>
+                            {/* HEADER */}
+                            <div className="mb-[0rem] ml-[1rem] flex flex-col">
+                              <div className="relative mb-[0rem] flex items-center justify-between gap-[0.5rem]">
+                                <p className="flex-1 text-[0.7rem] font-[700] text-[var(--primary-color)]">
+                                  {menu.title}
+                                </p>
+                                <button
+                                  onClick={() => toggleSection('layout')}
+                                  className="absolute top-1/2 right-[0.75rem] flex h-[0.8rem] w-[0.8rem] -translate-y-1/2 items-center justify-center border-0 bg-[var(--primary-white)] p-0"
+                                >
+                                  <img
+                                    src={collapsed.layout ? assets.plusIcon : assets.minusIcon}
+                                    alt={collapsed.layout ? 'Expand' : 'Collapse'}
+                                    className="h-[0.8rem] w-[0.8rem]"
+                                  />
+                                </button>
+                              </div>
+                              {!collapsed.layout && (
+                                <>
+                                  {/* PLANK LAYOUT - STACKED WITH CONTROLS */}
+                                  {(isPlankSelected || isPlatformSelected) && (
+                                    <div className="flex flex-col gap-[0.6rem]">
+                                      {menu.fields.map((field) => (
+                                        <div
+                                          key={field.name}
+                                          className="flex flex-row items-start justify-between gap-[0rem]"
+                                        >
+                                          {/* LEFT SIDE */}
+                                          <div className="flex items-center justify-between gap-[0rem]">
+                                            {/* LEFT: LABEL */}
+                                            <p className="w-[3.5rem] text-[0.6rem] font-[700] text-[var(--primary-color)]">
+                                              {field.label}
+                                            </p>
+
+                                            {field.controls && (
+                                              <div className="ml-[0rem] flex gap-[0.65rem] rounded-[0.25rem] bg-[#f2f2f2] p-[0.15rem]">
+                                                {controlIconMap[field.name]?.map((icon, idx) => {
+                                                  let isActive = false;
+                                                  if (field.name === 'width') {
+                                                    isActive =
+                                                      (idx === 0 && widthSide === 'left') ||
+                                                      (idx === 1 && widthSide === 'right');
+                                                  } else if (field.name === 'height') {
+                                                    isActive =
+                                                      (idx === 0 && heightSide === 'top') ||
+                                                      (idx === 1 && heightSide === 'bottom');
+                                                  } else if (field.name === 'depth') {
+                                                    isActive =
+                                                      (idx === 0 && depthSide === 'front') ||
+                                                      (idx === 1 && depthSide === 'back');
+                                                  }
+
+                                                  return (
+                                                    <button
+                                                      key={idx}
+                                                      type="button"
+                                                      onClick={() =>
+                                                        handleControlClick(field.name, idx)
+                                                      }
+                                                      className={`bg-[rgba(242, 242, 242, 1)] flex h-[1.2rem] w-[1.2rem] items-center justify-center rounded-[0.15rem] border-[0.1rem] p-[0rem] transition-all duration-150 ${
+                                                        isActive
+                                                          ? 'border-[0rem] border-[var(--border-color)] bg-[white]'
+                                                          : 'bg-[rgba(242, 242, 242, 1)] border-[0rem] border-transparent hover:bg-[#eaeaea]'
+                                                      } `}
+                                                    >
+                                                      <img
+                                                        src={icon}
+                                                        alt="control"
+                                                        className="h-[0.55rem] w-[0.55rem] cursor-pointer object-contain"
+                                                      />
+                                                    </button>
+                                                  );
+                                                })}
+                                              </div>
+                                            )}
+                                          </div>
+
+                                          {/* RIGHT SIDE INPUT */}
+                                          {field.type === 'select' ? (
+                                            <select
+                                              value={field.value ?? ''}
+                                              onChange={(e) =>
+                                                field.onValueChange(Number(e.target.value))
+                                              }
+                                              disabled={field.disabled}
+                                              className="mt-[0.25rem] mr-[1rem] h-[1.2rem] w-[3.5rem] cursor-pointer rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] bg-white p-[0rem] pl-[0.1rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none"
+                                            >
+                                              {field.options?.map((opt) => (
+                                                <option key={opt} value={opt}>
+                                                  {opt}
+                                                </option>
+                                              ))}
+                                            </select>
+                                          ) : (
+                                            <SidebarInputWithSuffix
+                                              wrapperClassName="relative mt-[0.25rem] mr-[1rem] w-[5rem]"
+                                              inputStyleCSS="h-[1.2rem] w-[3.5rem] [appearance:textfield] items-center justify-between rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] pr-[1.4rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                                              suffix="MM"
+                                              min={field.min}
+                                              step={1}
+                                              type="number"
+                                              value={field.value ?? ''}
+                                              onChange={(e) =>
+                                                field.onValueChange(Number(e.target.value))
+                                              }
+                                              disabled={field.disabled}
+                                            />
+                                          )}
+                                        </div>
+                                      ))}
+                                    </div>
+                                  )}
+
+                                  {/* CUPBOARD LAYOUT - aligned with Camlock / Minifix columns */}
+                                  {!isPlankSelected && !isPlatformSelected && (
+                                    <div className="mt-[1rem] mb-[0rem] flex gap-[0.75rem] font-[700]">
+                                      {/* Left column: Width, Depth */}
+                                      <div className="flex w-[6rem] flex-col">
+                                        <p className="mt-[0rem] mb-[0.2rem] text-[0.6rem] font-[700] text-[var(--primary-color)]">
+                                          Width
+                                        </p>
+                                        <SidebarInputWithSuffix
+                                          wrapperClassName="relative w-[5rem]"
+                                          inputStyleCSS="h-[1.2rem] w-[5rem] [appearance:textfield] rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                                          suffix="MM"
+                                          type="number"
+                                          min={1}
+                                          step="1"
+                                          value={dimensionsUI.width ?? ''}
+                                          onChange={(e) =>
+                                            handleDimensionChange(
+                                              'width',
+                                              Math.max(1, Number(e.target.value))
+                                            )
+                                          }
+                                          disabled={isHorizontalPlank || isDisabled}
+                                        />
+
+                                        <p className="mt-[0.6rem] mb-[0.2rem] text-[0.6rem] font-[700] text-[var(--primary-color)]">
+                                          Depth
+                                        </p>
+                                        <SidebarInputWithSuffix
+                                          wrapperClassName="relative w-[5rem]"
+                                          inputStyleCSS="h-[1.2rem] w-[5rem] [appearance:textfield] rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                                          suffix="MM"
+                                          type="number"
+                                          min={1}
+                                          step="1"
+                                          value={dimensionsUI.depth ?? ''}
+                                          onChange={(e) =>
+                                            handleDimensionChange(
+                                              'depth',
+                                              Math.max(1, Number(e.target.value))
+                                            )
+                                          }
+                                          disabled={isQuickHideActive}
+                                        />
+                                      </div>
+
+                                      <div className="mr-[0.3rem] ml-[0.2rem] w-[0.2px] self-stretch bg-[var(--table-title-border-color)]" />
+
+                                      {/* Right column: Height */}
+                                      <div className="mr-[0.7rem] flex w-[5.6rem] flex-col">
+                                        <p className="mt-[0rem] mb-[0.2rem] text-[0.6rem] font-[700] text-[var(--primary-color)]">
+                                          Height
+                                        </p>
+                                        <SidebarInputWithSuffix
+                                          wrapperClassName="relative w-[5rem]"
+                                          inputStyleCSS="h-[1.2rem] w-[5rem] [appearance:textfield] rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                                          suffix="MM"
+                                          type="number"
+                                          min={1}
+                                          step="1"
+                                          value={dimensionsUI.height ?? ''}
+                                          onChange={(e) =>
+                                            handleDimensionChange(
+                                              'height',
+                                              Math.max(1, Number(e.target.value))
+                                            )
+                                          }
+                                          disabled={isVerticalPlank || isDisabled}
+                                        />
+                                      </div>
+                                    </div>
+                                  )}
+                                </>
+                              )}
+                            </div>
+
+                            <hr className="my-[0.4rem] opacity-20" />
+                          </div>
+                        ))}
+                      </>
+                    )}
+                  {!isQuickHideActive && isSettingOpen && isPlankSelected && !isWallSelected && (
+                    <>
+                      <div className="mb-[0.7rem] ml-[1rem] flex flex-col gap-[0.5rem]">
+                        <div className="relative flex items-center justify-between gap-[0.5rem]">
+                          {/* Title */}
+                          <p className="mt-[0rem] mb-[0rem] flex-1 text-[0.7rem] font-[700] text-[var(--primary-color)]">
+                            Position Move
+                          </p>
+                          <button
+                            onClick={() => toggleSection('positionMove')}
+                            className="absolute top-1/2 right-[0.75rem] flex h-[0.8rem] w-[0.8rem] -translate-y-1/2 items-center justify-center border-0 bg-[var(--primary-white)] p-0"
+                          >
+                            <img
+                              src={collapsed.positionMove ? assets.plusIcon : assets.minusIcon}
+                              alt={collapsed.positionMove ? 'Expand' : 'Collapse'}
+                              className="h-[0.8rem] w-[0.8rem]"
+                            />
+                          </button>
+                        </div>
+                        {!collapsed.positionMove && (
+                          <>
+                            <div className="grid grid-cols-2 gap-[0.4rem]">
+                              {positionFields.map((field) => (
+                                <DistanceInput
+                                  label={field.label}
+                                  direction={field.direction}
+                                  rotate={field.rotate}
+                                  width={field.width}
+                                  value={field.value}
+                                  disabled={field.disabled}
+                                  onChange={handlePositionDistanceChange}
+                                />
+                              ))}
+                            </div>
+                          </>
+                        )}
+                      </div>
+                      <hr className="mx-[0.2rem] my-[0.2rem] ml-[0rem] w-[15rem] pl-[0rem] opacity-20" />
+                    </>
+                  )}
+
+                  {/* ================= Main Object Position ================= */}
+                  {!isQuickHideActive && isSettingOpen && isMainObject && !isWallSelected && (
+                    <>
+                      <div className="mb-[0.7rem] ml-[1rem] flex flex-col gap-[0.5rem]">
+                        <div className="relative flex items-center justify-between gap-[0.5rem]">
+                          {/* Title */}
+                          <p className="mt-[0rem] mb-[0rem] flex-1 text-[0.7rem] font-[700] text-[var(--primary-color)]">
+                            Position
+                          </p>
+                          <button
+                            onClick={() => toggleSection('mainPosition')}
+                            className="absolute top-1/2 right-[0.75rem] flex h-[0.8rem] w-[0.8rem] -translate-y-1/2 items-center justify-center border-0 bg-[var(--primary-white)] p-0"
+                          >
+                            <img
+                              src={collapsed.mainPosition ? assets.plusIcon : assets.minusIcon}
+                              alt={collapsed.mainPosition ? 'Expand' : 'Collapse'}
+                              className="h-[0.8rem] w-[0.8rem]"
+                            />
+                          </button>
+                        </div>
+                        {!collapsed.mainPosition && (
+                          <div className="mt-[1rem] mb-[0rem] flex gap-[0.75rem] font-[700]">
+                            <div className="flex w-[6rem] flex-col">
+                              <p className="mt-[0rem] mb-[0.2rem] text-[0.6rem] font-[700] text-[var(--primary-color)] uppercase">
+                                x
+                              </p>
+                              <input
+                                type="number"
+                                step="0.01"
+                                value={Number(selectedObject?.position?.x ?? 0).toFixed(2)}
+                                onChange={(e) =>
+                                  handleMainObjectPositionChange('x', Number(e.target.value))
+                                }
+                                disabled={isDisabled}
+                                className="h-[1.2rem] w-[5rem] [appearance:textfield] rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                              />
+
+                              <p className="mt-[0.6rem] mb-[0.2rem] text-[0.6rem] font-[700] text-[var(--primary-color)] uppercase">
+                                z
+                              </p>
+                              <input
+                                type="number"
+                                step="0.01"
+                                value={Number(selectedObject?.position?.z ?? 0).toFixed(2)}
+                                onChange={(e) =>
+                                  handleMainObjectPositionChange('z', Number(e.target.value))
+                                }
+                                disabled={isDisabled}
+                                className="h-[1.2rem] w-[5rem] [appearance:textfield] rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                              />
+                            </div>
+
+                            <div className="mr-[0.3rem] ml-[0.2rem] w-[0.2px] self-stretch bg-[var(--table-title-border-color)]" />
+
+                            <div className="mr-[0.7rem] flex w-[5.6rem] flex-col">
+                              <p className="mt-[0rem] mb-[0.2rem] text-[0.6rem] font-[700] text-[var(--primary-color)] uppercase">
+                                y
+                              </p>
+                              <input
+                                type="number"
+                                step="0.01"
+                                value={Number(selectedObject?.position?.y ?? 0).toFixed(2)}
+                                onChange={(e) =>
+                                  handleMainObjectPositionChange('y', Number(e.target.value))
+                                }
+                                disabled={isDisabled}
+                                className="h-[1.2rem] w-[5rem] [appearance:textfield] rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                              />
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                      <hr className="mx-[0.2rem] my-[0.2rem] ml-[0rem] w-[15rem] pl-[0rem] opacity-20" />
+                    </>
+                  )}
+
+                  {/* ================= Handle/Handleless Selector ================= */}
+                  {/* Moved to end after Material as per design sequence */}
+
+                  {/* ================= Top Plank ================= */}
+                  {!isQuickHideActive && isSettingOpen && isFullCupboard && (
+                    <>
+                      <div className="mt-[0] mb-[0.7rem] ml-[1rem] flex flex-col gap-[0.5rem]">
+                        <div className="relative flex items-center justify-between gap-[0.5rem]">
+                          <p className="mb-[0] flex flex-1 text-[0.7rem] font-[700] text-[var(--primary-color)]">
+                            Top Plank
+                          </p>
+                          <button
+                            onClick={() => toggleSection('topPlank')}
+                            className="absolute top-1/2 right-[0.75rem] flex h-[0.8rem] w-[0.8rem] -translate-y-1/2 items-center justify-center border-0 bg-[var(--primary-white)] p-0"
+                          >
+                            <img
+                              src={collapsed.topPlank ? assets.plusIcon : assets.minusIcon}
+                              alt={collapsed.topPlank ? 'Expand' : 'Collapse'}
+                              className="h-[0.8rem] w-[0.8rem]"
+                            />
+                          </button>
+                        </div>
+                        {!collapsed.topPlank && (
+                          <>
+                            {/* Row 1: Toggle only */}
+                            <div className="flex items-center gap-[0.5rem]">
+                              <div
+                                onClick={handleTopPlankToggle}
+                                className={`relative h-[1rem] w-[2rem] cursor-pointer rounded-full border-[0.1rem] border-[var(--toggle-border-color)] p-[0rem] transition-colors duration-300 ${topPlankEnabled ? 'bg-[var(--primary-color)]' : 'bg-[white]'} ${topPlankDisabled || isDisabled ? 'pointer-events-none opacity-50' : ''}`}
+                              >
+                                {/* Knob */}
+                                <div
+                                  className={`absolute top-[0.16rem] left-[0.1rem] h-[0.6rem] w-[0.6rem] rounded-full border-[0.1rem] border-[var(--toggle-border-color)] p-[0rem] ring-[0.1rem] transition-transform duration-300 ease-in-out ${
+                                    topPlankEnabled
+                                      ? 'translate-x-[1rem] bg-[white] ring-[var(--primary-color)]'
+                                      : 'translate-x-0 bg-[var(--primary-color)] ring-[white]'
+                                  }`}
+                                />
+                              </div>
+                            </div>
+
+                            {/* Depth: label above input (aligned with Layout / Position field pattern) */}
+                            <div className="mt-[1rem] flex w-[6rem] flex-col font-[700]">
+                              <p className="mt-[0rem] mb-[0.2rem] text-[0.6rem] font-[700] text-[var(--primary-color)]">
+                                Top Plank Depth
+                              </p>
+                              <SidebarInputWithSuffix
+                                wrapperClassName="relative w-[5rem]"
+                                inputStyleCSS="h-[1.2rem] w-[5rem] [appearance:textfield] rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                                suffix="MM"
+                                type="number"
+                                value={Number(getTopPlank()?.dimensions?.depth ?? 0).toFixed(2)}
+                                onChange={handleTopPlankDepthChange}
+                                disabled={isDisabled || topPlankDisabled}
+                              />
+                            </div>
+                          </>
+                        )}
+                      </div>
+
+                      <hr className="mx-[0.2rem] my-[0.2rem] ml-[0rem] w-[15rem] pl-[0rem] opacity-20" />
+
+                      {/* ================= Base ================= */}
+
+                      <div className="mt-[0] mb-[0.7rem] ml-[1rem] flex flex-col gap-[0.5rem]">
+                        <div className="relative flex items-center justify-between gap-[0.5rem]">
+                          <p className="mb-[0] flex flex-1 text-[0.7rem] font-[700] text-[var(--primary-color)]">
+                            Base
+                          </p>
+                          <button
+                            onClick={() => toggleSection('base')}
+                            className="absolute top-1/2 right-[0.75rem] flex h-[0.8rem] w-[0.8rem] -translate-y-1/2 items-center justify-center border-0 bg-[var(--primary-white)] p-0"
+                          >
+                            <img
+                              src={collapsed.base ? assets.plusIcon : assets.minusIcon}
+                              alt={collapsed.base ? 'Expand' : 'Collapse'}
+                              className="h-[0.8rem] w-[0.8rem]"
+                            />
+                          </button>
+                        </div>
+                        {!collapsed.base && (
+                          <>
+                            <div className="mt-[0.5rem] flex w-full max-w-[13.5rem] flex-col font-[700]">
+                              <p className="mt-[0rem] mb-[0.2rem] text-[0.6rem] font-[700] text-[var(--primary-color)]">
+                                Base type
+                              </p>
+                              <div
+                                role="radiogroup"
+                                aria-label="Base type"
+                                className="flex w-full gap-[0.35rem]"
+                              >
+                                {(
+                                  [
+                                    { id: 'noBase' as const, label: 'No Base' },
+                                    { id: 'nailer' as const, label: 'Nailer' },
+                                    { id: 'skirting' as const, label: 'Skirting' },
+                                  ] as const
+                                ).map((opt) => {
+                                  const active =
+                                    selectedObject && getBaseMode(selectedObject) === opt.id;
+                                  return (
+                                    <button
+                                      key={opt.id}
+                                      type="button"
+                                      role="radio"
+                                      aria-checked={active}
+                                      disabled={isDisabled}
+                                      onClick={() => handleBaseModeSelect(opt.id)}
+                                      className={`flex h-[1.2rem] min-h-[1.2rem] min-w-0 flex-1 items-center justify-center rounded-[0.25rem] border-[0.1rem] px-[0.2rem] py-0 text-center text-[0.58rem] leading-none font-[600] transition-colors duration-150 ${
+                                        active
+                                          ? 'border-[var(--primary-color)] bg-[var(--primary-color)] text-[var(--primary-white)]'
+                                          : 'border-[var(--border-color)] bg-[var(--primary-white)] text-[var(--primary-color)] hover:bg-[#f7fafc]'
+                                      } ${isDisabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}`}
+                                    >
+                                      {opt.label}
+                                    </button>
+                                  );
+                                })}
+                              </div>
+
+                              {selectedObject?.nailerEnabled && (
+                                <div className="mt-[0.25rem] w-full max-w-[13.5rem]">
+                                  <p className="mb-[0.25rem] text-[0.55rem] font-[600] text-[#4a5568]">
+                                    Nailer model
+                                  </p>
+                                  <select
+                                    value={selectedObject?.nailerModel || 'stand_1'}
+                                    onChange={(e) => handleNailerModelChange(e.target.value)}
+                                    disabled={isDisabled}
+                                    className="flex h-[1.2rem] w-full cursor-pointer appearance-none items-center justify-between rounded-[0.1rem] border-[0rem] bg-[var(--primary-color)] p-[0rem] px-[0.5rem] text-left font-[comfortaa] text-[0.6rem] font-[var(--font-family)] font-extralight text-[var(--primary-white)] transition-colors duration-200 ease-in-out"
+                                  >
+                                    <option value="stand_1">Stand 1</option>
+                                    <option value="stand_2">Stand 2</option>
+                                  </select>
+                                </div>
+                              )}
+                            </div>
+
+                            {selectedObject?.skirtingEnabled && (
+                              <div className="mt-[0.35rem] mb-[0rem] flex gap-[0.75rem] font-[700]">
+                                <div className="flex w-[6rem] flex-col">
+                                  <p
+                                    className={`mt-[0rem] mb-[0.2rem] text-[0.6rem] font-[700] text-[var(--primary-color)] ${isDisabled ? 'opacity-50' : ''}`}
+                                  >
+                                    Offset
+                                  </p>
+                                  <SidebarInputWithSuffix
+                                    wrapperClassName="relative w-[5rem]"
+                                    inputStyleCSS="h-[1.2rem] w-[5rem] [appearance:textfield] rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                                    suffix="MM"
+                                    type="number"
+                                    value={selectedObject?.skirtingOffset ?? 10}
+                                    onChange={handleSkirtingOffsetChange}
+                                    disabled={isDisabled}
+                                  />
+                                </div>
+
+                                <div className="mr-[0.3rem] ml-[0.2rem] w-[0.2px] self-stretch bg-[var(--table-title-border-color)]" />
+
+                                <div className="mr-[0.7rem] flex w-[5.6rem] flex-col">
+                                  <p
+                                    className={`mt-[0rem] mb-[0.2rem] text-[0.6rem] font-[700] text-[var(--primary-color)] ${isDisabled ? 'opacity-50' : ''}`}
+                                  >
+                                    Height
+                                  </p>
+                                  <SidebarInputWithSuffix
+                                    wrapperClassName="relative w-[5rem]"
+                                    inputStyleCSS="h-[1.2rem] w-[5rem] [appearance:textfield] rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                                    suffix="MM"
+                                    type="number"
+                                    value={selectedObject?.skirtingHeight ?? 75}
+                                    onChange={handleSkirtingHeightChange}
+                                    disabled={isDisabled}
+                                  />
+                                </div>
+                              </div>
+                            )}
+                          </>
+                        )}
+                      </div>
+
+                      <hr className="mx-[0.2rem] my-[0.2rem] ml-[0rem] w-[15rem] pl-[0rem] opacity-20" />
+                    </>
+                  )}
+
+                  {!isQuickHideActive && isSettingOpen && isDoorSelected && (
+                    <>
+                      <div className="mt-[0] mb-[0.7rem] ml-[1rem] flex flex-col gap-[0rem]">
+                        <div className="flex items-center justify-between gap-[0.5rem]">
+                          <p className="mb-[0] flex flex-1 text-[0.7rem] font-[700] text-[var(--primary-color)]">
+                            Door
+                          </p>
+                          <button
+                            onClick={() => toggleSection('shelf')}
+                            className="mr-[0.75rem] flex h-[0.8rem] w-[0.8rem] flex-shrink-0 items-center justify-center border-0 bg-[var(--primary-white)] p-0"
+                          >
+                            <img
+                              src={collapsed.shelf ? assets.plusIcon : assets.minusIcon}
+                              alt={collapsed.shelf ? 'Expand' : 'Collapse'}
+                              className="h-[0.8rem] w-[0.8rem]"
+                            />
+                          </button>
+                        </div>
+                        {!collapsed.shelf && (
+                          <>
+                            <div className={'relative flex items-center justify-between'}>
+                              <p className="m-0 pl-[0rem] font-[comfortaa] text-[0.6rem] font-[var(--font-family)] text-[var(--primary-color)]">
+                                Door Position
+                              </p>
+                              <select
+                                className="mr-[1.5rem] flex h-[1.2rem] w-[6.8rem] cursor-pointer appearance-none items-center justify-between rounded-[0.1rem] border-[0rem] bg-[var(--primary-color)] p-[0rem] px-[0.5rem] text-left font-[comfortaa] text-[0.6rem] font-[var(--font-family)] font-extralight text-[var(--primary-white)] transition-colors duration-200 ease-in-out"
+                                value={doorPosition}
+                                onChange={(e) => {
+                                  const value = e.target.value;
+                                  setDoorPosition(value);
+                                  handleDoorPositionChange(value);
+                                }}
+                                disabled={isDisabled}
+                              >
+                                <option value="None">None</option>
+                                <option value="Left">Left</option>
+                                <option value="Right">Right</option>
+                                <option value="Top">Top</option>
+                                <option value="Bottom">Bottom</option>
+                              </select>
+                            </div>
+
+                            <div className="relative flex items-center justify-between pl-[0rem]">
+                              <p className="m-0 font-[comfortaa] text-[0.6rem] font-[var(--font-family)] text-[var(--primary-color)]">
+                                Open/Close
+                              </p>
+                              <button
+                                className="mr-[1.5rem] flex h-[1.2rem] w-[6.8rem] cursor-pointer appearance-none items-center justify-between rounded-[0.1rem] border-[0rem] bg-[var(--primary-color)] p-[0rem] px-[0.5rem] text-left font-[comfortaa] text-[0.6rem] font-[var(--font-family)] font-extralight text-[var(--primary-white)] transition-colors duration-200 ease-in-out"
+                                disabled={isDisabled}
+                                onClick={handleOpenCloseChange}
+                              >
+                                Open/Close
+                              </button>
+                            </div>
+                          </>
+                        )}
+                      </div>
+                      <hr className="mx-[0.2rem] my-[0.2rem] ml-[0rem] w-[15rem] pl-[0rem] opacity-20" />
+                    </>
+                  )}
+
+                  {!isQuickHideActive && isSettingOpen && isDoorSelected && (
+                    <>
+                      <div className="mt-[0] mb-[0.7rem] ml-[1rem] flex flex-col gap-[0rem]">
+                        <div className="flex items-center justify-between gap-[0.5rem]">
+                          <p className="mb-[0] flex flex-1 text-[0.7rem] font-[700] text-[var(--primary-color)]">
+                            Door
                           </p>
                           <button
                             onClick={() => toggleSection('layout')}
@@ -2124,1154 +3150,135 @@ const Sidebar: React.FC = () => {
                             />
                           </button>
                         </div>
-
                         {!collapsed.layout && (
-                          <div className="mt-[0rem] mr-[0rem] grid grid-cols-2 gap-[0.4rem]">
-                            {/* Height only for wall */}
-                            <div className="flex flex-col gap-[0.2rem]">
-                              <p className="mb-[0rem] text-[0.6rem] font-[700] text-[var(--primary-color)]">
-                                Height
+                          <>
+                            <div className="relative flex items-center justify-between pl-[0rem]">
+                              <p className="m-0 font-[comfortaa] text-[0.6rem] font-[var(--font-family)] text-[var(--primary-color)]">
+                                Door Type
                               </p>
-                              <SidebarInputWithSuffix
-                                wrapperClassName="relative w-[5rem]"
-                                inputStyleCSS="h-[1.2rem] w-[5rem] [appearance:textfield] rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-                                suffix="MM"
-                                type="number"
-                                min={1}
-                                step="1"
-                                value={dimensionsUI.height ?? ''}
-                                onChange={(e) =>
-                                  handleDimensionChange(
-                                    'height',
-                                    Math.max(1, Number(e.target.value))
-                                  )
-                                }
+                              <select
+                                className="mr-[1.5rem] flex h-[1.2rem] w-[6.8rem] cursor-pointer appearance-none items-center justify-between rounded-[0.1rem] border-[0rem] bg-[var(--primary-color)] px-[0.5rem] text-left font-[comfortaa] text-[0.6rem] font-extralight text-[var(--primary-white)] transition-colors duration-200 ease-in-out"
                                 disabled={isDisabled}
-                              />
+                                value={
+                                  selectedObject?.doorType === DOOR_TYPES.INSET
+                                    ? DOOR_TYPES.INSET
+                                    : DOOR_TYPES.OVERLAY
+                                }
+                                onChange={(e) => {
+                                  const value = e.target.value;
+                                  if (selectedObject?.id) {
+                                    updateDoorType(scene, selectedObject.id, value);
+                                  }
+                                }}
+                              >
+                                <option value={DOOR_TYPES.INSET}>In to In</option>
+                                <option value={DOOR_TYPES.OVERLAY}>Out to Out</option>
+                              </select>
                             </div>
-                          </div>
-                        )}
-                      </div>
 
-                      <hr className="mx-[0.2rem] my-[0.3rem] ml-[0rem] w-[15rem] pl-[0rem] opacity-20" />
-                    </>
-                  )}
-                  {/* ================= Minifix & Grooving ================= */}
-                  {!isWallSelected && (
-                    <>
-                      <div className="mb-[0rem] ml-[1rem] pb-[0rem]">
-                        {/* Header */}
-                        <div className="relative mb-[0rem] flex items-center justify-between">
-                          <p className="flex-1 text-[0.7rem] font-[600] text-[var(--primary-color)]">
-                            Minifix & Grooving
-                          </p>
-                          <button
-                            onClick={() => toggleSection('minifix')}
-                            className="absolute top-1/2 right-[0.75rem] flex h-[0.8rem] w-[0.8rem] -translate-y-1/2 items-center justify-center border-0 bg-[var(--primary-white)] p-0"
-                          >
-                            <img
-                              src={collapsed.minifix ? assets.plusIcon : assets.minusIcon}
-                              alt={collapsed.minifix ? 'Expand' : 'Collapse'}
-                              className="h-[0.8rem] w-[0.8rem]"
-                            />
-                          </button>
-                        </div>
-                        {!collapsed.minifix && (
-                          <>
-                            {/* ================= Split Inputs ================= */}
-                            <div className="flex gap-[0.75rem]">
-                              {/* -------- LEFT PART -------- */}
-                              <div className="flex w-[6rem] flex-col">
-                                {/* Toggle */}
-                                <div className="ml-[0rem] flex items-center gap-[1rem]">
-                                  <div
-                                    onClick={handleMinifixToggle}
-                                    className={`relative h-[1rem] w-[2rem] cursor-pointer rounded-full border-[0.1rem] border-[var(--toggle-border-color)] p-[0rem] transition-colors duration-300 ${minifixEnabled ? 'bg-[var(--primary-color)]' : 'bg-[var(--primary-white)]'} ${minifixDisabled ? 'pointer-events-none opacity-50' : ''}`}
-                                  >
-                                    {/* Knob */}
-                                    <div
-                                      className={`absolute top-[0.15rem] left-[0.1rem] h-[0.6rem] w-[0.6rem] rounded-full border-[0.1rem] border-[var(--toggle-button-border-color)] p-[0rem] ring-[0.1rem] transition-transform duration-300 ease-in-out ${
-                                        minifixEnabled
-                                          ? 'translate-x-[1rem] bg-[var(--primary-white)] ring-[var(--primary-color)]'
-                                          : 'translate-x-0 bg-[var(--primary-color)] ring-[var(--primary-white)]'
-                                      }`}
-                                    />
-                                  </div>
-                                  <p className="mb-[1remrem] text-[0.6rem] font-[700] text-[var(--primary-color)]">
-                                    Minifix
-                                  </p>
-                                </div>
-
-                                {/* Distance */}
-                                <div className="mt-[0rem]">
-                                  <p className="mt-[0.2rem] mb-[0.2rem] text-[0.6rem] font-[700] text-[var(--primary-color)]">
-                                    Distance
-                                  </p>
-                                  <SidebarInputWithSuffix
-                                    wrapperClassName="relative w-[5rem]"
-                                    inputStyleCSS="h-[1.2rem] w-[5rem] [appearance:textfield] appearance-none rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-                                    suffix="MM"
-                                    type="number"
-                                    disabled={isDisabled}
-                                    value={minifixDistanceInput}
-                                    onChange={(e) => {
-                                      const value = Number(e.target.value);
-                                      setMinifixDistanceInput(value);
-
-                                      if (value % 32 !== 0) {
-                                        toast(
-                                          ({ closeToast }) => (
-                                            <CustomToast
-                                              appearance="error"
-                                              message="Distance must be in multiple of 32"
-                                              closeToast={closeToast}
-                                            />
-                                          ),
-                                          {
-                                            position: 'top-center',
-                                            autoClose: 3000,
-                                            hideProgressBar: true, // as per user pref or default
-                                            closeButton: false,
-                                            icon: false,
-                                            className:
-                                              '!overflow-hidden !rounded-[0.75rem] !border !border-[var(--primary-color)] !bg-white !p-0',
-                                            style: { padding: 0, minHeight: 'auto' },
-                                          }
-                                        );
-                                        return;
-                                      }
-
-                                      // Save to cupboard object if it's a full cupboard
-                                      if (selectedObject && isFullCupboard) {
-                                        dispatch(
-                                          updateObject({
-                                            id: selectedObject.id,
-                                            minifixDistance: value,
-                                          })
-                                        );
-                                      } else {
-                                        dispatch(setActiveItemMinifixDistance(value));
-                                      }
-                                    }}
-                                  />
-                                  <p className="mt-[0rem] items-center text-center text-[0.4rem] font-[700] text-[var(--primary-color)]">
-                                    in multiple of 32
-                                  </p>
-                                </div>
-
-                                {/* Diameter Hole */}
-                                <div className="">
-                                  <p className="mt-[0rem] mb-[0.2rem] text-[0.6rem] font-[700] text-[var(--primary-color)]">
-                                    Diameter Hole
-                                  </p>
-                                  <SidebarInputWithSuffix
-                                    wrapperClassName="relative w-[5rem]"
-                                    inputStyleCSS="h-[1.2rem] w-[5rem] [appearance:textfield] appearance-none rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-                                    suffix="MM"
-                                    type="number"
-                                    disabled={!minifixEnabled || isDisabled}
-                                    value={minifixDiameterHoleInput}
-                                    onChange={(e) => {
-                                      const value = Number(e.target.value);
-                                      setMinifixDiameterHoleInput(value);
-                                      // Save to cupboard object if it's a full cupboard
-                                      if (selectedObject && isFullCupboard) {
-                                        dispatch(
-                                          updateObject({
-                                            id: selectedObject.id,
-                                            minifixDiameterHole: value,
-                                          })
-                                        );
-                                      } else {
-                                        dispatch(setActiveItemMinifixDiameterHole(value));
-                                      }
-                                    }}
-                                  />
-                                </div>
-                              </div>
-
-                              {/* -------- VERTICAL DIVIDER -------- */}
-                              <hr className="mr-[0.3rem] ml-[0.2rem] h-[7rem] w-[0.2px] border-[0rem] bg-[var(--table-title-border-color)] p-[0rem]" />
-
-                              {/* -------- RIGHT PART -------- */}
-                              <div className="disabled mr-[0.7rem] flex w-[6rem] flex-col">
-                                {/* Toggle */}
-                                <div className="flex items-center gap-[0.5rem]">
-                                  <div
-                                    className={`pointer-events-none relative h-[1rem] w-[2rem] cursor-not-allowed rounded-full border-[0.1rem] border-[var(--toggle-border-color)] bg-[var(--primary-white)] opacity-50`}
-                                  >
-                                    {/* Knob */}
-                                    <div className="absolute top-[0.15rem] left-[0.1rem] h-[0.6rem] w-[0.6rem] rounded-full border-[0.1rem] border-[var(--border-color)] bg-[var(--primary-color)]" />
-                                  </div>
-
-                                  <p className="text-[0.6rem] font-[700] text-[var(--primary-color)] opacity-50">
-                                    Grooving
-                                  </p>
-                                </div>
-
-                                {/* Inside */}
-                                <div>
-                                  <p className="mt-[0.2rem] mb-[0.2rem] text-[0.6rem] font-[700] text-[var(--primary-color)]">
-                                    Inside
-                                  </p>
-                                  <SidebarInputWithSuffix
-                                    wrapperClassName="relative w-[5rem]"
-                                    inputStyleCSS="h-[1.2rem] w-[5rem] [appearance:textfield] appearance-none rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-                                    suffix="MM"
-                                    type="number"
-                                    disabled={true}
-                                    // value={inside}
-                                    // onChange={(e) => setInside(Number(e.target.value))}
-                                  />
-                                </div>
-
-                                {/* Edge to End */}
-                                <div>
-                                  <p className="mt-[0.8rem] mb-[0.2rem] text-[0.6rem] font-[500] text-[var(--primary-color)]">
-                                    Edge to End
-                                  </p>
-                                  <SidebarInputWithSuffix
-                                    wrapperClassName="relative w-[5rem]"
-                                    inputStyleCSS="h-[1.2rem] w-[5rem] [appearance:textfield] appearance-none rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-                                    suffix="MM"
-                                    type="number"
-                                    disabled={true}
-                                    // value={edgeToEnd}
-                                    // onChange={(e) => setEdgeToEnd(Number(e.target.value))}
-                                  />
-                                </div>
-                              </div>
-                            </div>
-                          </>
-                        )}
-                      </div>
-                      <hr className="mx-[0.2rem] my-[0.2rem] ml-[0rem] w-[15rem] pl-[0rem] opacity-20" />
-
-                      {/* ================= Camlock Screw Hole ================= */}
-                      <div className="mt-[0] mb-[0.7rem] ml-[1rem] flex flex-col">
-                        <div className="relative flex items-center justify-between gap-[0.5rem]">
-                          <p className="mb-[0] flex flex-1 text-[0.7rem] font-[700] text-[var(--primary-color)]">
-                            Camlock Screw Hole
-                          </p>
-                          <button
-                            onClick={() => toggleSection('camlock')}
-                            className="absolute top-1/2 right-[0.75rem] flex h-[0.8rem] w-[0.8rem] -translate-y-1/2 items-center justify-center border-0 bg-[var(--primary-white)] p-0"
-                          >
-                            <img
-                              src={collapsed.camlock ? assets.plusIcon : assets.minusIcon}
-                              alt={collapsed.camlock ? 'Expand' : 'Collapse'}
-                              className="h-[0.8rem] w-[0.8rem]"
-                            />
-                          </button>
-                        </div>
-                        {!collapsed.camlock && (
-                          <>
-                            <div className="mt-[1rem] mb-[0rem] flex gap-[0.75rem] font-[700]">
-                              {/* Left Column */}
-                              <div className="flex w-[6rem] flex-col">
-                                <p className="mt-[0rem] mb-[0.2rem] text-[0.6rem] font-[700] text-[var(--primary-color)]">
-                                  Diameter
-                                </p>
-                                <SidebarInputWithSuffix
-                                  wrapperClassName="relative w-[5rem]"
-                                  inputStyleCSS="h-[1.2rem] w-[5rem] [appearance:textfield] appearance-none rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-                                  suffix="MM"
-                                  type="number"
-                                  disabled={!minifixEnabled || isDisabled}
-                                  value={camDiameterInput}
-                                  onChange={(e) => {
-                                    const value = Number(e.target.value);
-                                    setCamDiameterInput(value);
-                                    if (selectedObject && isFullCupboard) {
-                                      dispatch(
-                                        updateObject({ id: selectedObject.id, camDiameter: value })
-                                      );
-                                    } else {
-                                      dispatch(setActiveItemCamDiameter(value));
-                                    }
-                                  }}
-                                />
-
-                                <p className="mt-[0.6rem] mb-[0.2rem] text-[0.6rem] text-[var(--primary-color)]">
-                                  Height
-                                </p>
-                                <SidebarInputWithSuffix
-                                  wrapperClassName="relative w-[5rem]"
-                                  inputStyleCSS="h-[1.2rem] w-[5rem] [appearance:textfield] appearance-none rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-                                  suffix="MM"
-                                  type="number"
-                                  disabled={!minifixEnabled || isDisabled}
-                                  value={camHeightInput}
-                                  onChange={(e) => {
-                                    const value = Number(e.target.value);
-                                    setCamHeightInput(value);
-                                    if (selectedObject && isFullCupboard) {
-                                      dispatch(
-                                        updateObject({ id: selectedObject.id, camHeight: value })
-                                      );
-                                    } else {
-                                      dispatch(setActiveItemCamHeight(value));
-                                    }
-                                  }}
-                                />
-                              </div>
-
-                              {/* Divider */}
-                              <div className="mr-[0.3rem] ml-[0.2rem] w-[0.2px] self-stretch bg-[var(--table-title-border-color)]" />
-
-                              {/* Right Column */}
-                              <div className="mr-[0.7rem] flex w-[6rem] flex-col">
-                                <p className="mt-[0rem] mb-[0.2rem] text-[0.6rem] font-[700] text-[var(--primary-color)]">
-                                  Depth
-                                </p>
-                                <SidebarInputWithSuffix
-                                  wrapperClassName="relative w-[5rem]"
-                                  inputStyleCSS="h-[1.2rem] w-[5rem] [appearance:textfield] appearance-none rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-                                  suffix="MM"
-                                  type="number"
-                                  disabled={!minifixEnabled || isDisabled}
-                                  value={camDepthInput}
-                                  onChange={(e) => {
-                                    const value = Number(e.target.value);
-                                    setCamDepthInput(value);
-                                    if (selectedObject && isFullCupboard) {
-                                      dispatch(
-                                        updateObject({ id: selectedObject.id, camDepth: value })
-                                      );
-                                    } else {
-                                      dispatch(setActiveItemCamDepth(value));
-                                    }
-                                  }}
-                                />
-                              </div>
-                            </div>
-                          </>
-                        )}
-                      </div>
-                      <hr className="mx-[0.2rem] my-[0.2rem] ml-[0rem] w-[15rem] pl-[0rem] opacity-20" />
-                    </>
-                  )}
-                </div>
-                {!isQuickHideActive && isSettingOpen && isPlankSelected && !isWallSelected && (
-                  <>
-                    <div className="mt-[0] mb-[0.7rem] ml-[1rem] flex flex-col gap-[0.5rem]">
-                      <div className="flex items-center justify-between gap-[0.5rem]">
-                        <p className="mb-[0] flex flex-1 text-[0.7rem] font-[700] text-[var(--primary-color)]">
-                          Shelf
-                        </p>
-                        <button
-                          onClick={() => toggleSection('shelf')}
-                          className="mr-[0.75rem] flex h-[0.8rem] w-[0.8rem] flex-shrink-0 items-center justify-center border-0 bg-[var(--primary-white)] p-0"
-                        >
-                          <img
-                            src={collapsed.shelf ? assets.plusIcon : assets.minusIcon}
-                            alt={collapsed.shelf ? 'Expand' : 'Collapse'}
-                            className="h-[0.8rem] w-[0.8rem]"
-                          />
-                        </button>
-                      </div>
-                      {!collapsed.shelf && (
-                        <>
-                          <div className="mr-[1.1rem] flex items-start justify-between gap-[0.75rem]">
-                            <p className="mt-[0rem] mb-[0.2rem] w-[6rem] text-[0.6rem] leading-[1.1] font-[700] text-[var(--primary-color)]">
-                              Shelves Inner Distance
-                            </p>
-                            <SidebarInputWithSuffix
-                              wrapperClassName="relative w-[5rem]"
-                              inputStyleCSS="h-[1.2rem] w-[5rem] [appearance:textfield] appearance-none rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none disabled:opacity-50 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-                              suffix="MM"
-                              type="number"
-                              min={0}
-                              max={25}
-                              value={shelvesInnerDistance.toFixed(2)}
-                              onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                                handleShelvesInnerDistanceChange(Number(e.target.value))
-                              }
-                              disabled={isDisabled}
-                            />
-                          </div>
-                        </>
-                      )}
-                    </div>
-                    <hr className="mx-[0.2rem] my-[0.2rem] ml-[0rem] w-[15rem] pl-[0rem] opacity-20" />
-                  </>
-                )}
-
-                {/* Edge Banding Controls for Planks */}
-                {!isQuickHideActive && isSettingOpen && isPlankSelected && !isWallSelected && (
-                  <>
-                    <div className="mt-[0] mb-[0.7rem] ml-[1rem] flex flex-col gap-[0.5rem]">
-                      <div className="flex items-center justify-between gap-[0.5rem]">
-                        <p className="mb-[0] flex flex-1 text-[0.7rem] font-[700] text-[var(--primary-color)]">
-                          Edge Banding
-                        </p>
-                        <button
-                          onClick={() => toggleSection('plankBanding')}
-                          className="mr-[0.75rem] flex h-[0.8rem] w-[0.8rem] flex-shrink-0 items-center justify-center border-0 bg-[var(--primary-white)] p-0"
-                        >
-                          <img
-                            src={collapsed.plankBanding ? assets.plusIcon : assets.minusIcon}
-                            alt={collapsed.plankBanding ? 'Expand' : 'Collapse'}
-                            className="h-[0.8rem] w-[0.8rem]"
-                          />
-                        </button>
-                      </div>
-                      {!collapsed.plankBanding && (
-                        <>
-                          <div className="flex flex-col gap-[0.4rem]">
-                            {edgeBandingOptions.map((row, rowIndex) => (
-                              <div key={rowIndex} className="flex items-center justify-between">
-                                {row.map((item) => (
-                                  <div
-                                    key={item.key}
-                                    className="flex w-[4rem] items-center gap-[0.1rem]"
-                                  >
-                                    <input
-                                      type="checkbox"
-                                      checked={item.checked}
-                                      onChange={(e) =>
-                                        handleBandingToggle(
-                                          item.key as
-                                            | 'top'
-                                            | 'bottom'
-                                            | 'left'
-                                            | 'right'
-                                            | 'front'
-                                            | 'back',
-                                          e.target.checked
-                                        )
-                                      }
-                                      disabled={isDisabled || item.disabled}
-                                      className="h-[0.9rem] w-[0.9rem] cursor-pointer rounded border-[0.1rem] border-[var(--border-color)] accent-[var(--primary-color)] disabled:opacity-50"
-                                    />
-                                    <p
-                                      className={`text-[0.6rem] font-[700] ${item.disabled ? 'text-[var(--border-color)] opacity-50' : 'text-[var(--primary-color)]'}`}
-                                    >
-                                      {item.label}
-                                    </p>
-                                  </div>
-                                ))}
-                              </div>
-                            ))}
-                          </div>
-                        </>
-                      )}
-                    </div>
-                    <hr className="mx-[0.2rem] my-[0.2rem] ml-[0rem] w-[15rem] pl-[0rem] opacity-20" />
-                  </>
-                )}
-
-                {!isQuickHideActive &&
-                  isSettingOpen &&
-                  isFullCupboardorPlankSelected &&
-                  !isWallSelected && (
-                    <>
-                      {sideBarMenuConfig.map((menu) => (
-                        <div key={menu.subMenu}>
-                          {/* HEADER */}
-                          <div className="mb-[0rem] ml-[1rem] flex flex-col">
-                            <div className="relative mb-[0rem] flex items-center justify-between gap-[0.5rem]">
-                              <p className="flex-1 text-[0.7rem] font-[700] text-[var(--primary-color)]">
-                                {menu.title}
+                            <div className="relative flex items-center justify-between pl-[0rem]">
+                              <p className="m-0 font-[comfortaa] text-[0.6rem] font-[var(--font-family)] text-[var(--primary-color)]">
+                                Open/Close
                               </p>
                               <button
-                                onClick={() => toggleSection('layout')}
-                                className="absolute top-1/2 right-[0.75rem] flex h-[0.8rem] w-[0.8rem] -translate-y-1/2 items-center justify-center border-0 bg-[var(--primary-white)] p-0"
+                                className="mr-[1.5rem] flex h-[1.2rem] w-[6.8rem] cursor-pointer appearance-none items-center justify-between rounded-[0.1rem] border-[0rem] bg-[var(--primary-color)] p-[0rem] px-[0.5rem] text-left font-[comfortaa] text-[0.6rem] font-[var(--font-family)] font-extralight text-[var(--primary-white)] transition-colors duration-200 ease-in-out"
+                                disabled={isDisabled}
+                                onClick={handleOpenCloseChange}
                               >
-                                <img
-                                  src={collapsed.layout ? assets.plusIcon : assets.minusIcon}
-                                  alt={collapsed.layout ? 'Expand' : 'Collapse'}
-                                  className="h-[0.8rem] w-[0.8rem]"
-                                />
+                                Open/Close
                               </button>
                             </div>
-                            {!collapsed.layout && (
-                              <>
-                                {/* PLANK LAYOUT - STACKED WITH CONTROLS */}
-                                {(isPlankSelected || isPlatformSelected) && (
-                                  <div className="flex flex-col gap-[0.6rem]">
-                                    {menu.fields.map((field) => (
-                                      <div
-                                        key={field.name}
-                                        className="flex flex-row items-start justify-between gap-[0rem]"
-                                      >
-                                        {/* LEFT SIDE */}
-                                        <div className="flex items-center justify-between gap-[0rem]">
-                                          {/* LEFT: LABEL */}
-                                          <p className="w-[3.5rem] text-[0.6rem] font-[700] text-[var(--primary-color)]">
-                                            {field.label}
-                                          </p>
-
-                                          {field.controls && (
-                                            <div className="ml-[0rem] flex gap-[0.65rem] rounded-[0.25rem] bg-[#f2f2f2] p-[0.15rem]">
-                                              {controlIconMap[field.name]?.map((icon, idx) => {
-                                                let isActive = false;
-                                                if (field.name === 'width') {
-                                                  isActive =
-                                                    (idx === 0 && widthSide === 'left') ||
-                                                    (idx === 1 && widthSide === 'right');
-                                                } else if (field.name === 'height') {
-                                                  isActive =
-                                                    (idx === 0 && heightSide === 'top') ||
-                                                    (idx === 1 && heightSide === 'bottom');
-                                                } else if (field.name === 'depth') {
-                                                  isActive =
-                                                    (idx === 0 && depthSide === 'front') ||
-                                                    (idx === 1 && depthSide === 'back');
-                                                }
-
-                                                return (
-                                                  <button
-                                                    key={idx}
-                                                    type="button"
-                                                    onClick={() =>
-                                                      handleControlClick(field.name, idx)
-                                                    }
-                                                    className={`bg-[rgba(242, 242, 242, 1)] flex h-[1.2rem] w-[1.2rem] items-center justify-center rounded-[0.15rem] border-[0.1rem] p-[0rem] transition-all duration-150 ${
-                                                      isActive
-                                                        ? 'border-[0rem] border-[var(--border-color)] bg-[white]'
-                                                        : 'bg-[rgba(242, 242, 242, 1)] border-[0rem] border-transparent hover:bg-[#eaeaea]'
-                                                    } `}
-                                                  >
-                                                    <img
-                                                      src={icon}
-                                                      alt="control"
-                                                      className="h-[0.55rem] w-[0.55rem] cursor-pointer object-contain"
-                                                    />
-                                                  </button>
-                                                );
-                                              })}
-                                            </div>
-                                          )}
-                                        </div>
-
-                                        {/* RIGHT SIDE INPUT */}
-                                        {field.type === 'select' ? (
-                                          <select
-                                            value={field.value ?? ''}
-                                            onChange={(e) =>
-                                              field.onValueChange(Number(e.target.value))
-                                            }
-                                            disabled={field.disabled}
-                                            className="mt-[0.25rem] mr-[1rem] h-[1.2rem] w-[3.5rem] cursor-pointer rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] bg-white p-[0rem] pl-[0.1rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none"
-                                          >
-                                            {field.options?.map((opt) => (
-                                              <option key={opt} value={opt}>
-                                                {opt}
-                                              </option>
-                                            ))}
-                                          </select>
-                                        ) : (
-                                          <SidebarInputWithSuffix
-                                            wrapperClassName="relative mt-[0.25rem] mr-[1rem] w-[5rem]"
-                                            inputStyleCSS="h-[1.2rem] w-[3.5rem] [appearance:textfield] items-center justify-between rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] pr-[1.4rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-                                            suffix="MM"
-                                            min={field.min}
-                                            step={1}
-                                            type="number"
-                                            value={field.value ?? ''}
-                                            onChange={(e) =>
-                                              field.onValueChange(Number(e.target.value))
-                                            }
-                                            disabled={field.disabled}
-                                          />
-                                        )}
-                                      </div>
-                                    ))}
-                                  </div>
-                                )}
-
-                                {/* CUPBOARD LAYOUT - aligned with Camlock / Minifix columns */}
-                                {!isPlankSelected && !isPlatformSelected && (
-                                  <div className="mt-[1rem] mb-[0rem] flex gap-[0.75rem] font-[700]">
-                                    {/* Left column: Width, Depth */}
-                                    <div className="flex w-[6rem] flex-col">
-                                      <p className="mt-[0rem] mb-[0.2rem] text-[0.6rem] font-[700] text-[var(--primary-color)]">
-                                        Width
-                                      </p>
-                                      <SidebarInputWithSuffix
-                                        wrapperClassName="relative w-[5rem]"
-                                        inputStyleCSS="h-[1.2rem] w-[5rem] [appearance:textfield] rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-                                        suffix="MM"
-                                        type="number"
-                                        min={1}
-                                        step="1"
-                                        value={dimensionsUI.width ?? ''}
-                                        onChange={(e) =>
-                                          handleDimensionChange(
-                                            'width',
-                                            Math.max(1, Number(e.target.value))
-                                          )
-                                        }
-                                        disabled={isHorizontalPlank || isDisabled}
-                                      />
-
-                                      <p className="mt-[0.6rem] mb-[0.2rem] text-[0.6rem] font-[700] text-[var(--primary-color)]">
-                                        Depth
-                                      </p>
-                                      <SidebarInputWithSuffix
-                                        wrapperClassName="relative w-[5rem]"
-                                        inputStyleCSS="h-[1.2rem] w-[5rem] [appearance:textfield] rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-                                        suffix="MM"
-                                        type="number"
-                                        min={1}
-                                        step="1"
-                                        value={dimensionsUI.depth ?? ''}
-                                        onChange={(e) =>
-                                          handleDimensionChange(
-                                            'depth',
-                                            Math.max(1, Number(e.target.value))
-                                          )
-                                        }
-                                        disabled={isQuickHideActive}
-                                      />
-                                    </div>
-
-                                    <div className="mr-[0.3rem] ml-[0.2rem] w-[0.2px] self-stretch bg-[var(--table-title-border-color)]" />
-
-                                    {/* Right column: Height */}
-                                    <div className="mr-[0.7rem] flex w-[5.6rem] flex-col">
-                                      <p className="mt-[0rem] mb-[0.2rem] text-[0.6rem] font-[700] text-[var(--primary-color)]">
-                                        Height
-                                      </p>
-                                      <SidebarInputWithSuffix
-                                        wrapperClassName="relative w-[5rem]"
-                                        inputStyleCSS="h-[1.2rem] w-[5rem] [appearance:textfield] rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-                                        suffix="MM"
-                                        type="number"
-                                        min={1}
-                                        step="1"
-                                        value={dimensionsUI.height ?? ''}
-                                        onChange={(e) =>
-                                          handleDimensionChange(
-                                            'height',
-                                            Math.max(1, Number(e.target.value))
-                                          )
-                                        }
-                                        disabled={isVerticalPlank || isDisabled}
-                                      />
-                                    </div>
-                                  </div>
-                                )}
-                              </>
-                            )}
-                          </div>
-
-                          <hr className="my-[0.4rem] opacity-20" />
-                        </div>
-                      ))}
+                          </>
+                        )}
+                      </div>
+                      <hr className="mx-[0.2rem] my-[0.2rem] ml-[0rem] w-[15rem] pl-[0rem] opacity-20" />
                     </>
                   )}
-                {!isQuickHideActive && isSettingOpen && isPlankSelected && !isWallSelected && (
-                  <>
-                    <div className="mb-[0.7rem] ml-[1rem] flex flex-col gap-[0.5rem]">
-                      <div className="relative flex items-center justify-between gap-[0.5rem]">
-                        {/* Title */}
-                        <p className="mt-[0rem] mb-[0rem] flex-1 text-[0.7rem] font-[700] text-[var(--primary-color)]">
-                          Position Move
-                        </p>
-                        <button
-                          onClick={() => toggleSection('positionMove')}
-                          className="absolute top-1/2 right-[0.75rem] flex h-[0.8rem] w-[0.8rem] -translate-y-1/2 items-center justify-center border-0 bg-[var(--primary-white)] p-0"
-                        >
-                          <img
-                            src={collapsed.positionMove ? assets.plusIcon : assets.minusIcon}
-                            alt={collapsed.positionMove ? 'Expand' : 'Collapse'}
-                            className="h-[0.8rem] w-[0.8rem]"
-                          />
-                        </button>
-                      </div>
-                      {!collapsed.positionMove && (
-                        <>
-                          <div className="grid grid-cols-2 gap-[0.4rem]">
-                            {positionFields.map((field) => (
-                              <DistanceInput
-                                label={field.label}
-                                direction={field.direction}
-                                rotate={field.rotate}
-                                width={field.width}
-                                value={field.value}
-                                disabled={field.disabled}
-                                onChange={handlePositionDistanceChange}
-                              />
-                            ))}
-                          </div>
-                        </>
-                      )}
-                    </div>
-                    <hr className="mx-[0.2rem] my-[0.2rem] ml-[0rem] w-[15rem] pl-[0rem] opacity-20" />
-                  </>
-                )}
 
-                {/* ================= Main Object Position ================= */}
-                {!isQuickHideActive && isSettingOpen && isMainObject && !isWallSelected && (
-                  <>
-                    <div className="mb-[0.7rem] ml-[1rem] flex flex-col gap-[0.5rem]">
-                      <div className="relative flex items-center justify-between gap-[0.5rem]">
-                        {/* Title */}
-                        <p className="mt-[0rem] mb-[0rem] flex-1 text-[0.7rem] font-[700] text-[var(--primary-color)]">
-                          Position
-                        </p>
-                        <button
-                          onClick={() => toggleSection('mainPosition')}
-                          className="absolute top-1/2 right-[0.75rem] flex h-[0.8rem] w-[0.8rem] -translate-y-1/2 items-center justify-center border-0 bg-[var(--primary-white)] p-0"
-                        >
-                          <img
-                            src={collapsed.mainPosition ? assets.plusIcon : assets.minusIcon}
-                            alt={collapsed.mainPosition ? 'Expand' : 'Collapse'}
-                            className="h-[0.8rem] w-[0.8rem]"
-                          />
-                        </button>
-                      </div>
-                      {!collapsed.mainPosition && (
-                        <div className="mt-[1rem] mb-[0rem] flex gap-[0.75rem] font-[700]">
-                          <div className="flex w-[6rem] flex-col">
-                            <p className="mt-[0rem] mb-[0.2rem] text-[0.6rem] font-[700] text-[var(--primary-color)] uppercase">
-                              x
-                            </p>
-                            <input
-                              type="number"
-                              step="0.01"
-                              value={Number(selectedObject?.position?.x ?? 0).toFixed(2)}
-                              onChange={(e) =>
-                                handleMainObjectPositionChange('x', Number(e.target.value))
-                              }
-                              disabled={isDisabled}
-                              className="h-[1.2rem] w-[5rem] [appearance:textfield] rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-                            />
-
-                            <p className="mt-[0.6rem] mb-[0.2rem] text-[0.6rem] font-[700] text-[var(--primary-color)] uppercase">
-                              z
-                            </p>
-                            <input
-                              type="number"
-                              step="0.01"
-                              value={Number(selectedObject?.position?.z ?? 0).toFixed(2)}
-                              onChange={(e) =>
-                                handleMainObjectPositionChange('z', Number(e.target.value))
-                              }
-                              disabled={isDisabled}
-                              className="h-[1.2rem] w-[5rem] [appearance:textfield] rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-                            />
-                          </div>
-
-                          <div className="mr-[0.3rem] ml-[0.2rem] w-[0.2px] self-stretch bg-[var(--table-title-border-color)]" />
-
-                          <div className="mr-[0.7rem] flex w-[5.6rem] flex-col">
-                            <p className="mt-[0rem] mb-[0.2rem] text-[0.6rem] font-[700] text-[var(--primary-color)] uppercase">
-                              y
-                            </p>
-                            <input
-                              type="number"
-                              step="0.01"
-                              value={Number(selectedObject?.position?.y ?? 0).toFixed(2)}
-                              onChange={(e) =>
-                                handleMainObjectPositionChange('y', Number(e.target.value))
-                              }
-                              disabled={isDisabled}
-                              className="h-[1.2rem] w-[5rem] [appearance:textfield] rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-                            />
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                    <hr className="mx-[0.2rem] my-[0.2rem] ml-[0rem] w-[15rem] pl-[0rem] opacity-20" />
-                  </>
-                )}
-
-                {/* ================= Handle/Handleless Selector ================= */}
-                {/* Moved to end after Material as per design sequence */}
-
-                {/* ================= Top Plank ================= */}
-                {!isQuickHideActive && isSettingOpen && isFullCupboard && (
-                  <>
-                    <div className="mt-[0] mb-[0.7rem] ml-[1rem] flex flex-col gap-[0.5rem]">
-                      <div className="relative flex items-center justify-between gap-[0.5rem]">
-                        <p className="mb-[0] flex flex-1 text-[0.7rem] font-[700] text-[var(--primary-color)]">
-                          Top Plank
-                        </p>
-                        <button
-                          onClick={() => toggleSection('topPlank')}
-                          className="absolute top-1/2 right-[0.75rem] flex h-[0.8rem] w-[0.8rem] -translate-y-1/2 items-center justify-center border-0 bg-[var(--primary-white)] p-0"
-                        >
-                          <img
-                            src={collapsed.topPlank ? assets.plusIcon : assets.minusIcon}
-                            alt={collapsed.topPlank ? 'Expand' : 'Collapse'}
-                            className="h-[0.8rem] w-[0.8rem]"
-                          />
-                        </button>
-                      </div>
-                      {!collapsed.topPlank && (
-                        <>
-                          {/* Row 1: Toggle only */}
-                          <div className="flex items-center gap-[0.5rem]">
-                            <div
-                              onClick={handleTopPlankToggle}
-                              className={`relative h-[1rem] w-[2rem] cursor-pointer rounded-full border-[0.1rem] border-[var(--toggle-border-color)] p-[0rem] transition-colors duration-300 ${topPlankEnabled ? 'bg-[var(--primary-color)]' : 'bg-[white]'} ${topPlankDisabled || isDisabled ? 'pointer-events-none opacity-50' : ''}`}
-                            >
-                              {/* Knob */}
-                              <div
-                                className={`absolute top-[0.16rem] left-[0.1rem] h-[0.6rem] w-[0.6rem] rounded-full border-[0.1rem] border-[var(--toggle-border-color)] p-[0rem] ring-[0.1rem] transition-transform duration-300 ease-in-out ${
-                                  topPlankEnabled
-                                    ? 'translate-x-[1rem] bg-[white] ring-[var(--primary-color)]'
-                                    : 'translate-x-0 bg-[var(--primary-color)] ring-[white]'
-                                }`}
-                              />
-                            </div>
-                          </div>
-
-                          {/* Depth: label above input (aligned with Layout / Position field pattern) */}
-                          <div className="mt-[1rem] flex w-[6rem] flex-col font-[700]">
-                            <p className="mt-[0rem] mb-[0.2rem] text-[0.6rem] font-[700] text-[var(--primary-color)]">
-                              Top Plank Depth
-                            </p>
-                            <SidebarInputWithSuffix
-                              wrapperClassName="relative w-[5rem]"
-                              inputStyleCSS="h-[1.2rem] w-[5rem] [appearance:textfield] rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-                              suffix="MM"
-                              type="number"
-                              value={Number(getTopPlank()?.dimensions?.depth ?? 0).toFixed(2)}
-                              onChange={handleTopPlankDepthChange}
-                              disabled={isDisabled || topPlankDisabled}
-                            />
-                          </div>
-                        </>
-                      )}
-                    </div>
-
-                    <hr className="mx-[0.2rem] my-[0.2rem] ml-[0rem] w-[15rem] pl-[0rem] opacity-20" />
-
-                    {/* ================= Base ================= */}
-
-                    <div className="mt-[0] mb-[0.7rem] ml-[1rem] flex flex-col gap-[0.5rem]">
-                      <div className="relative flex items-center justify-between gap-[0.5rem]">
-                        <p className="mb-[0] flex flex-1 text-[0.7rem] font-[700] text-[var(--primary-color)]">
-                          Base
-                        </p>
-                        <button
-                          onClick={() => toggleSection('base')}
-                          className="absolute top-1/2 right-[0.75rem] flex h-[0.8rem] w-[0.8rem] -translate-y-1/2 items-center justify-center border-0 bg-[var(--primary-white)] p-0"
-                        >
-                          <img
-                            src={collapsed.base ? assets.plusIcon : assets.minusIcon}
-                            alt={collapsed.base ? 'Expand' : 'Collapse'}
-                            className="h-[0.8rem] w-[0.8rem]"
-                          />
-                        </button>
-                      </div>
-                      {!collapsed.base && (
-                        <>
-                          <div className="mt-[0.5rem] flex w-full max-w-[13.5rem] flex-col font-[700]">
-                            <p className="mt-[0rem] mb-[0.2rem] text-[0.6rem] font-[700] text-[var(--primary-color)]">
-                              Base type
-                            </p>
-                            <div
-                              role="radiogroup"
-                              aria-label="Base type"
-                              className="flex w-full gap-[0.35rem]"
-                            >
-                              {(
-                                [
-                                  { id: 'noBase' as const, label: 'No Base' },
-                                  { id: 'nailer' as const, label: 'Nailer' },
-                                  { id: 'skirting' as const, label: 'Skirting' },
-                                ] as const
-                              ).map((opt) => {
-                                const active =
-                                  selectedObject && getBaseMode(selectedObject) === opt.id;
-                                return (
-                                  <button
-                                    key={opt.id}
-                                    type="button"
-                                    role="radio"
-                                    aria-checked={active}
-                                    disabled={isDisabled}
-                                    onClick={() => handleBaseModeSelect(opt.id)}
-                                    className={`flex h-[1.2rem] min-h-[1.2rem] min-w-0 flex-1 items-center justify-center rounded-[0.25rem] border-[0.1rem] px-[0.2rem] py-0 text-center text-[0.58rem] leading-none font-[600] transition-colors duration-150 ${
-                                      active
-                                        ? 'border-[var(--primary-color)] bg-[var(--primary-color)] text-[var(--primary-white)]'
-                                        : 'border-[var(--border-color)] bg-[var(--primary-white)] text-[var(--primary-color)] hover:bg-[#f7fafc]'
-                                    } ${isDisabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}`}
-                                  >
-                                    {opt.label}
-                                  </button>
-                                );
-                              })}
-                            </div>
-
-                            {selectedObject?.nailerEnabled && (
-                              <div className="mt-[0.25rem] w-full max-w-[13.5rem]">
-                                <p className="mb-[0.25rem] text-[0.55rem] font-[600] text-[#4a5568]">
-                                  Nailer model
-                                </p>
-                                <select
-                                  value={selectedObject?.nailerModel || 'stand_1'}
-                                  onChange={(e) => handleNailerModelChange(e.target.value)}
-                                  disabled={isDisabled}
-                                  className="flex h-[1.2rem] w-full cursor-pointer appearance-none items-center justify-between rounded-[0.1rem] border-[0rem] bg-[var(--primary-color)] p-[0rem] px-[0.5rem] text-left font-[comfortaa] text-[0.6rem] font-[var(--font-family)] font-extralight text-[var(--primary-white)] transition-colors duration-200 ease-in-out"
-                                >
-                                  <option value="stand_1">Stand 1</option>
-                                  <option value="stand_2">Stand 2</option>
-                                </select>
-                              </div>
-                            )}
-                          </div>
-
-                          {selectedObject?.skirtingEnabled && (
-                            <div className="mt-[0.35rem] mb-[0rem] flex gap-[0.75rem] font-[700]">
-                              <div className="flex w-[6rem] flex-col">
-                                <p
-                                  className={`mt-[0rem] mb-[0.2rem] text-[0.6rem] font-[700] text-[var(--primary-color)] ${isDisabled ? 'opacity-50' : ''}`}
-                                >
-                                  Offset
-                                </p>
-                                <SidebarInputWithSuffix
-                                  wrapperClassName="relative w-[5rem]"
-                                  inputStyleCSS="h-[1.2rem] w-[5rem] [appearance:textfield] rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-                                  suffix="MM"
-                                  type="number"
-                                  value={selectedObject?.skirtingOffset ?? 10}
-                                  onChange={handleSkirtingOffsetChange}
-                                  disabled={isDisabled}
-                                />
-                              </div>
-
-                              <div className="mr-[0.3rem] ml-[0.2rem] w-[0.2px] self-stretch bg-[var(--table-title-border-color)]" />
-
-                              <div className="mr-[0.7rem] flex w-[5.6rem] flex-col">
-                                <p
-                                  className={`mt-[0rem] mb-[0.2rem] text-[0.6rem] font-[700] text-[var(--primary-color)] ${isDisabled ? 'opacity-50' : ''}`}
-                                >
-                                  Height
-                                </p>
-                                <SidebarInputWithSuffix
-                                  wrapperClassName="relative w-[5rem]"
-                                  inputStyleCSS="h-[1.2rem] w-[5rem] [appearance:textfield] rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-                                  suffix="MM"
-                                  type="number"
-                                  value={selectedObject?.skirtingHeight ?? 75}
-                                  onChange={handleSkirtingHeightChange}
-                                  disabled={isDisabled}
-                                />
-                              </div>
-                            </div>
-                          )}
-                        </>
-                      )}
-                    </div>
-
-                    <hr className="mx-[0.2rem] my-[0.2rem] ml-[0rem] w-[15rem] pl-[0rem] opacity-20" />
-                  </>
-                )}
-
-                {!isQuickHideActive && isSettingOpen && isDoorSelected && (
-                  <>
-                    <div className="mt-[0] mb-[0.7rem] ml-[1rem] flex flex-col gap-[0rem]">
-                      <div className="flex items-center justify-between gap-[0.5rem]">
-                        <p className="mb-[0] flex flex-1 text-[0.7rem] font-[700] text-[var(--primary-color)]">
-                          Door
-                        </p>
-                        <button
-                          onClick={() => toggleSection('shelf')}
-                          className="mr-[0.75rem] flex h-[0.8rem] w-[0.8rem] flex-shrink-0 items-center justify-center border-0 bg-[var(--primary-white)] p-0"
-                        >
-                          <img
-                            src={collapsed.shelf ? assets.plusIcon : assets.minusIcon}
-                            alt={collapsed.shelf ? 'Expand' : 'Collapse'}
-                            className="h-[0.8rem] w-[0.8rem]"
-                          />
-                        </button>
-                      </div>
-                      {!collapsed.shelf && (
-                        <>
-                          <div className={'relative flex items-center justify-between'}>
-                            <p className="m-0 pl-[0rem] font-[comfortaa] text-[0.6rem] font-[var(--font-family)] text-[var(--primary-color)]">
-                              Door Position
-                            </p>
-                            <select
-                              className="mr-[1.5rem] flex h-[1.2rem] w-[6.8rem] cursor-pointer appearance-none items-center justify-between rounded-[0.1rem] border-[0rem] bg-[var(--primary-color)] p-[0rem] px-[0.5rem] text-left font-[comfortaa] text-[0.6rem] font-[var(--font-family)] font-extralight text-[var(--primary-white)] transition-colors duration-200 ease-in-out"
-                              value={doorPosition}
-                              onChange={(e) => {
-                                const value = e.target.value;
-                                setDoorPosition(value);
-                                handleDoorPositionChange(value);
-                              }}
-                              disabled={isDisabled}
-                            >
-                              <option value="None">None</option>
-                              <option value="Left">Left</option>
-                              <option value="Right">Right</option>
-                              <option value="Top">Top</option>
-                              <option value="Bottom">Bottom</option>
-                            </select>
-                          </div>
-
-                          <div className="relative flex items-center justify-between pl-[0rem]">
-                            <p className="m-0 font-[comfortaa] text-[0.6rem] font-[var(--font-family)] text-[var(--primary-color)]">
-                              Open/Close
-                            </p>
-                            <button
-                              className="mr-[1.5rem] flex h-[1.2rem] w-[6.8rem] cursor-pointer appearance-none items-center justify-between rounded-[0.1rem] border-[0rem] bg-[var(--primary-color)] p-[0rem] px-[0.5rem] text-left font-[comfortaa] text-[0.6rem] font-[var(--font-family)] font-extralight text-[var(--primary-white)] transition-colors duration-200 ease-in-out"
-                              disabled={isDisabled}
-                              onClick={handleOpenCloseChange}
-                            >
-                              Open/Close
-                            </button>
-                          </div>
-                        </>
-                      )}
-                    </div>
-                    <hr className="mx-[0.2rem] my-[0.2rem] ml-[0rem] w-[15rem] pl-[0rem] opacity-20" />
-                  </>
-                )}
-
-                {!isQuickHideActive && isSettingOpen && isDoorSelected && (
-                  <>
-                    <div className="mt-[0] mb-[0.7rem] ml-[1rem] flex flex-col gap-[0rem]">
-                      <div className="flex items-center justify-between gap-[0.5rem]">
-                        <p className="mb-[0] flex flex-1 text-[0.7rem] font-[700] text-[var(--primary-color)]">
-                          Door
-                        </p>
-                        <button
-                          onClick={() => toggleSection('layout')}
-                          className="mr-[0.75rem] flex h-[0.8rem] w-[0.8rem] flex-shrink-0 items-center justify-center border-0 bg-[var(--primary-white)] p-0"
-                        >
-                          <img
-                            src={collapsed.layout ? assets.plusIcon : assets.minusIcon}
-                            alt={collapsed.layout ? 'Expand' : 'Collapse'}
-                            className="h-[0.8rem] w-[0.8rem]"
-                          />
-                        </button>
-                      </div>
-                      {!collapsed.layout && (
-                        <>
-                          <div className="relative flex items-center justify-between pl-[0rem]">
-                            <p className="m-0 font-[comfortaa] text-[0.6rem] font-[var(--font-family)] text-[var(--primary-color)]">
-                              Door Type
-                            </p>
-                            <select
-                              className="mr-[1.5rem] flex h-[1.2rem] w-[6.8rem] cursor-pointer appearance-none items-center justify-between rounded-[0.1rem] border-[0rem] bg-[var(--primary-color)] px-[0.5rem] text-left font-[comfortaa] text-[0.6rem] font-extralight text-[var(--primary-white)] transition-colors duration-200 ease-in-out"
-                              disabled={isDisabled}
-                              value={
-                                selectedObject?.doorType === DOOR_TYPES.INSET
-                                  ? DOOR_TYPES.INSET
-                                  : DOOR_TYPES.OVERLAY
-                              }
-                              onChange={(e) => {
-                                const value = e.target.value;
-                                if (selectedObject?.id) {
-                                  updateDoorType(scene, selectedObject.id, value);
-                                }
-                              }}
-                            >
-                              <option value={DOOR_TYPES.INSET}>In to In</option>
-                              <option value={DOOR_TYPES.OVERLAY}>Out to Out</option>
-                            </select>
-                          </div>
-
-                          <div className="relative flex items-center justify-between pl-[0rem]">
-                            <p className="m-0 font-[comfortaa] text-[0.6rem] font-[var(--font-family)] text-[var(--primary-color)]">
-                              Open/Close
-                            </p>
-                            <button
-                              className="mr-[1.5rem] flex h-[1.2rem] w-[6.8rem] cursor-pointer appearance-none items-center justify-between rounded-[0.1rem] border-[0rem] bg-[var(--primary-color)] p-[0rem] px-[0.5rem] text-left font-[comfortaa] text-[0.6rem] font-[var(--font-family)] font-extralight text-[var(--primary-white)] transition-colors duration-200 ease-in-out"
-                              disabled={isDisabled}
-                              onClick={handleOpenCloseChange}
-                            >
-                              Open/Close
-                            </button>
-                          </div>
-                        </>
-                      )}
-                    </div>
-                    <hr className="mx-[0.2rem] my-[0.2rem] ml-[0rem] w-[15rem] pl-[0rem] opacity-20" />
-                  </>
-                )}
-
-                {!isQuickHideActive && isSettingOpen && isDrawerSelected && (
-                  <>
-                    <div className="mt-[0] mb-[0.7rem] ml-[1rem] flex flex-col gap-[0rem]">
-                      <div className="flex items-center justify-between gap-[0.5rem]">
-                        <p className="mb-[0] flex flex-1 text-[0.7rem] font-[700] text-[var(--primary-color)]">
-                          Drawer
-                        </p>
-                        <button
-                          onClick={() => toggleSection('shelf')}
-                          className="mr-[0.75rem] flex h-[0.8rem] w-[0.8rem] flex-shrink-0 items-center justify-center border-0 bg-[var(--primary-white)] p-0"
-                        >
-                          <img
-                            src={collapsed.shelf ? assets.plusIcon : assets.minusIcon}
-                            alt={collapsed.shelf ? 'Expand' : 'Collapse'}
-                            className="h-[0.8rem] w-[0.8rem]"
-                          />
-                        </button>
-                      </div>
-                      {!collapsed.shelf && (
-                        <>
-                          <div className="relative flex items-center justify-between pl-[0rem]">
-                            <p className="m-0 font-[comfortaa] text-[0.6rem] font-[var(--font-family)] text-[var(--primary-color)]">
-                              Drawer Type
-                            </p>
-                            <select
-                              className="mr-[1.5rem] flex h-[1.2rem] w-[6.8rem] cursor-pointer appearance-none items-center justify-between rounded-[0.1rem] border-[0rem] bg-[var(--primary-color)] px-[0.5rem] text-left font-[comfortaa] text-[0.6rem] font-extralight text-[var(--primary-white)] transition-colors duration-200 ease-in-out"
-                              disabled={isDisabled}
-                              value={
-                                selectedObject?.drawerType === DRAWER_TYPES.OVERLAY
-                                  ? DRAWER_TYPES.OVERLAY
-                                  : DRAWER_TYPES.INSET
-                              }
-                              onChange={(e) => {
-                                const value = e.target.value;
-                                if (selectedObject?.id) {
-                                  updateDrawerType(scene, selectedObject.id, value);
-                                }
-                              }}
-                            >
-                              <option value={DRAWER_TYPES.INSET}>In to In</option>
-                              <option value={DRAWER_TYPES.OVERLAY}>Out to Out</option>
-                            </select>
-                          </div>
-
-                          <div className="relative flex items-center justify-between pl-[0rem]">
-                            <p className="m-0 font-[comfortaa] text-[0.6rem] font-[var(--font-family)] text-[var(--primary-color)]">
-                              Open/Close
-                            </p>
-                            <button
-                              className="mr-[1.5rem] flex h-[1.2rem] w-[6.8rem] cursor-pointer appearance-none items-center justify-between rounded-[0.1rem] border-[0rem] bg-[var(--primary-color)] p-[0rem] px-[0.5rem] text-left font-[comfortaa] text-[0.6rem] font-[var(--font-family)] font-extralight text-[var(--primary-white)] transition-colors duration-200 ease-in-out"
-                              disabled={isDisabled}
-                              onClick={handleOpenCloseChange}
-                            >
-                              Open/Close
-                            </button>
-                          </div>
-                        </>
-                      )}
-                    </div>
-                    <hr className="mx-[0.2rem] my-[0.2rem] ml-[0rem] w-[15rem] pl-[0rem] opacity-20" />
-                  </>
-                )}
-
-                {/* ================= MATERIAL ================= */}
-                <div className="relative flex items-center justify-between gap-[0.5rem]">
-                  <p className="mb-2 ml-[1rem] flex-1 text-[0.7rem] font-[700] text-[var(--primary-color)]">
-                    Material
-                  </p>
-                  <button
-                    onClick={() => toggleSection('material')}
-                    className="absolute top-1/2 right-[0.75rem] flex h-[0.8rem] w-[0.8rem] -translate-y-1/2 items-center justify-center border-0 bg-[var(--primary-white)] p-0"
-                  >
-                    <img
-                      src={collapsed.material ? assets.plusIcon : assets.minusIcon}
-                      alt={collapsed.material ? 'Expand' : 'Collapse'}
-                      className="h-[0.8rem] w-[0.8rem]"
-                    />
-                  </button>
-                </div>
-                <div className="mr-[1rem] px-[3] py-[2]">
-                  {!collapsed.material && (
+                  {!isQuickHideActive && isSettingOpen && isDrawerSelected && (
                     <>
-                      {/* Color */}
-                      {/* <div className="pointer-events-none mb-[0rem] ml-[1rem] flex items-center justify-between opacity-40">
+                      <div className="mt-[0] mb-[0.7rem] ml-[1rem] flex flex-col gap-[0rem]">
+                        <div className="flex items-center justify-between gap-[0.5rem]">
+                          <p className="mb-[0] flex flex-1 text-[0.7rem] font-[700] text-[var(--primary-color)]">
+                            Drawer
+                          </p>
+                          <button
+                            onClick={() => toggleSection('shelf')}
+                            className="mr-[0.75rem] flex h-[0.8rem] w-[0.8rem] flex-shrink-0 items-center justify-center border-0 bg-[var(--primary-white)] p-0"
+                          >
+                            <img
+                              src={collapsed.shelf ? assets.plusIcon : assets.minusIcon}
+                              alt={collapsed.shelf ? 'Expand' : 'Collapse'}
+                              className="h-[0.8rem] w-[0.8rem]"
+                            />
+                          </button>
+                        </div>
+                        {!collapsed.shelf && (
+                          <>
+                            <div className="relative flex items-center justify-between pl-[0rem]">
+                              <p className="m-0 font-[comfortaa] text-[0.6rem] font-[var(--font-family)] text-[var(--primary-color)]">
+                                Drawer Type
+                              </p>
+                              <select
+                                className="mr-[1.5rem] flex h-[1.2rem] w-[6.8rem] cursor-pointer appearance-none items-center justify-between rounded-[0.1rem] border-[0rem] bg-[var(--primary-color)] px-[0.5rem] text-left font-[comfortaa] text-[0.6rem] font-extralight text-[var(--primary-white)] transition-colors duration-200 ease-in-out"
+                                disabled={isDisabled}
+                                value={
+                                  selectedObject?.drawerType === DRAWER_TYPES.OVERLAY
+                                    ? DRAWER_TYPES.OVERLAY
+                                    : DRAWER_TYPES.INSET
+                                }
+                                onChange={(e) => {
+                                  const value = e.target.value;
+                                  if (selectedObject?.id) {
+                                    updateDrawerType(scene, selectedObject.id, value);
+                                  }
+                                }}
+                              >
+                                <option value={DRAWER_TYPES.INSET}>In to In</option>
+                                <option value={DRAWER_TYPES.OVERLAY}>Out to Out</option>
+                              </select>
+                            </div>
+
+                            <div className="relative flex items-center justify-between pl-[0rem]">
+                              <p className="m-0 font-[comfortaa] text-[0.6rem] font-[var(--font-family)] text-[var(--primary-color)]">
+                                Open/Close
+                              </p>
+                              <button
+                                className="mr-[1.5rem] flex h-[1.2rem] w-[6.8rem] cursor-pointer appearance-none items-center justify-between rounded-[0.1rem] border-[0rem] bg-[var(--primary-color)] p-[0rem] px-[0.5rem] text-left font-[comfortaa] text-[0.6rem] font-[var(--font-family)] font-extralight text-[var(--primary-white)] transition-colors duration-200 ease-in-out"
+                                disabled={isDisabled}
+                                onClick={handleOpenCloseChange}
+                              >
+                                Open/Close
+                              </button>
+                            </div>
+                          </>
+                        )}
+                      </div>
+                      <hr className="mx-[0.2rem] my-[0.2rem] ml-[0rem] w-[15rem] pl-[0rem] opacity-20" />
+                    </>
+                  )}
+
+                  {/* ================= MATERIAL ================= */}
+                  <div className="relative flex items-center justify-between gap-[0.5rem]">
+                    <p className="mb-2 ml-[1rem] flex-1 text-[0.7rem] font-[700] text-[var(--primary-color)]">
+                      Material
+                    </p>
+                    <button
+                      onClick={() => toggleSection('material')}
+                      className="absolute top-1/2 right-[0.75rem] flex h-[0.8rem] w-[0.8rem] -translate-y-1/2 items-center justify-center border-0 bg-[var(--primary-white)] p-0"
+                    >
+                      <img
+                        src={collapsed.material ? assets.plusIcon : assets.minusIcon}
+                        alt={collapsed.material ? 'Expand' : 'Collapse'}
+                        className="h-[0.8rem] w-[0.8rem]"
+                      />
+                    </button>
+                  </div>
+                  <div className="mr-[1rem] px-[3] py-[2]">
+                    {!collapsed.material && (
+                      <>
+                        {/* Color */}
+                        {/* <div className="pointer-events-none mb-[0rem] ml-[1rem] flex items-center justify-between opacity-40">
                       <p className="text-[0.6rem] font-[700] text-[var(--primary-color)]">Color</p>
 
                       <div className="flex h-[1.5rem] w-[8rem] items-center gap-[0.3rem] rounded-[0.1rem] bg-[var(--primary-light-grey)] px-[0.3rem] py-[0.3rem]">
@@ -3308,280 +3315,293 @@ const Sidebar: React.FC = () => {
                       </div>
                     </div> */}
 
-                      {/* Change Material */}
-                      {!isWallSelected && (
-                        <div
-                          onClick={handleMaterialChange}
-                          className="mb-2 flex items-center justify-between gap-[0rem] py-[0rem] pr-[0.5rem] pr-[0rem]"
-                        >
-                          <p className="ml-[1rem] text-[0.6rem] font-[700] text-[var(--primary-color)]">
-                            Change Material
-                          </p>
-                          <button
-                            className="flex h-[1.3rem] w-[6.8rem] cursor-pointer appearance-none items-center justify-between justify-center rounded-[0.1rem] border-[0rem] bg-[var(--primary-color)] p-[0rem] px-[0.5rem] text-center font-[comfortaa] text-[0.5rem] font-extralight text-[var(--primary-white)] transition-colors duration-200 ease-in-out"
-                            disabled={isDisabled}
-                          >
-                            <p className="items-center text-center text-[0.55rem] font-[700]">
-                              Press to Change
-                            </p>
-                          </button>
-                        </div>
-                      )}
-
-                      {/* Texture */}
-
-                      {/* ================= Change Texture ================= */}
-                      <div className="mr-[0rem] ml-[1rem] flex flex-col gap-[0rem]">
-                        <div className="mt-[0rem] flex gap-[0rem]">
-                          <div className="flex-1">
-                            <p className="m-[0.5rem] ml-[0rem] text-[0.6rem] font-[700] text-[var(--primary-color)]">
-                              Change Texture
-                            </p>
-                          </div>
-                          <div className="flex-1">
-                            <p className="m-[0.5rem] ml-[0.5rem] text-[0.6rem] font-[700] text-[var(--primary-color)]">
-                              Texture Grain
-                            </p>
-                          </div>
-                        </div>
-
-                        {/* Controls Row */}
-                        <div className="mt-[0rem] flex gap-[1rem]">
-                          {/* Change Texture Button */}
-                          <button
-                            onClick={toggleTextureList}
-                            disabled={isTextureChangeDisabled}
-                            className={`flex h-[1.3rem] w-[5rem] flex-1 cursor-pointer appearance-none items-center justify-between rounded-[0.1rem] border-[0rem] bg-[var(--primary-color)] p-[0rem] px-[0.2rem] text-left font-[comfortaa] text-[0.5rem] font-[var(--font-family)] font-extralight text-[var(--primary-white)] transition-colors duration-200 ease-in-out ${
-                              isTextureChangeDisabled ? 'cursor-not-allowed opacity-50' : ''
-                            }`}
-                          >
-                            Select Texture
-                            <img src={assets.down_arrow1} className="h-[0.6rem] w-[0.6rem]" />
-                          </button>
-
-                          {/* Texture Grain Input */}
-                          <div className="relative flex h-[1.2rem] w-[4.5rem] flex-1 appearance-none items-center rounded-[0.1rem] border-[0.1rem] border-[rgba(120,110,170,0.5)] bg-[white] p-[0rem]">
-                            <select
-                              value={textureGrain}
-                              onChange={(e) =>
-                                handleTextureGrainChange(e.target.value as TextureGrain)
-                              }
-                              disabled={isDisabled || !hasTextureMaterial(selectedObject?.material)}
-                              className="h-[1rem] w-full border-[0rem] pl-[0.2rem] text-[0.6rem] font-[700] text-[var(--primary-color)] focus:border-[var(--primary-color)] focus:outline-none disabled:opacity-50"
-                            >
-                              <option value="None">None</option>
-                              <option value="Horizontal">Horizontal</option>
-                              <option value="Vertical">Vertical</option>
-                            </select>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Texture List */}
-                      {isTextureListOpen && (
-                        <div className="fixed top-[3.7rem] right-[15rem] z-[100] flex h-[85.1vh] w-[11.5rem] flex-col rounded-[0.6rem] border border-[var(--border-color)] bg-[var(--primary-white)] shadow-[-4px_0_10px_rgba(0,0,0,0.05)]">
-                          {/* Search Field */}
-                          <div className="border-b border-[rgba(57,37,121,0.1)] p-[0.6rem]">
-                            <input
-                              type="text"
-                              placeholder="Search textures..."
-                              value={textureSearchQuery}
-                              onChange={(e) => setTextureSearchQuery(e.target.value)}
-                              className="w-[9.2rem] rounded-full border border-[rgba(57,37,121,0.2)] px-[0.5rem] py-[0.4rem] font-[comfortaa] text-[0.65rem] font-[500] text-[var(--primary-color)] placeholder:text-[rgba(57,37,121,0.4)] focus:border-[var(--primary-color)] focus:outline-none"
-                            />
-                            {textureSearchQuery && (
-                              <div className="mt-[0.3rem] text-[0.55rem] font-[500] text-[rgba(57,37,121,0.6)]">
-                                {filteredTextures.length} result
-                                {filteredTextures.length !== 1 ? 's' : ''}
-                              </div>
-                            )}
-                          </div>
-                          {/* Scrollable grid area */}
+                        {/* Change Material */}
+                        {!isWallSelected && (
                           <div
-                            className={`flex-1 ${visibleCount > LOAD_MORE_INCREMENT ? 'overflow-y-auto' : 'overflow-y-auto'} p-[0.6rem] [&::-webkit-scrollbar]:w-[0.3rem] [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-[rgba(57,37,121,0.1)] hover:[&::-webkit-scrollbar-thumb]:bg-[rgba(57,37,121,0.25)] [&::-webkit-scrollbar-track]:bg-transparent`}
+                            onClick={handleMaterialChange}
+                            className="mb-2 flex items-center justify-between gap-[0rem] py-[0rem] pr-[0.5rem] pr-[0rem]"
                           >
-                            <div className="grid grid-cols-3 gap-[0.2rem] p-[0rem]">
-                              {/* Add New Texture Button */}
-                              <div className="flex aspect-square w-full cursor-pointer flex-col items-center justify-center gap-[0rem] bg-[var(--primary-color)] transition-transform active:scale-[0.95]">
-                                <button className="flex cursor-pointer flex-col items-center justify-center gap-[0.1rem] border-[0rem] bg-transparent p-[0rem]">
-                                  <div className="flex h-[1rem] w-[1rem] items-center justify-center rounded border-[0rem]">
-                                    <img
-                                      src={assets.plusIcon}
-                                      alt="Add New Texture"
-                                      className="h-[0.8rem] w-[0.8rem] invert"
-                                    />
+                            <p className="ml-[1rem] text-[0.6rem] font-[700] text-[var(--primary-color)]">
+                              Change Material
+                            </p>
+                            <button
+                              className="flex h-[1.3rem] w-[6.8rem] cursor-pointer appearance-none items-center justify-between justify-center rounded-[0.1rem] border-[0rem] bg-[var(--primary-color)] p-[0rem] px-[0.5rem] text-center font-[comfortaa] text-[0.5rem] font-extralight text-[var(--primary-white)] transition-colors duration-200 ease-in-out"
+                              disabled={isDisabled}
+                            >
+                              <p className="items-center text-center text-[0.55rem] font-[700]">
+                                Press to Change
+                              </p>
+                            </button>
+                          </div>
+                        )}
+
+                        {/* Texture */}
+
+                        {/* ================= Change Texture ================= */}
+                        <div className="mr-[0rem] ml-[1rem] flex flex-col gap-[0rem]">
+                          <div className="mt-[0rem] flex gap-[0rem]">
+                            <div className="flex-1">
+                              <p className="m-[0.5rem] ml-[0rem] text-[0.6rem] font-[700] text-[var(--primary-color)]">
+                                Change Texture
+                              </p>
+                            </div>
+                            <div className="flex-1">
+                              <p className="m-[0.5rem] ml-[0.5rem] text-[0.6rem] font-[700] text-[var(--primary-color)]">
+                                Texture Grain
+                              </p>
+                            </div>
+                          </div>
+
+                          {/* Controls Row */}
+                          <div className="mt-[0rem] flex gap-[1rem]">
+                            {/* Change Texture Button */}
+                            <button
+                              onClick={toggleTextureList}
+                              disabled={isTextureChangeDisabled}
+                              className={`flex h-[1.3rem] w-[5rem] flex-1 cursor-pointer appearance-none items-center justify-between rounded-[0.1rem] border-[0rem] bg-[var(--primary-color)] p-[0rem] px-[0.2rem] text-left font-[comfortaa] text-[0.5rem] font-[var(--font-family)] font-extralight text-[var(--primary-white)] transition-colors duration-200 ease-in-out ${
+                                isTextureChangeDisabled ? 'cursor-not-allowed opacity-50' : ''
+                              }`}
+                            >
+                              Select Texture
+                              <img src={assets.down_arrow1} className="h-[0.6rem] w-[0.6rem]" />
+                            </button>
+
+                            {/* Texture Grain Input */}
+                            <div className="relative flex h-[1.2rem] w-[4.5rem] flex-1 appearance-none items-center rounded-[0.1rem] border-[0.1rem] border-[rgba(120,110,170,0.5)] bg-[white] p-[0rem]">
+                              <select
+                                value={textureGrain}
+                                onChange={(e) =>
+                                  handleTextureGrainChange(e.target.value as TextureGrain)
+                                }
+                                disabled={
+                                  isDisabled || !hasTextureMaterial(selectedObject?.material)
+                                }
+                                className="h-[1rem] w-full border-[0rem] pl-[0.2rem] text-[0.6rem] font-[700] text-[var(--primary-color)] focus:border-[var(--primary-color)] focus:outline-none disabled:opacity-50"
+                              >
+                                <option value="None">None</option>
+                                <option value="Horizontal">Horizontal</option>
+                                <option value="Vertical">Vertical</option>
+                              </select>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Texture List */}
+                        {isTextureListOpen && (
+                          <div className="fixed top-[3.7rem] right-[15rem] z-[100] flex h-[85.1vh] w-[11.5rem] flex-col rounded-[0.6rem] border border-[var(--border-color)] bg-[var(--primary-white)] shadow-[-4px_0_10px_rgba(0,0,0,0.05)]">
+                            {/* Search Field */}
+                            <div className="border-b border-[rgba(57,37,121,0.1)] p-[0.6rem]">
+                              <input
+                                type="text"
+                                placeholder="Search textures..."
+                                value={textureSearchQuery}
+                                onChange={(e) => setTextureSearchQuery(e.target.value)}
+                                className="w-[9.2rem] rounded-full border border-[rgba(57,37,121,0.2)] px-[0.5rem] py-[0.4rem] font-[comfortaa] text-[0.65rem] font-[500] text-[var(--primary-color)] placeholder:text-[rgba(57,37,121,0.4)] focus:border-[var(--primary-color)] focus:outline-none"
+                              />
+                              {textureSearchQuery && (
+                                <div className="mt-[0.3rem] text-[0.55rem] font-[500] text-[rgba(57,37,121,0.6)]">
+                                  {filteredTextures.length} result
+                                  {filteredTextures.length !== 1 ? 's' : ''}
+                                </div>
+                              )}
+                            </div>
+                            {/* Scrollable grid area */}
+                            <div
+                              className={`flex-1 ${visibleCount > LOAD_MORE_INCREMENT ? 'overflow-y-auto' : 'overflow-y-auto'} p-[0.6rem] [&::-webkit-scrollbar]:w-[0.3rem] [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-[rgba(57,37,121,0.1)] hover:[&::-webkit-scrollbar-thumb]:bg-[rgba(57,37,121,0.25)] [&::-webkit-scrollbar-track]:bg-transparent`}
+                            >
+                              <div className="grid grid-cols-3 gap-[0.2rem] p-[0rem]">
+                                {/* Add New Texture Button */}
+                                <div
+                                  onClick={() => setIsAddTexturePopupOpen(true)}
+                                  className="flex aspect-square w-full cursor-pointer flex-col items-center justify-center gap-[0rem] bg-[var(--primary-color)] transition-transform active:scale-[0.95]"
+                                >
+                                  <button className="pointer-events-none flex cursor-pointer flex-col items-center justify-center gap-[0.1rem] border-[0rem] bg-transparent p-[0rem]">
+                                    <div className="flex h-[1rem] w-[1rem] items-center justify-center rounded border-[0rem]">
+                                      <img
+                                        src={assets.plusIcon}
+                                        alt="Add New Texture"
+                                        className="h-[0.8rem] w-[0.8rem] invert"
+                                      />
+                                    </div>
+
+                                    <span className="px-[0.13rem] text-center font-[comfortaa] text-[0.5rem] leading-none font-bold tracking-tighter whitespace-normal text-[white]">
+                                      Add New Texture
+                                    </span>
+                                  </button>
+                                </div>
+
+                                {filteredTextures.length === 0 && !isFetchingTextures ? (
+                                  <div className="col-span-3 flex flex-col items-center justify-center py-[2rem] text-center">
+                                    <span className="text-[0.7rem] font-[500] text-[rgba(57,37,121,0.6)]">
+                                      No textures found
+                                    </span>
+                                    <span className="mt-[0.3rem] text-[0.6rem] font-[400] text-[rgba(57,37,121,0.4)]">
+                                      Try a different search term
+                                    </span>
                                   </div>
+                                ) : (
+                                  filteredTextures.map((m, idx) => (
+                                    <div
+                                      key={`${m.option}-${idx}`}
+                                      className="group relative flex aspect-square w-full cursor-pointer items-center justify-center overflow-hidden text-center active:scale-[0.95]"
+                                      onClick={() => handleTextureSelect(m)}
+                                    >
+                                      <img
+                                        src={`${(process.env.NEXT_PUBLIC_PUBLIC_API || '').replace(/\/$/, '')}${m.image_thumbnail || m.image}`}
+                                        alt={m.name}
+                                        className="h-full w-full object-cover transition-all duration-200 ease-in-out group-hover:brightness-75"
+                                      />
 
-                                  <span className="px-[0.13rem] text-center font-[comfortaa] text-[0.5rem] leading-none font-bold tracking-tighter whitespace-normal text-[white]">
-                                    Add New Texture
-                                  </span>
-                                </button>
+                                      <div className="absolute inset-0 bg-black opacity-0 transition-opacity duration-200 ease-in-out group-hover:opacity-60" />
+
+                                      <div className="absolute inset-0 flex items-end justify-center bg-gradient-to-t from-black/80 to-transparent px-1 py-1 opacity-0 transition-opacity duration-200 ease-in-out group-hover:opacity-100">
+                                        <span className="text-[0.5rem] font-semibold text-white">
+                                          {m.name}
+                                        </span>
+                                      </div>
+                                    </div>
+                                  ))
+                                )}
+                                {/* Sentinal element for Infinite Scroll */}
+                                <div ref={observerTarget} className="h-[10px] w-full" />
                               </div>
-
-                              {filteredTextures.length === 0 && !isFetchingTextures ? (
-                                <div className="col-span-3 flex flex-col items-center justify-center py-[2rem] text-center">
-                                  <span className="text-[0.7rem] font-[500] text-[rgba(57,37,121,0.6)]">
-                                    No textures found
-                                  </span>
-                                  <span className="mt-[0.3rem] text-[0.6rem] font-[400] text-[rgba(57,37,121,0.4)]">
-                                    Try a different search term
+                              {isFetchingTextures && (
+                                <div className="flex justify-center py-2">
+                                  <span className="text-[0.6rem] font-semibold text-[var(--primary-color)]">
+                                    Loading...
                                   </span>
                                 </div>
-                              ) : (
-                                filteredTextures.map((m, idx) => (
-                                  <div
-                                    key={`${m.option}-${idx}`}
-                                    className="group relative flex aspect-square w-full cursor-pointer items-center justify-center overflow-hidden text-center active:scale-[0.95]"
-                                    onClick={() => handleTextureSelect(m)}
-                                  >
-                                    <img
-                                      src={`${(process.env.NEXT_PUBLIC_PUBLIC_API || '').replace(/\/$/, '')}${m.image_thumbnail || m.image}`}
-                                      alt={m.name}
-                                      className="h-full w-full object-cover transition-all duration-200 ease-in-out group-hover:brightness-75"
-                                    />
+                              )}
+                            </div>
+                          </div>
+                        )}
 
-                                    <div className="absolute inset-0 bg-black opacity-0 transition-opacity duration-200 ease-in-out group-hover:opacity-60" />
+                        {/* Door Position */}
+                        {!isQuickHideActive && isSettingOpen && isDoorOrDrawerSelected && (
+                          <>
+                            <hr className="mx-[0.2rem] my-[0.2rem] ml-[0rem] w-[15rem] pl-[0rem] opacity-20" />
 
-                                    <div className="absolute inset-0 flex items-end justify-center bg-gradient-to-t from-black/80 to-transparent px-1 py-1 opacity-0 transition-opacity duration-200 ease-in-out group-hover:opacity-100">
-                                      <span className="text-[0.5rem] font-semibold text-white">
-                                        {m.name}
-                                      </span>
+                            <div className="mt-[0rem] ml-[1rem] flex flex-col items-start gap-[0.5rem]">
+                              <p className="mb-[1] flex text-[0.7rem] font-[700] text-[var(--primary-color)]">
+                                Handle Position
+                              </p>
+                              <div className="mb-[0rem] flex w-[13rem] justify-center gap-[0.5rem]">
+                                {handlePositionInputFlid.map((field) => (
+                                  <div key={field.name} className="mt-[0rem]">
+                                    <p className="m-[0] w-[3.9rem] text-[0.56rem] font-[200] font-[var(--font-family)] tracking-[0.04rem] text-[var(--primary-color)]">
+                                      {field.label}
+                                    </p>
+                                    <div
+                                      className={`mt-2 flex h-[1.3rem] w-[3rem] items-center gap-[0.1rem] rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] bg-white p-0 p-[0rem] px-[0.35rem] focus-within:border-[var(--primary-color)]`}
+                                    >
+                                      {/* IMAGE ICON */}
+                                      <Image
+                                        src={field.icon}
+                                        alt={field.label}
+                                        width={19}
+                                        height={19}
+                                        className="h-[0.7rem] w-[0.7rem] object-contain opacity-70"
+                                      />
+
+                                      <img
+                                        src={assets.vrLine}
+                                        className="ml-[0.1rem] h-[0.9rem] w-[0.5rem]"
+                                      />
+
+                                      {/* Input */}
+                                      <input
+                                        id={field.name}
+                                        name={field.name}
+                                        type={field.type}
+                                        value={field.value ?? ''}
+                                        onChange={field.onChange}
+                                        className="ml-[0rem] w-[1.9rem] [appearance:textfield] border-[0rem] bg-transparent p-[0rem] text-[0.7rem] font-[600] text-[var(--primary-color)] outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                                      />
                                     </div>
                                   </div>
-                                ))
-                              )}
-                              {/* Sentinal element for Infinite Scroll */}
-                              <div ref={observerTarget} className="h-[10px] w-full" />
-                            </div>
-                            {isFetchingTextures && (
-                              <div className="flex justify-center py-2">
-                                <span className="text-[0.6rem] font-semibold text-[var(--primary-color)]">
-                                  Loading...
-                                </span>
+                                ))}
                               </div>
-                            )}
+                            </div>
+                            <hr className="mx-[0.2rem] my-[0.2rem] ml-[0rem] w-[15rem] pl-[0rem] opacity-20" />
+                          </>
+                        )}
+                      </>
+                    )}
+                  </div>
+                  <hr className="mx-[0.2rem] my-[0.2rem] ml-[0rem] w-[15rem] pl-[0rem] opacity-20" />
+                  {/* Standalone Handle Mode section after Material */}
+                  {!isQuickHideActive && isSettingOpen && isDoorOrDrawerSelected && (
+                    <>
+                      <div className="mt-[0] mb-[0.7rem] ml-[1rem] flex items-center gap-[4rem]">
+                        <div className="flex items-center justify-between">
+                          <p className="mt-[0.4rem] mb-[0] flex text-[0.7rem] font-[700] text-[var(--primary-color)]">
+                            Handle Mode
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-[0.5rem]">
+                          <select
+                            className="mt-[0.5rem] flex h-[1.3rem] w-[3.8rem] cursor-pointer appearance-none items-center justify-between rounded-[0.1rem] border-[0rem] bg-[var(--primary-color)] p-[0rem] px-[0.5rem] text-left font-[comfortaa] font-[poppins] text-[0.6rem] font-[var(--font-family)] font-extralight text-[var(--primary-white)] transition-colors duration-200 ease-in-out"
+                            value={handleMode}
+                            onChange={(e) => {
+                              const value = e.target.value as 'handle' | 'handleless';
+                              handleHandleModeChange(value);
+                            }}
+                            disabled={isDisabled}
+                          >
+                            <option value="handle">Handle</option>
+                            <option value="handleless">Handleless</option>
+                          </select>
+                        </div>
+                      </div>
+
+                      {/* Up Side / Down Side buttons — only for single drawer/door in handleless mode */}
+                      {isDoorOrDrawerSelected && handleMode === 'handleless' && (
+                        <div className="mt-[0.2rem] mb-[0.5rem] ml-[1rem] flex flex-col gap-[0.4rem]">
+                          <p className="mb-[0] text-[0.6rem] font-[600] text-[var(--primary-color)]">
+                            L-Shape Position
+                          </p>
+                          <div className="flex items-center gap-[0.5rem]">
+                            <button
+                              onClick={() => handleLShapeDirection('up')}
+                              disabled={isDisabled}
+                              className="flex h-[1.4rem] w-[5.5rem] cursor-pointer items-center justify-center rounded-[0.2rem] border-[0.1rem] border-[var(--primary-color)] bg-[var(--primary-white)] p-[0rem] text-[0.55rem] font-[600] text-[var(--primary-color)] transition-colors duration-200 hover:bg-[var(--primary-color)] hover:text-[var(--primary-white)] disabled:cursor-not-allowed disabled:opacity-50"
+                            >
+                              ▲ Up Side
+                            </button>
+                            <button
+                              onClick={() => handleLShapeDirection('down')}
+                              disabled={isDisabled}
+                              className="flex h-[1.4rem] w-[5.5rem] cursor-pointer items-center justify-center rounded-[0.2rem] border-[0.1rem] border-[var(--primary-color)] bg-[var(--primary-white)] p-[0rem] text-[0.55rem] font-[600] text-[var(--primary-color)] transition-colors duration-200 hover:bg-[var(--primary-color)] hover:text-[var(--primary-white)] disabled:cursor-not-allowed disabled:opacity-50"
+                            >
+                              ▼ Down Side
+                            </button>
                           </div>
                         </div>
                       )}
 
-                      {/* Door Position */}
-                      {!isQuickHideActive && isSettingOpen && isDoorOrDrawerSelected && (
-                        <>
-                          <hr className="mx-[0.2rem] my-[0.2rem] ml-[0rem] w-[15rem] pl-[0rem] opacity-20" />
-
-                          <div className="mt-[0rem] ml-[1rem] flex flex-col items-start gap-[0.5rem]">
-                            <p className="mb-[1] flex text-[0.7rem] font-[700] text-[var(--primary-color)]">
-                              Handle Position
-                            </p>
-                            <div className="mb-[0rem] flex w-[13rem] justify-center gap-[0.5rem]">
-                              {handlePositionInputFlid.map((field) => (
-                                <div key={field.name} className="mt-[0rem]">
-                                  <p className="m-[0] w-[3.9rem] text-[0.56rem] font-[200] font-[var(--font-family)] tracking-[0.04rem] text-[var(--primary-color)]">
-                                    {field.label}
-                                  </p>
-                                  <div
-                                    className={`mt-2 flex h-[1.3rem] w-[3rem] items-center gap-[0.1rem] rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] bg-white p-0 p-[0rem] px-[0.35rem] focus-within:border-[var(--primary-color)]`}
-                                  >
-                                    {/* IMAGE ICON */}
-                                    <Image
-                                      src={field.icon}
-                                      alt={field.label}
-                                      width={19}
-                                      height={19}
-                                      className="h-[0.7rem] w-[0.7rem] object-contain opacity-70"
-                                    />
-
-                                    <img
-                                      src={assets.vrLine}
-                                      className="ml-[0.1rem] h-[0.9rem] w-[0.5rem]"
-                                    />
-
-                                    {/* Input */}
-                                    <input
-                                      id={field.name}
-                                      name={field.name}
-                                      type={field.type}
-                                      value={field.value ?? ''}
-                                      onChange={field.onChange}
-                                      className="ml-[0rem] w-[1.9rem] [appearance:textfield] border-[0rem] bg-transparent p-[0rem] text-[0.7rem] font-[600] text-[var(--primary-color)] outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-                                    />
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                          <hr className="mx-[0.2rem] my-[0.2rem] ml-[0rem] w-[15rem] pl-[0rem] opacity-20" />
-                        </>
-                      )}
+                      <hr className="mx-[0.2rem] my-[0.2rem] ml-[0rem] w-[15rem] pl-[0rem] opacity-20" />
                     </>
                   )}
-                </div>
-                <hr className="mx-[0.2rem] my-[0.2rem] ml-[0rem] w-[15rem] pl-[0rem] opacity-20" />
-                {/* Standalone Handle Mode section after Material */}
-                {!isQuickHideActive && isSettingOpen && isDoorOrDrawerSelected && (
-                  <>
-                    <div className="mt-[0] mb-[0.7rem] ml-[1rem] flex items-center gap-[4rem]">
-                      <div className="flex items-center justify-between">
-                        <p className="mt-[0.4rem] mb-[0] flex text-[0.7rem] font-[700] text-[var(--primary-color)]">
-                          Handle Mode
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-[0.5rem]">
-                        <select
-                          className="mt-[0.5rem] flex h-[1.3rem] w-[3.8rem] cursor-pointer appearance-none items-center justify-between rounded-[0.1rem] border-[0rem] bg-[var(--primary-color)] p-[0rem] px-[0.5rem] text-left font-[comfortaa] font-[poppins] text-[0.6rem] font-[var(--font-family)] font-extralight text-[var(--primary-white)] transition-colors duration-200 ease-in-out"
-                          value={handleMode}
-                          onChange={(e) => {
-                            const value = e.target.value as 'handle' | 'handleless';
-                            handleHandleModeChange(value);
-                          }}
-                          disabled={isDisabled}
-                        >
-                          <option value="handle">Handle</option>
-                          <option value="handleless">Handleless</option>
-                        </select>
-                      </div>
-                    </div>
+                </>
+              )}
+            </div>
+          </>
+        )}
+        {showMaterialPopup && (
+          <MaterialChangePopup
+            selectedObject={selectedObject}
+            onClose={() => setShowMaterialPopup(false)}
+          />
+        )}
 
-                    {/* Up Side / Down Side buttons — only for single drawer/door in handleless mode */}
-                    {isDoorOrDrawerSelected && handleMode === 'handleless' && (
-                      <div className="mt-[0.2rem] mb-[0.5rem] ml-[1rem] flex flex-col gap-[0.4rem]">
-                        <p className="mb-[0] text-[0.6rem] font-[600] text-[var(--primary-color)]">
-                          L-Shape Position
-                        </p>
-                        <div className="flex items-center gap-[0.5rem]">
-                          <button
-                            onClick={() => handleLShapeDirection('up')}
-                            disabled={isDisabled}
-                            className="flex h-[1.4rem] w-[5.5rem] cursor-pointer items-center justify-center rounded-[0.2rem] border-[0.1rem] border-[var(--primary-color)] bg-[var(--primary-white)] p-[0rem] text-[0.55rem] font-[600] text-[var(--primary-color)] transition-colors duration-200 hover:bg-[var(--primary-color)] hover:text-[var(--primary-white)] disabled:cursor-not-allowed disabled:opacity-50"
-                          >
-                            ▲ Up Side
-                          </button>
-                          <button
-                            onClick={() => handleLShapeDirection('down')}
-                            disabled={isDisabled}
-                            className="flex h-[1.4rem] w-[5.5rem] cursor-pointer items-center justify-center rounded-[0.2rem] border-[0.1rem] border-[var(--primary-color)] bg-[var(--primary-white)] p-[0rem] text-[0.55rem] font-[600] text-[var(--primary-color)] transition-colors duration-200 hover:bg-[var(--primary-color)] hover:text-[var(--primary-white)] disabled:cursor-not-allowed disabled:opacity-50"
-                          >
-                            ▼ Down Side
-                          </button>
-                        </div>
-                      </div>
-                    )}
-
-                    <hr className="mx-[0.2rem] my-[0.2rem] ml-[0rem] w-[15rem] pl-[0rem] opacity-20" />
-                  </>
-                )}
-              </>
-            )}
-          </div>
-        </>
-      )}
-      {showMaterialPopup && (
-        <MaterialChangePopup
-          selectedObject={selectedObject}
-          onClose={() => setShowMaterialPopup(false)}
-        />
-      )}
-    </div>
+        {isAddTexturePopupOpen && (
+          <TextureAddPopup
+            onClose={() => setIsAddTexturePopupOpen(false)}
+            onSuccess={() => getTextures()}
+          />
+        )}
+      </div>
+    </>
   );
 };
 

@@ -28,7 +28,7 @@ import {
 } from '../../store/dataSlice';
 import { MAXIMUM_WALL_OBJECT } from '../constants';
 import { WallPoint } from '../interface';
-import { snapToGrid } from '../utils';
+import { pointsNear, snapToGrid } from '../utils';
 import { findRoomsFromWalls, getFloorPolygon } from './wallFloor';
 
 export function useWallDrawing(svgWidth: number, svgHeight: number) {
@@ -87,7 +87,7 @@ export function useWallDrawing(svgWidth: number, svgHeight: number) {
           const { startPoint, endPoint } = getWallReferenceEdgePoints(otherWall);
 
           const isSamePoint = (p1: { x: number; y: number }, p2: { x: number; y: number }) =>
-            Math.round(p1.x) === Math.round(p2.x) && Math.round(p1.y) === Math.round(p2.y);
+            pointsNear(p1, p2);
 
           return (
             isSamePoint(startPoint, currentStart) ||
@@ -110,7 +110,7 @@ export function useWallDrawing(svgWidth: number, svgHeight: number) {
     const clickedPoint = findOrCreatePoint(endCoords.x, endCoords.y);
 
     // Prevent drawing wall to itself
-    const isSamePoint = startPoint.x === clickedPoint.x && startPoint.y === clickedPoint.y;
+    const isSamePoint = pointsNear(startPoint, clickedPoint);
     if (isSamePoint) return;
 
     // Prevent duplicate wall in either direction
@@ -120,15 +120,8 @@ export function useWallDrawing(svgWidth: number, svgHeight: number) {
       const end = wallCoords.endPoint;
 
       return (
-        //math.round is used to avoid floating point precision issues
-        (Math.round(start.x) === Math.round(startPoint.x) &&
-          Math.round(start.y) === Math.round(startPoint.y) &&
-          Math.round(end.x) === Math.round(clickedPoint.x) &&
-          Math.round(end.y) === Math.round(clickedPoint.y)) ||
-        (Math.round(start.x) === Math.round(clickedPoint.x) &&
-          Math.round(start.y) === Math.round(clickedPoint.y) &&
-          Math.round(end.x) === Math.round(startPoint.x) &&
-          Math.round(end.y) === Math.round(startPoint.y))
+        (pointsNear(start, startPoint) && pointsNear(end, clickedPoint)) ||
+        (pointsNear(start, clickedPoint) && pointsNear(end, startPoint))
       );
     });
 
@@ -370,12 +363,7 @@ export function useWallDrawing(svgWidth: number, svgHeight: number) {
     const connectedWall = walls.find((wall) => {
       const { startPoint: s, endPoint: e } = getWallReferenceEdgePoints(wall);
 
-      return (
-        (Math.round(s.x) === Math.round(startPoint.x) &&
-          Math.round(s.y) === Math.round(startPoint.y)) ||
-        (Math.round(e.x) === Math.round(startPoint.x) &&
-          Math.round(e.y) === Math.round(startPoint.y))
-      );
+      return pointsNear(s, startPoint) || pointsNear(e, startPoint);
     });
 
     if (!connectedWall) return null;

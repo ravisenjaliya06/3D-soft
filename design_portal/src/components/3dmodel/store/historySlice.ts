@@ -1,13 +1,13 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
+import * as THREE from 'three';
+import { generateCompartmentsFromMesh } from '../handler/items';
+import { FloorManager } from '../sceneCreator/floorManager';
 import { SyncManager } from '../sceneCreator/syncState';
 import { AppThunk, RootState } from '../store';
-import { generateCompartmentsFromMesh } from '../handler/items';
 import { restoreActiveDesignState } from './activeDesignSlice';
 import { restoreActiveItemState } from './activeItemSlice';
 import { restoreDataState } from './dataSlice';
 import { restoreDesignSettingsState } from './designSettingsSlice';
-import * as THREE from 'three';
-import { FloorManager } from '../sceneCreator/floorManager';
 
 const MAX_HISTORY_STEPS = 20;
 

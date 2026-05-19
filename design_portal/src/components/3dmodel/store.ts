@@ -4,6 +4,7 @@ import activeDesignReducer, {
 import activeItemReducer, {
   clearActiveItemOverrides,
 } from '@/components/3dmodel/store/activeItemSlice';
+import backendStatusReducer from '@/components/3dmodel/store/backendStatusSlice';
 import catalogReducer, { resetCatalog } from '@/components/3dmodel/store/catalogSlice';
 import dataReducer, { resetData } from '@/components/3dmodel/store/dataSlice';
 import designSettingsReducer from '@/components/3dmodel/store/designSettingsSlice';
@@ -143,7 +144,10 @@ const historyTrackingMiddleware: Middleware = (api) => (next) => (action: any) =
     return result;
   }
 
-  const hasChanged = isSignificantHistoryChange(snapshotBeforeAction, createHistorySnapshot(nextState));
+  const hasChanged = isSignificantHistoryChange(
+    snapshotBeforeAction,
+    createHistorySnapshot(nextState)
+  );
 
   if (hasChanged) {
     if (transactionDepth > 0) {
@@ -170,6 +174,7 @@ export const store = configureStore({
     designSettings: designSettingsReducer,
     activeDesign: activeDesignReducer,
     activeItem: activeItemReducer,
+    backendStatus: backendStatusReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({

@@ -10,8 +10,8 @@ import type React from 'react';
 import { useEffect, useRef, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { toast } from 'react-toastify';
-import * as THREE from 'three';
 import { UnknownAction } from 'redux';
+import * as THREE from 'three';
 import { Design, HeaderProps } from '../interface';
 import { ObjectsSaver } from '../sceneCreator/tools/objectSaver';
 import { CabinetMotionController } from '../sceneCreator/tools/openCloseTool';
@@ -26,6 +26,7 @@ import {
   setIsLatestVersion,
 } from '../store/activeDesignSlice';
 import { setGlobalDoorsOpen } from '../store/dataSlice';
+import { redoAction, undoAction } from '../store/historySlice';
 import {
   selectHeaderCamDepth,
   selectHeaderCamDiameter,
@@ -34,7 +35,6 @@ import {
   selectHeaderMinifixDistance,
   selectIsLatestVersion,
 } from '../store/selectors';
-import { redoAction, undoAction } from '../store/historySlice';
 import { CustomToast } from '../utils/CustomToast';
 import { parseDesignIdsFromPathname } from '../utils/routeIds';
 import styles from './header.module.css';
@@ -744,10 +744,11 @@ const Header: React.FC<HeaderProps> = ({ router, design3D }) => {
                   {designDetail.versions.map((v, index) => (
                     <div
                       key={v.id}
-                      className={`${styles.versionItem} ${v.id === versionIdFromUrl || (!versionIdFromUrl && index === 0)
+                      className={`${styles.versionItem} ${
+                        v.id === versionIdFromUrl || (!versionIdFromUrl && index === 0)
                           ? styles.active
                           : ''
-                        }`}
+                      }`}
                       onClick={() => handleVersionSelect(v.id)}
                     >
                       <div className={styles.versionInfo}>
