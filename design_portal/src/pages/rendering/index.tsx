@@ -157,11 +157,9 @@ export default function RenderingPage() {
         const firstImageRes = await fetch(fetchedImages[0].image);
         const firstImageBlob = await firstImageRes.blob();
         const state = store.getState();
-        const scene_data = buildSceneDataPayload(
-          state.data.objects,
-          designData,
-          state.data.currentUnitType
-        );
+        const scene_data = {
+          catalogs: state.data.objects,
+        }
 
         const projectFormData = new FormData();
         projectFormData.append('name', `Design ${id}`);
