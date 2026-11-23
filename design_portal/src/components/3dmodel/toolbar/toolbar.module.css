@@ -134,11 +134,7 @@
   border-radius: 0.6rem;
 
   &:hover {
-    background: linear-gradient(
-      90deg,
-      rgba(204, 188, 255, 0.2) 0%,
-      rgba(204, 188, 255, 0.4) 87.74%
-    );
+    background: linear-gradient(90deg, rgba(200, 87, 27, 0.15) 0%, rgba(200, 87, 27, 0.3) 87.74%);
     opacity: 0.8;
     transform: translateY(-2px);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
@@ -155,7 +151,7 @@
   flex-direction: row;
   justify-content: center;
   cursor: pointer;
-  background: linear-gradient(90deg, rgba(204, 188, 255, 0.2) 0%, rgba(57, 37, 121, 0.4) 87.74%);
+  background: linear-gradient(90deg, rgba(200, 87, 27, 0.15) 0%, rgba(84, 83, 51, 0.4) 87.74%);
   border-radius: 0.6rem;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   box-shadow:
@@ -1259,7 +1255,7 @@
   &:hover {
     background-color: var(--hover-button);
     transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(91, 33, 182, 0.25);
+    box-shadow: 0 4px 12px rgba(200, 87, 27, 0.25);
   }
 }
 
@@ -1680,4 +1676,966 @@
 
 .createpopupLShape h2 {
   padding: 0rem !important;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Editor left side v3 — "floating workbench".
+   A small dark launcher puck, a white tool drawer with a tile
+   grid, and a catalogue card with picture tiles. All three float
+   over the canvas with gaps instead of being docked to the edge.
+   Sizes: --bv-edge (gap to the screen edge), --bv-launch-w,
+   --bv-drawer-w, --bv-cat-w.
+   ───────────────────────────────────────────────────────────── */
+
+.aside {
+  --bv-edge: 0.8rem;
+  --bv-launch-w: 3.4rem;
+  --bv-drawer-w: 13.2rem;
+  --bv-cat-w: 15.5rem;
+  --bv-float-top: calc(var(--banner-offset, 0px) + var(--bv-frame-h, 3.6rem) + var(--bv-edge));
+  --bv-float-h: calc(100vh - var(--bv-float-top) - var(--bv-edge));
+
+  position: fixed;
+  top: var(--bv-float-top);
+  left: var(--bv-edge);
+  width: var(--bv-launch-w);
+  height: auto;
+  padding: 0.45rem 0;
+  font-family: var(--bv-font);
+  background: var(--bv-ink);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 1.2rem;
+  box-shadow: 0 0.7rem 1.8rem rgba(20, 20, 10, 0.25);
+}
+
+.aside .group,
+.aside .partLineGroup {
+  display: none;
+}
+
+.icon_style {
+  gap: 0.35rem;
+  margin: 0;
+  padding: 0 0.4rem;
+}
+
+.icon,
+.icon_active {
+  position: relative;
+  flex-direction: column;
+  gap: 0.2rem;
+  width: 100%;
+  height: auto;
+  padding: 0.5rem 0 0.4rem;
+  color: var(--bv-on-ink-muted);
+  background: transparent;
+  border-radius: 0.85rem;
+  box-shadow: none;
+  opacity: 1;
+  transform: none;
+  transition:
+    background-color var(--bv-ease),
+    color var(--bv-ease);
+}
+
+.icon:hover {
+  color: var(--bv-on-ink);
+  background: var(--bv-glass);
+  box-shadow: none;
+  opacity: 1;
+  transform: none;
+}
+
+.icon_active {
+  color: var(--bv-on-accent);
+  background: var(--bv-accent);
+  box-shadow: 0 0.3rem 0.9rem var(--bv-accent-glow);
+}
+
+.icon img,
+.icon_active img {
+  width: 1.1rem;
+  height: 1.1rem;
+}
+
+.icon span,
+.icon_active span {
+  font-size: 0.5rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+/* ─── Tool drawer ─── */
+
+.activegroup_tools_container {
+  top: var(--bv-float-top);
+  left: calc(var(--bv-edge) + var(--bv-launch-w) + 0.55rem);
+  width: var(--bv-drawer-w);
+  height: auto;
+  max-height: var(--bv-float-h);
+  overflow-y: auto;
+  background: var(--bv-surface);
+  border: 1px solid var(--bv-border);
+  border-radius: 1.1rem;
+  box-shadow: 0 0.8rem 2rem rgba(30, 30, 18, 0.14);
+  backdrop-filter: none;
+  animation: bvDrawerIn 180ms cubic-bezier(0.2, 0, 0, 1);
+}
+
+@keyframes bvDrawerIn {
+  from {
+    opacity: 0;
+    transform: translateX(-0.5rem);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.activegroup {
+  padding: 0 0 0.7rem;
+  text-align: left;
+}
+
+.activegroup_header,
+.activegroup_header.no_arrow {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  min-height: 0;
+  margin: 0;
+  padding: 0.8rem 0.9rem 0.7rem;
+  background-image:
+    radial-gradient(circle at 100% 0%, var(--bv-accent-glow) 0%, transparent 60%),
+    linear-gradient(180deg, var(--bv-primary-soft) 0%, transparent 100%);
+  border-bottom: 1px dashed var(--bv-border);
+}
+
+.drawerTitle {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 0;
+}
+
+.drawerEyebrow {
+  font-size: 0.5rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--bv-accent);
+}
+
+.activegroup_header p,
+.activegroup_header.no_arrow p {
+  margin: 0;
+  padding: 0;
+  font-family: var(--bv-font);
+  font-size: 0.86rem;
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: -0.01em;
+  text-transform: none;
+  color: var(--bv-text);
+}
+
+.activegroup_header img {
+  flex-shrink: 0;
+  width: 1.5rem;
+  height: 1.5rem;
+  margin: 0;
+  padding: 0.3rem;
+  box-sizing: border-box;
+  background: var(--bv-surface);
+  border: 1px solid var(--bv-border);
+  border-radius: 50%;
+  cursor: pointer;
+  transition: border-color var(--bv-ease);
+}
+
+.activegroup_header img:hover {
+  border-color: var(--bv-accent);
+}
+
+.active_tool_part_line,
+.active_tool_part_liness {
+  display: none;
+}
+
+/* Tools as a two-column tile grid */
+.activegroup_tools_group {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.45rem;
+  margin: 0.7rem 0.7rem 0;
+}
+
+.toollistbox,
+.furnitureItemslist {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  min-height: 4.6rem;
+  padding: 0.6rem 0.35rem 0.5rem;
+  font-family: var(--bv-font);
+  font-size: 0.62rem;
+  font-weight: 700;
+  text-align: center;
+  color: var(--bv-text);
+  background: var(--bv-surface-2);
+  border: 1px solid var(--bv-border);
+  border-radius: 0.8rem;
+  transform: none;
+  transition:
+    background-color var(--bv-ease),
+    border-color var(--bv-ease),
+    box-shadow var(--bv-ease),
+    transform var(--bv-ease);
+}
+
+.toollistbox:hover,
+.furnitureItemslist:hover {
+  background: var(--bv-surface);
+  border-color: var(--bv-primary);
+  box-shadow: 0 0.35rem 0.9rem rgba(30, 30, 18, 0.1);
+  transform: translateY(-1px);
+}
+
+.toollistbox.activeItem,
+.furnitureItemslist.activeItem {
+  background: var(--bv-primary);
+  border-color: var(--bv-primary);
+  box-shadow: 0 0.4rem 1rem rgba(84, 83, 51, 0.28);
+  color: var(--bv-on-primary);
+  transform: none;
+}
+
+.activegroup_tools {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 2.2rem;
+  height: 2.2rem;
+  background: var(--bv-surface);
+  border: 1px solid var(--bv-border);
+  border-radius: 50%;
+}
+
+.activegroup_tools img {
+  width: 1.35rem;
+}
+
+.activeItem .activegroup_tools {
+  background: var(--bv-surface);
+  border-color: var(--bv-accent);
+  box-shadow: 0 0 0 3px var(--bv-accent-glow);
+}
+
+/* Arrow becomes a small corner mark on tiles that open more */
+.left_toolbarlist_arrow,
+.furnitureItemslist > .arrow {
+  position: absolute;
+  top: 0.35rem;
+  right: 0.35rem;
+}
+
+.left_toolbarlist_arrow img,
+.arrow {
+  width: 0.75rem;
+  height: 0.75rem;
+  opacity: 0.45;
+}
+
+.activeItem .arrow,
+.activeItem .left_toolbarlist_arrow img {
+  filter: brightness(0) invert(1);
+  opacity: 0.8;
+}
+
+/* Expanded "Model" list spans the full drawer width */
+.submenuContainer {
+  grid-column: 1 / -1;
+}
+
+.submenuContainer.open {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.3rem;
+  padding: 0.45rem;
+  background: var(--bv-surface-2);
+  border: 1px dashed var(--bv-border-strong);
+  border-radius: 0.8rem;
+}
+
+.dropdownItem {
+  position: relative;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 0.3rem;
+  min-height: 1.9rem;
+  margin: 0;
+  padding: 0.2rem 0.2rem 0.2rem 0.2rem;
+  font-family: var(--bv-font);
+  font-size: 0.52rem;
+  font-weight: 700;
+  line-height: 1.15;
+  text-align: left;
+  word-break: normal;
+  color: var(--bv-text-muted);
+  background: var(--bv-surface);
+  border: 1px solid var(--bv-border);
+  border-radius: 0.6rem;
+  cursor: pointer;
+  transition:
+    border-color var(--bv-ease),
+    color var(--bv-ease);
+}
+
+.dropdownItem:hover {
+  color: var(--bv-text);
+  background: var(--bv-surface);
+  border-color: var(--bv-primary);
+}
+
+.dropdownItem.active {
+  color: var(--bv-on-accent);
+  background: var(--bv-accent);
+  border-color: var(--bv-accent);
+}
+
+.dropdownItem .activegroup_tools {
+  width: 1.4rem;
+  height: 1.4rem;
+  border: none;
+  background: var(--bv-surface-2);
+}
+
+.dropdownItem img:not(.arrow) {
+  width: 0.95rem;
+}
+
+.dropdownItem .arrow {
+  display: none;
+}
+
+.dropdownItem span {
+  min-width: 0;
+  word-break: normal;
+  overflow-wrap: normal;
+}
+
+/* ─── Catalogue card ─── */
+
+.submenuPanel {
+  top: var(--bv-float-top);
+  left: calc(var(--bv-edge) + var(--bv-launch-w) + 0.55rem + var(--bv-drawer-w) + 0.55rem);
+  display: flex;
+  flex-direction: column;
+  width: var(--bv-cat-w);
+  height: var(--bv-float-h);
+  overflow: hidden;
+  background: var(--bv-surface);
+  border: 1px solid var(--bv-border);
+  border-radius: 1.1rem;
+  box-shadow: 0 0.8rem 2rem rgba(30, 30, 18, 0.16);
+  backdrop-filter: none;
+  animation: bvDrawerIn 200ms cubic-bezier(0.2, 0, 0, 1);
+}
+
+.submenuHeader {
+  position: relative;
+  flex-shrink: 0;
+  padding: 0 0 0.75rem;
+  color: var(--bv-on-ink);
+  background-color: var(--bv-ink);
+  background-image: radial-gradient(circle at 100% 0%, var(--bv-accent-glow) 0%, transparent 65%);
+}
+
+.submenuHeaderTitle {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  min-height: 0;
+  margin: 0;
+  padding: 0.85rem 2.6rem 0.65rem 0.9rem;
+  box-sizing: border-box;
+}
+
+.submenuHeader .drawerEyebrow {
+  color: var(--bv-accent-light);
+}
+
+.submenuHeader .headerTitle {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin: 0;
+  font-family: var(--bv-font);
+  font-size: 0.9rem;
+  font-weight: 700;
+  text-align: left;
+  color: var(--bv-on-ink);
+}
+
+.submenuCount {
+  padding: 0.05rem 0.45rem;
+  font-size: 0.55rem;
+  font-weight: 700;
+  color: var(--bv-on-ink);
+  background: var(--bv-glass);
+  border: 1px solid var(--bv-glass-border);
+  border-radius: var(--bv-radius-pill);
+}
+
+.submenuHeader .closeIcon {
+  position: absolute;
+  top: 50%;
+  right: 0.75rem;
+  width: 1.5rem;
+  height: 1.5rem;
+  padding: 0.38rem;
+  box-sizing: border-box;
+  background: var(--bv-glass);
+  border-radius: 50%;
+  filter: brightness(0) invert(1);
+  transform: translateY(-50%);
+  cursor: pointer;
+  transition: background-color var(--bv-ease);
+}
+
+.submenuHeader .closeIcon:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.submenuHeader .searchWrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin: 0 0.75rem;
+}
+
+.submenuHeader .searchIcon {
+  left: 0.65rem;
+  width: 0.8rem;
+  height: 0.8rem;
+  opacity: 0.55;
+}
+
+.submenuHeader .searchInput {
+  box-sizing: border-box;
+  height: 2rem;
+  padding: 0 0.7rem 0 1.85rem;
+  font-family: var(--bv-font);
+  font-size: 0.64rem;
+  color: var(--bv-text);
+  background: var(--bv-surface);
+  border: 1px solid transparent;
+  border-radius: var(--bv-radius-pill);
+}
+
+.submenuHeader .searchInput:focus {
+  border-color: var(--bv-accent);
+  outline: none;
+  box-shadow: 0 0 0 3px var(--bv-accent-glow);
+}
+
+.submenuHeader .searchInput::placeholder {
+  color: var(--bv-text-subtle);
+}
+
+.submenuHeader .searchAddBtn {
+  flex-shrink: 0;
+  width: 2rem;
+  height: 2rem;
+  background: var(--bv-accent);
+  border-radius: 50%;
+  transform: none;
+}
+
+.submenuHeader .searchAddBtn:hover {
+  background: var(--bv-accent-hover);
+  opacity: 1;
+  transform: none;
+}
+
+.submenuContent {
+  display: grid;
+  flex: 1;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-content: start;
+  gap: 0.55rem;
+  max-height: none;
+  margin: 0;
+  padding: 0.75rem;
+  overflow-y: auto;
+  background: var(--bv-surface-2);
+}
+
+.submenuItem {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0 0 0.5rem !important;
+  overflow: hidden;
+  background: var(--bv-surface);
+  border: 1px solid var(--bv-border);
+  border-radius: 0.8rem;
+  cursor: pointer;
+  transition:
+    border-color var(--bv-ease),
+    box-shadow var(--bv-ease),
+    transform var(--bv-ease);
+}
+
+.submenuItem:hover {
+  background: var(--bv-surface);
+  border-color: var(--bv-accent);
+  box-shadow: 0 0.5rem 1.2rem rgba(30, 30, 18, 0.14);
+  transform: translateY(-2px);
+}
+
+/* Picture sits on a soft "plinth" */
+.submenuItem img {
+  box-sizing: border-box;
+  width: 100%;
+  height: 4.6rem;
+  margin: 0 0 0.45rem;
+  padding: 0.55rem;
+  object-fit: contain;
+  background: radial-gradient(
+    ellipse at 50% 85%,
+    var(--bv-primary-tint, #e9e8dc) 0%,
+    var(--bv-surface-2) 70%
+  );
+  border-bottom: 1px solid var(--bv-border);
+}
+
+.submenuItem > span:not(.submenuPlace) {
+  padding: 0 0.4rem;
+  font-family: var(--bv-font);
+  font-size: 0.58rem;
+  font-weight: 700;
+  line-height: 1.25;
+  text-align: center;
+  color: var(--bv-text);
+}
+
+.submenuPlace {
+  position: absolute;
+  top: 0.4rem;
+  right: 0.4rem;
+  padding: 0.12rem 0.45rem;
+  font-family: var(--bv-font);
+  font-size: 0.5rem;
+  font-weight: 700;
+  color: var(--bv-on-accent);
+  background: var(--bv-accent);
+  border-radius: var(--bv-radius-pill);
+  opacity: 0;
+  transform: translateY(-3px);
+  transition:
+    opacity var(--bv-ease),
+    transform var(--bv-ease);
+  pointer-events: none;
+}
+
+.submenuItem:hover .submenuPlace {
+  opacity: 1;
+  transform: none;
+}
+
+.noItems {
+  position: static;
+  grid-column: 1 / -1;
+  padding: 2rem 0.75rem;
+  font-family: var(--bv-font);
+  font-size: 0.66rem;
+  text-align: center;
+  color: var(--bv-text-subtle);
+  background: var(--bv-surface);
+  border: 1px dashed var(--bv-border-strong);
+  border-radius: 0.8rem;
+}
+
+.submenuContainer:not(.open) {
+  display: none;
+}
+
+.dropdownItem.active span {
+  color: var(--bv-on-accent);
+}
+
+.dropdownItem.active .activegroup_tools {
+  background: var(--bv-surface);
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Editor popups v3 (Phase 2)
+   ───────────────────────────────────────────────────────────── */
+
+/* Add part — compact card beside the catalogue tile */
+.createpopup,
+.createpopupLShape {
+  width: 14.5rem;
+  padding: 0;
+  overflow: visible;
+  font-family: var(--bv-font);
+  background: var(--bv-surface);
+  border: 1px solid var(--bv-border);
+  border-radius: 1rem;
+  box-shadow: 0 1rem 2.4rem rgba(20, 20, 10, 0.22);
+  backdrop-filter: none;
+}
+
+.createpopup::before,
+.createpopupLShape::before {
+  border-right-color: var(--bv-ink);
+  filter: none;
+}
+
+.addHead {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.7rem 0.6rem 0.7rem 0.7rem;
+  color: var(--bv-on-ink);
+  background: var(--bv-ink);
+  border-radius: 1rem 1rem 0 0;
+}
+
+.createicon {
+  display: grid;
+  flex-shrink: 0;
+  place-items: center;
+  width: 1.9rem;
+  height: 1.9rem;
+  margin: 0;
+  background: var(--bv-accent);
+  border-radius: 0.55rem;
+}
+
+.createicon img {
+  width: 55%;
+  height: 55%;
+  filter: brightness(0) invert(1);
+}
+
+.addHeadText {
+  flex: 1;
+  min-width: 0;
+}
+
+.addEyebrow {
+  display: block;
+  font-size: 0.5rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--bv-accent-light);
+}
+
+.createpopup h2,
+.createpopupLShape h2 {
+  margin: 0.1rem 0 0;
+  padding: 0;
+  overflow: hidden;
+  font-family: var(--bv-font);
+  font-size: 0.78rem;
+  font-weight: 700;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  color: var(--bv-on-ink);
+}
+
+.createclose {
+  position: static;
+  display: grid;
+  flex-shrink: 0;
+  place-items: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  padding: 0;
+  background: var(--bv-glass);
+  border: none;
+  border-radius: 50%;
+  opacity: 1;
+  cursor: pointer;
+}
+
+.createclose img {
+  width: 45%;
+  height: 45%;
+  filter: brightness(0) invert(1);
+}
+
+.create_right_side {
+  padding: 0.8rem 0.8rem 0;
+}
+
+.createinputGroup {
+  margin: 0;
+}
+
+.createButtonGrop {
+  margin: 0;
+  padding: 0.7rem 0.8rem 0.8rem;
+}
+
+.createcontinueButton {
+  width: 100%;
+  height: 2rem;
+  font-family: var(--bv-font);
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--bv-on-accent);
+  background: var(--bv-accent);
+  border-radius: 999px;
+}
+
+.createcontinueButton:hover {
+  background-color: var(--bv-accent-hover);
+  box-shadow: 0 4px 12px var(--bv-accent-glow);
+}
+
+/* L / U shape: direction compass */
+.arrowContainer {
+  gap: 0.5rem;
+  padding: 0.75rem 0.8rem 0.85rem;
+}
+
+.arrowHint {
+  margin: 0;
+  font-size: 0.6rem;
+  font-weight: 600;
+  text-align: center;
+  color: var(--bv-text-muted);
+}
+
+.compass {
+  display: grid;
+  grid-template-areas:
+    '. up .'
+    'left center right'
+    '. down .';
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.3rem;
+}
+
+.compassUp {
+  grid-area: up;
+}
+
+.compassLeft {
+  grid-area: left;
+}
+
+.compassRight {
+  grid-area: right;
+}
+
+.compassDown {
+  grid-area: down;
+}
+
+.compassCenter {
+  grid-area: center;
+  justify-self: center;
+  align-self: center;
+  width: 0.6rem;
+  height: 0.6rem;
+  background: var(--bv-accent);
+  border-radius: 50%;
+  box-shadow: 0 0 0 4px var(--bv-accent-glow);
+}
+
+.compass .arrowButtons,
+.compass .disableArrowButton {
+  flex-direction: column;
+  justify-content: center;
+  gap: 0.15rem;
+  width: 100%;
+  height: 2.6rem;
+  font-family: var(--bv-font);
+  font-size: 0.55rem;
+  font-weight: 700;
+  color: var(--bv-text);
+  background: var(--bv-surface-2);
+  border: 1px solid var(--bv-border);
+  border-radius: 0.6rem;
+}
+
+.compass .arrowButtons:hover {
+  color: var(--bv-on-primary);
+  background: var(--bv-primary);
+  border-color: var(--bv-primary);
+  box-shadow: none;
+}
+
+.compass .arrowButtons:hover img {
+  filter: brightness(0) invert(1);
+}
+
+.compass .disableArrowButton {
+  opacity: 0.4;
+}
+
+.compass .arrowButtons img,
+.compass .disableArrowButton img {
+  margin: 0;
+}
+
+/* Upload 3D model — dark viewer on the left, details on the right */
+.uploadPopupOverlay {
+  background: rgba(20, 20, 10, 0.5);
+  backdrop-filter: blur(4px);
+}
+
+.premiumUploadPopup {
+  overflow: hidden;
+  font-family: var(--bv-font);
+  background: var(--bv-surface);
+  border: none;
+  border-radius: 1.3rem;
+  box-shadow: 0 1.6rem 4rem rgba(10, 10, 4, 0.4);
+}
+
+.uploadHeader {
+  color: var(--bv-on-ink);
+  background-color: var(--bv-ink);
+  background-image: radial-gradient(circle at 100% 0%, var(--bv-accent-glow) 0%, transparent 55%);
+  border-bottom: 2px solid var(--bv-accent);
+}
+
+.headerTitleGroup h2 {
+  font-family: var(--bv-font);
+  font-weight: 700;
+  color: var(--bv-on-ink);
+}
+
+.uploadHeaderIcon {
+  display: grid;
+  place-items: center;
+  background: var(--bv-accent);
+  border-radius: 0.7rem;
+}
+
+.uploadHeaderIcon img {
+  filter: brightness(0) invert(1);
+}
+
+.uploadCloseBtn {
+  padding: 0.4rem;
+  box-sizing: border-box;
+  background: var(--bv-glass);
+  border-radius: 50%;
+  filter: brightness(0) invert(1);
+}
+
+.uploadBody > .detailsContainer {
+  order: 2;
+}
+
+.uploadBody > .previewContainer {
+  order: 1;
+  color: var(--bv-on-ink);
+  background: var(--bv-ink-2);
+  border: none;
+}
+
+.previewContainer .uploadLabel {
+  color: var(--bv-on-ink-muted);
+}
+
+.modelViewerContainer {
+  background: radial-gradient(ellipse at 50% 40%, rgba(255, 255, 255, 0.1) 0%, transparent 70%);
+  border: 1px dashed var(--bv-glass-border);
+  border-radius: 1rem;
+}
+
+.noModelPlaceholder,
+.noModelPlaceholder p {
+  color: var(--bv-on-ink-muted);
+}
+
+.uploadLabel {
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--bv-text-muted);
+}
+
+.fileUploadBox {
+  background: var(--bv-surface-2);
+  border: 1.5px dashed var(--bv-border-strong);
+  border-radius: 0.9rem;
+}
+
+.fileUploadBox:hover {
+  background: var(--bv-surface);
+  border-color: var(--bv-accent);
+}
+
+.popupFooter {
+  border-top: 1px solid var(--bv-border);
+}
+
+.btnSecondary,
+.btnPrimary {
+  font-family: var(--bv-font);
+  font-weight: 700;
+  border-radius: 999px;
+}
+
+.btnSecondary {
+  color: var(--bv-text);
+  background: var(--bv-surface);
+  border: 1px solid var(--bv-border-strong);
+}
+
+.btnPrimary {
+  color: var(--bv-on-accent);
+  background: var(--bv-accent);
+  border: none;
+}
+
+.btnPrimary:hover:not(:disabled) {
+  background: var(--bv-accent-hover);
+}
+
+/* The older rule pins the L/U card to 9rem; the compass needs room */
+.createpopupLShape {
+  width: 14.5rem !important;
+}
+
+.createicon svg {
+  width: 55%;
+  height: 55%;
+  color: var(--bv-on-accent);
+}
+
+.uploadHeaderIcon svg {
+  width: 55%;
+  height: 55%;
+  color: var(--bv-on-accent);
+}
+
+.uploadHeaderIcon {
+  flex-shrink: 0;
+  width: 2.6rem;
+  height: 2.6rem;
+  min-width: 36px;
+  min-height: 36px;
+  padding: 0;
+  box-sizing: border-box;
 }

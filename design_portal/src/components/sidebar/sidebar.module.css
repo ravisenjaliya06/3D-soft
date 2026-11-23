@@ -1,297 +1,183 @@
+/* ─────────────────────────────────────────────────────────────
+   App top navigation (replaces the old left sidebar).
+   Every page stacks: top bar → title row (Header) → content.
+   ───────────────────────────────────────────────────────────── */
+
 .container {
-  display: flex;
-  height: 100vh;
-  overflow: hidden;
-}
-
-/* ===== EXPANDED SIDEBAR ===== */
-
-.leftside {
-  flex: 0 0 15rem;
-  width: 15rem;
-  background-color: var(--primary-color);
-  height: 100vh;
-  display: flex;
-  flex-direction: column;
-  box-shadow: 4px 0 15px rgba(0, 0, 0, 0.05);
-  transition: width 0.3s ease;
-}
-
-/* ===== COLLAPSED SIDEBAR ===== */
-
-.leftsidebar {
-  width: 5.5rem;
-  background-color: var(--primary-color);
-  height: 100vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  transition: width 0.3s ease;
-}
-
-/* ===== TOGGLE BUTTONS ===== */
-
-/* Expanded: arrow at bottom-right */
-.dropdown {
   position: relative;
-  display: inline-block;
-  margin-left: 14rem;
-  cursor: pointer;
-}
-
-.dropdown img,
-.dropup img {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  width: 1.6rem;
-}
-
-/* Collapsed: arrow at right edge (matching original) */
-.dropup {
-  position: relative;
-  display: inline-block;
-  margin-left: 4.8rem;
-  cursor: pointer;
-}
-
-/* ===== USER HELP (Bottom Section) ===== */
-
-.userhelp {
-  position: fixed;
-  bottom: 1rem;
-}
-
-/* ===== LOGO & HEADER ===== */
-
-.project_logo {
-  height: 5rem;
-  display: flex;
-  align-items: center;
-  padding-left: 1.5rem;
-  padding-top: 0;
-  padding-bottom: 0;
-  box-sizing: border-box;
-}
-
-.project_logo img {
-  width: 8rem;
-  max-height: 3.5rem;
-  object-fit: contain;
-  cursor: pointer;
-  transition: opacity 0.3s ease;
-}
-
-.project_logo img:hover {
-  opacity: 0.9;
-}
-
-/* Collapsed Logo — perfectly centered */
-.leftsidebar .project_logo {
-  height: 5rem;
-  width: 5.5rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0;
-  box-sizing: border-box;
-}
-
-.leftsidebar .project_logo img {
-  width: 2.2rem;
-  max-height: 2.2rem;
-  height: auto;
-  margin: 0;
-  object-fit: contain;
-}
-
-/* ===== DIVIDER LINES ===== */
-
-.simple_line,
-.simple_line2 {
-  display: flex;
-  justify-content: center;
+  z-index: 60;
+  flex-shrink: 0;
   width: 100%;
-  margin-bottom: 1rem;
-  opacity: 0.3;
+  font-family: var(--bv-font);
 }
 
-.simple_line img {
-  width: 85%;
-  height: auto;
+.topbar {
+  display: flex;
+  align-items: center;
+  gap: 1.4rem;
+  height: clamp(52px, 3.6rem, 64px);
+  padding: 0 clamp(16px, 1.6rem, 32px);
+  box-sizing: border-box;
+  color: var(--bv-on-ink);
+  background-color: var(--bv-ink);
+  background-image: linear-gradient(90deg, var(--bv-ink) 0%, var(--bv-ink-2) 100%);
+  border-bottom: 3px solid var(--bv-accent);
 }
 
-.simple_line2 img {
-  width: 3.5rem;
-  height: auto;
+/* Brand */
+
+.brand {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  padding: 0;
+  background: transparent;
+  border: none;
+  cursor: pointer;
 }
 
-/* ===== NAVIGATION ===== */
+.brand img {
+  height: clamp(26px, 1.9rem, 36px);
+  object-fit: contain;
+}
+
+.brand:focus-visible {
+  outline: 2px solid var(--bv-accent-light);
+  outline-offset: 4px;
+  border-radius: var(--bv-radius-sm);
+}
+
+/* Section tabs */
 
 .nav {
+  display: flex;
   flex: 1;
-  width: 100%;
-  padding-top: 0.5rem;
-  padding-bottom: 8rem;
-  overflow-y: auto;
+  align-items: stretch;
+  align-self: stretch;
+  gap: 0.2rem;
+  min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
 }
 
-.nav ul {
-  list-style-type: none;
-  padding: 0;
-  margin: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 0.4rem;
+.nav::-webkit-scrollbar {
+  display: none;
 }
 
-/* ===== BASE LIST ITEM (Expanded) ===== */
-
-.nav li {
-  display: flex;
-  align-items: center;
-  padding: 0.85rem 1rem;
-  margin: 0 0.8rem;
-  border-radius: 10px;
-  cursor: pointer;
-  font-family: 'Poppins', sans-serif;
-  font-size: 0.9rem;
-  font-weight: 500;
-  color: var(--text-white);
-  opacity: 0.7;
-  transition: all 0.3s ease;
+.tab {
   position: relative;
-  overflow: hidden;
-  white-space: nowrap;
-}
-
-/* Hover State (Expanded) */
-.nav li:hover {
-  background-color: rgba(255, 255, 255, 0.08);
-  opacity: 1;
-  transform: translateX(4px);
-}
-
-/* Active State (Expanded) */
-.nav li.active {
-  background: linear-gradient(90deg, rgba(144, 120, 221, 0.25) 0%, #392579 100%);
-  opacity: 1 !important;
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0 clamp(10px, 0.9rem, 18px);
+  font-family: var(--bv-font);
+  font-size: clamp(13px, 0.84rem, 15px);
   font-weight: 600;
-  box-shadow: 0 4px 15px rgba(57, 37, 121, 0.25);
-  border: 1px solid rgba(144, 120, 221, 0.4);
-  transform: none;
-}
-
-/* ===== COLLAPSED LIST ITEM ===== */
-
-.listItem {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  width: calc(5.5rem - 1.6rem); /* sidebar width minus margins */
-  margin: 0 auto !important; /* Center horizontally */
-  padding: 0.75rem 0 !important;
-  border-radius: 10px;
-  position: relative;
+  color: var(--bv-on-ink-muted);
+  background: transparent;
+  border: none;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition:
+    color var(--bv-ease),
+    background-color var(--bv-ease);
 }
 
-/* Remove icon margin in collapsed mode so it centers perfectly */
-.listItem .sidebar_icon {
-  margin: 0 !important;
-  width: 1.4rem;
-  height: 1.4rem;
+.tab svg {
+  font-size: 1.15em;
 }
 
-/* Hover for collapsed items — no translateX shift, just background */
-.listItem:hover {
-  transform: none !important;
-}
-
-/* Active State (Collapsed) — centered highlight box */
-.nav li.active_small {
-  background: linear-gradient(135deg, rgba(144, 120, 221, 0.3) 0%, #392579 100%);
-  opacity: 1 !important;
-  box-shadow: 0 4px 12px rgba(57, 37, 121, 0.35);
-  border-radius: 12px;
-  border: 1px solid rgba(144, 120, 221, 0.3);
-}
-
-/* ===== ICONS ===== */
-
-.sidebar_icon {
-  width: 1.35rem;
-  height: 1.35rem;
-  margin-right: 1rem;
-  object-fit: contain;
-  filter: brightness(0.9);
-  transition: all 0.3s ease;
-}
-
-.nav li:hover .sidebar_icon,
-.nav li.active .sidebar_icon,
-.nav li.active_small .sidebar_icon {
-  filter: brightness(1.2);
-}
-
-/* Icon adjustments for expanded active state */
-.icon_adjusted {
-  margin-left: 0;
-}
-
-.icon_adjusteds {
-  margin: 0;
-}
-
-/* ===== SELECTED INDICATOR (Vertical bar) ===== */
-
-.selected_icon {
+.tab::after {
   position: absolute;
+  right: 0.6rem;
+  bottom: -3px;
   left: 0.6rem;
-  height: 1.2rem;
-  width: auto;
-  opacity: 0.8;
-  filter: drop-shadow(0 0 2px rgba(255, 255, 255, 0.5));
+  height: 3px;
+  content: '';
+  background: transparent;
+  border-radius: 3px 3px 0 0;
+  transition: background-color var(--bv-ease);
 }
 
-/* Active padding for expanded (space for indicator) */
-.nav li.active span,
-.nav li.active {
-  padding-left: 2rem;
+.tab:hover {
+  color: var(--bv-on-ink);
+  background: var(--bv-glass);
 }
 
-/* Inactive padding for expanded */
-.nav li:not(.active) {
+.tabActive {
+  color: var(--bv-on-ink);
+}
+
+.tabActive svg {
+  color: var(--bv-accent-light);
+}
+
+.tabActive::after {
+  background: var(--bv-on-ink);
+}
+
+.tab:focus-visible,
+.action:focus-visible {
+  outline: 2px solid var(--bv-accent-light);
+  outline-offset: -2px;
+}
+
+/* Settings + log out */
+
+.actions {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 0.4rem;
   padding-left: 1rem;
+  border-left: 1px solid var(--bv-glass-border);
 }
 
-/* ===== TOOLTIPS (Collapsed Sidebar) ===== */
-
-.listItem[data-title]::after {
-  content: attr(data-title);
-  position: absolute;
-  left: calc(100% + 0.8rem);
-  top: 50%;
-  transform: translateY(-50%);
-  background-color: var(--primary-white);
-  color: var(--primary-color);
-  padding: 0.45rem 0.9rem;
-  border-radius: 6px;
-  white-space: nowrap;
-  font-size: 0.75rem;
-  font-weight: 500;
-  letter-spacing: 0.01em;
-  opacity: 0;
-  visibility: hidden;
-  transition: all 0.25s ease;
-  z-index: 100;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  pointer-events: none;
+.action {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: clamp(34px, 2.3rem, 42px);
+  height: clamp(34px, 2.3rem, 42px);
+  font-size: clamp(16px, 1.05rem, 20px);
+  color: var(--bv-on-ink-muted);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 50%;
+  cursor: pointer;
+  transition:
+    color var(--bv-ease),
+    background-color var(--bv-ease),
+    border-color var(--bv-ease);
 }
 
-.listItem[data-title]:hover::after {
-  opacity: 1;
-  visibility: visible;
-  left: calc(100% + 1.2rem);
+.action:hover {
+  color: var(--bv-on-ink);
+  background: var(--bv-glass);
+  border-color: var(--bv-glass-border);
+}
+
+.actionActive {
+  color: var(--bv-on-accent);
+  background: var(--bv-accent);
+}
+
+.actionLogout:hover {
+  color: var(--bv-on-accent);
+  background: var(--bv-danger);
+  border-color: var(--bv-danger);
+}
+
+@media (max-width: 760px) {
+  .topbar {
+    gap: 0.8rem;
+  }
+
+  .tab span {
+    display: none;
+  }
+
+  .actions {
+    padding-left: 0.6rem;
+  }
 }

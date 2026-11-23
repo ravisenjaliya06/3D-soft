@@ -62,7 +62,7 @@ export const QUOTATION_HEADERS = [
 ];
 
 export const PDF_THEME = {
-  titleColor: [57, 37, 121] as [number, number, number],
+  titleColor: [84, 83, 51] as [number, number, number],
   lightGray: [242, 242, 242] as [number, number, number],
   tableHeaderBg: [0, 0, 0] as [number, number, number],
   tableHeaderText: [255, 255, 255] as [number, number, number],

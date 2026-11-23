@@ -63,66 +63,70 @@ export const TextureAddPopup: React.FC<TextureAddPopupProps> = ({ onClose, onSuc
       <div className={styles.popup} onClick={(e) => e.stopPropagation()}>
         <div className={styles.header}>
           <div className={styles.headerLeft}>
-            <img
-              src={assets.Setting || '/placeholder.svg'}
-              alt="Settings Icon"
-              className={styles.headerIcon}
-            />
-            <h2>Add New Texture</h2>
+            <span className={styles.headerIcon}>
+              <img src={assets.Setting || '/placeholder.svg'} alt="" />
+            </span>
+            <div>
+              <span className={styles.headerEyebrow}>Finishes</span>
+              <h2>Add New Texture</h2>
+            </div>
           </div>
-          <img
-            src={assets.close || '/placeholder.svg'}
-            alt="Close"
-            className={styles.closeButton}
-            onClick={onClose}
-          />
+          <button type="button" className={styles.closeButton} onClick={onClose} aria-label="Close">
+            <img src={assets.close || '/placeholder.svg'} alt="" />
+          </button>
         </div>
 
         <div className={styles.mainContent}>
-          <div className={styles.inputGroup}>
-            <label className={styles.inputLabel}>Texture Name</label>
-            <input
-              type="text"
-              value={newTextureName}
-              onChange={(e) => setNewTextureName(e.target.value)}
-              placeholder="Enter texture name"
-              className={styles.textInput}
-            />
+          <div className={styles.formColumn}>
+            <div className={styles.inputGroup}>
+              <label className={styles.inputLabel}>Texture Name</label>
+              <input
+                type="text"
+                value={newTextureName}
+                onChange={(e) => setNewTextureName(e.target.value)}
+                placeholder="Enter texture name"
+                className={styles.textInput}
+              />
+            </div>
+
+            <div className={styles.inputGroup}>
+              <label className={styles.inputLabel}>Upload Image</label>
+              <div className={styles.uploadRow}>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleTextureFileChange}
+                  ref={fileInputRef}
+                  className={styles.fileInput}
+                  id="texture-upload-input"
+                />
+                <label htmlFor="texture-upload-input" className={styles.uploadButton}>
+                  <strong>Choose Image</strong>
+                  <small>A photo of the board, laminate or veneer</small>
+                </label>
+              </div>
+            </div>
           </div>
 
-          <div className={styles.inputGroup}>
-            <label className={styles.inputLabel}>Upload Image</label>
-            <div className={styles.uploadRow}>
-              <input
-                type="file"
-                accept="image/*"
-                onChange={handleTextureFileChange}
-                ref={fileInputRef}
-                className={styles.fileInput}
-                id="texture-upload-input"
-              />
-              <label htmlFor="texture-upload-input" className={styles.uploadButton}>
-                Choose Image
-              </label>
-              {newTexturePreview && (
-                <div className={styles.previewContainer}>
-                  <img src={newTexturePreview} alt="Preview" className={styles.previewImage} />
-                </div>
-              )}
-            </div>
+          <div className={styles.previewContainer}>
+            {newTexturePreview ? (
+              <img src={newTexturePreview} alt="Preview" className={styles.previewImage} />
+            ) : (
+              <span className={styles.previewEmpty}>Preview</span>
+            )}
           </div>
         </div>
 
         <div className={styles.buttonGroup}>
+          <button onClick={onClose} className={styles.cancelButton}>
+            Cancel
+          </button>
           <button
             onClick={handleSaveNewTexture}
             disabled={isSavingTexture}
             className={styles.saveButton}
           >
             {isSavingTexture ? 'Saving...' : 'Save Texture'}
-          </button>
-          <button onClick={onClose} className={styles.cancelButton}>
-            Cancel
           </button>
         </div>
       </div>

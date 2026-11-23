@@ -224,37 +224,31 @@ export const MaterialChangePopup: React.FC<
       <div className={styles.popup} style={{ width: '65rem' }}>
         {/* Header */}
         <div className={styles.header}>
-          <h2>Assign Materials to Parts</h2>
-          <img
-            src={assets.close || '/placeholder.svg'}
-            className={styles.closeButton}
-            alt="close"
-            onClick={onClose}
-          />
+          <div className={styles.headerText}>
+            <span className={styles.headerEyebrow}>Materials</span>
+            <h2>Assign Materials to Parts</h2>
+          </div>
+          <span className={styles.targetChip}>
+            Target Object: {formatEnumLabel(selectedObject?.name || '')}
+          </span>
+          <button type="button" className={styles.closeButton} onClick={onClose} aria-label="Close">
+            <img src={assets.close || '/placeholder.svg'} alt="" />
+          </button>
         </div>
-        <hr className={styles.divider} />
 
         {/* Main Content */}
         <div className={styles.mainContent}>
           {/* Left Table (Parts) */}
           <div className={styles.leftPanel} style={{ flex: '0.45' }}>
-            <div
-              className={styles.lefttopbar}
-              style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
-            >
-              <span>Target Object: {formatEnumLabel(selectedObject?.name || '')}</span>
+            <div className={styles.stepHead}>
+              <span className={styles.stepBadge}>1</span>
+              <div>
+                <h3>Parts</h3>
+                <p>Pick a material type, then a part</p>
+              </div>
             </div>
 
-            <div
-              className={styles.tabs}
-              style={{
-                display: 'flex',
-                gap: '0.5rem',
-                marginBottom: '0.5rem',
-                overflowX: 'auto',
-                paddingBottom: '0.5rem',
-              }}
-            >
+            <div className={styles.tabs}>
               {ruleMaterialTypes.map((type) => (
                 <button
                   key={type}
@@ -263,17 +257,6 @@ export const MaterialChangePopup: React.FC<
                     setSelectedMaterialType(type);
                   }}
                   className={`${styles.tab} ${activeRuleType === type ? styles.activeTab : ''}`}
-                  style={{
-                    padding: '0.3rem 0.6rem',
-                    borderRadius: '0.3rem',
-                    border: '1px solid var(--border-color)',
-                    background: activeRuleType === type ? 'var(--primary-color)' : 'transparent',
-                    color:
-                      activeRuleType === type ? 'var(--primary-white)' : 'var(--primary-color)',
-                    cursor: 'pointer',
-                    fontSize: '0.75rem',
-                    whiteSpace: 'nowrap',
-                  }}
                 >
                   {type}
                 </button>
@@ -341,6 +324,14 @@ export const MaterialChangePopup: React.FC<
 
           {/* Right Table (Materials) */}
           <div className={styles.rightPanel} style={{ flex: '0.55' }}>
+            <div className={styles.stepHead}>
+              <span className={styles.stepBadge}>2</span>
+              <div>
+                <h3>Materials</h3>
+                <p>Choose the material to apply</p>
+              </div>
+            </div>
+
             {/* ================= TOP BAR ================= */}
             <div className={styles.righttopbar}>
               {/* DROPDOWN */}
@@ -451,15 +442,7 @@ export const MaterialChangePopup: React.FC<
             </div>
 
             {/* ACTION FOOTER */}
-            <div
-              style={{
-                padding: '0.75rem',
-                borderTop: '1px solid var(--table-title-border-color)',
-                backgroundColor: 'var(--primary-white)',
-                display: 'flex',
-                justifyContent: 'flex-end',
-              }}
-            >
+            <div className={styles.assignBar}>
               <button
                 onClick={() => {
                   if (selectedPartId && selectedMaterialId) {
@@ -469,12 +452,6 @@ export const MaterialChangePopup: React.FC<
                   }
                 }}
                 className={styles.saveButton}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.5rem',
-                  padding: '0.5rem 1rem',
-                }}
               >
                 <img
                   src={assets.addMaterialIcon || assets.addd}

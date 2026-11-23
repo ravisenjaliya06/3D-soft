@@ -1,10 +1,11 @@
-import { assets } from '@/svgPaths';
 import React, { useEffect, useRef, useState } from 'react';
+import { LuBox, LuChevronUp, LuLayers, LuSquareDashed } from 'react-icons/lu';
 import { useDispatch, useSelector } from 'react-redux';
 import * as THREE from 'three';
 import { FLOOR_PLAN_TYPES, OBJECT_TYPES } from '../sceneCreator/interface';
 import { RootState } from '../store';
 import { setWireframeColor, toggleWireframe } from '../store/dataSlice';
+import styles from './footer.module.css';
 import { FooterProps } from './interface';
 
 const Footer: React.FC<FooterProps> = ({ viewMode, onViewModeChange }) => {
@@ -73,95 +74,98 @@ const Footer: React.FC<FooterProps> = ({ viewMode, onViewModeChange }) => {
   };
 
   return (
-    <div className="fixed right-[15.1rem] bottom-[0rem] z-[10] flex h-[3rem] items-center justify-center gap-[0.5rem] border-none select-none">
-      {/* 2. Color Toggle Pill */}
-      {isWireframeVisible && (
-        <div className="flex h-[1.5rem] items-center rounded-[1rem] bg-[#FFFFFF] p-[0.35rem]">
-          {/* BLACK OPTION */}
-          <div
-            onClick={() => handleColorChange('#000000')}
-            className={`flex h-full cursor-pointer items-center gap-[0.4rem] rounded-[1rem] px-[0.6rem] transition-all duration-200 ${wireframeColor === '#000000' ? 'bg-[#DCE6F2]' : 'hover:bg-[#DCE6F2]'}`}
+    <div className={styles.dock} role="toolbar" aria-label="View options">
+      {/* View: 2D plan or 3D model */}
+      <div className={styles.segment}>
+        <span className={styles.segmentLabel}>View</span>
+        <div className={styles.switch}>
+          <button
+            type="button"
+            onClick={() => onViewModeChange('2d')}
+            className={`${styles.switchButton} ${viewMode === '2d' ? styles.switchButtonActive : ''}`}
+            aria-pressed={viewMode === '2d'}
           >
-            <div className="h-[0.7rem] w-[0.7rem] rounded-full bg-[#000000]"></div>
-            <p className="text-[0.8rem] font-medium text-[#3B3B6D]">Black</p>
-          </div>
-
-          {/* WHITE OPTION */}
-          <div
-            onClick={() => handleColorChange('#FFFFFF')}
-            className={`flex h-full cursor-pointer items-center gap-[0.4rem] rounded-[1rem] px-[0.6rem] transition-all duration-200 ${wireframeColor === '#FFFFFF' ? 'bg-[#DCE6F2]' : 'hover:bg-[#DCE6F2]'}`}
+            <LuSquareDashed aria-hidden="true" />
+            2D
+          </button>
+          <button
+            type="button"
+            onClick={() => onViewModeChange('3d')}
+            className={`${styles.switchButton} ${viewMode === '3d' ? styles.switchButtonActive : ''}`}
+            aria-pressed={viewMode === '3d'}
           >
-            <div className="h-[0.7rem] w-[0.7rem] rounded-full border border-[#3B3B6D] bg-[#FFFFFF]"></div>
-            <p className="text-[0.8rem] font-medium text-[#3B3B6D]">White</p>
-          </div>
+            <LuBox aria-hidden="true" />
+            3D
+          </button>
         </div>
-      )}
-      {/* 1. Wireframe Mode Dropdown Pill */}
-      <div
-        className="relative flex h-[1.5rem] w-[7.5rem] items-center rounded-[1rem] bg-[#FFFFFF] p-[0.35rem]"
-        ref={dropdownRef}
-      >
+      </div>
+
+      <span className={styles.divider} aria-hidden="true" />
+
+      {/* Display: solid or solid with panel edges */}
+      <div className={styles.segment} ref={dropdownRef}>
+        <span className={styles.segmentLabel}>Display</span>
+        <button
+          type="button"
+          onClick={() => setShowModeDropdown(!showModeDropdown)}
+          className={`${styles.modeButton} ${showModeDropdown ? styles.modeButtonOpen : ''}`}
+          aria-expanded={showModeDropdown}
+        >
+          <LuLayers aria-hidden="true" />
+          <span>{isWireframeVisible ? 'Solid + Edge' : 'Solid'}</span>
+          <LuChevronUp aria-hidden="true" className={styles.modeChevron} />
+        </button>
         {showModeDropdown && (
-          <div className="absolute right-0 bottom-[2.2rem] left-0 z-[10001] overflow-hidden rounded-[0.4rem] border-none bg-[#FFFFFF]">
+          <div className={styles.modeMenu}>
             <button
+              type="button"
               onClick={() => handleWireframeToggle(false)}
-              className="flex h-[2rem] w-[7.5rem] items-center justify-center border-none bg-[#FFFFFF] bg-white text-[0.75rem] font-medium text-[#3B3B6D] transition-colors hover:bg-[#DCE6F2]"
+              className={`${styles.modeOption} ${!isWireframeVisible ? styles.modeOptionActive : ''}`}
             >
               Solid
             </button>
-            <div className="mx-2 h-[1px] bg-[#F1F5F9]" />
             <button
+              type="button"
               onClick={() => handleWireframeToggle(true)}
-              className="flex h-[2rem] w-[7.5rem] items-center justify-center border-none bg-[#ffffff] bg-white text-[0.75rem] font-medium text-[#3B3B6D] transition-colors hover:bg-[#DCE6F2]"
+              className={`${styles.modeOption} ${isWireframeVisible ? styles.modeOptionActive : ''}`}
             >
               Solid + Edge
             </button>
           </div>
         )}
-        <div
-          onClick={() => setShowModeDropdown(!showModeDropdown)}
-          className="flex h-full w-full cursor-pointer items-center justify-center gap-[0.4rem] rounded-[1rem] transition-all duration-200 hover:bg-[#D2DEED]"
-        >
-          <img src={assets.circle_footer_icon} alt="" className="h-[0.7rem] w-[0.8rem]" />
-
-          <p className="w-[4.8rem] text-center text-[0.75rem] font-medium tracking-wide whitespace-nowrap text-[#3B3B6D]">
-            {isWireframeVisible ? 'Solid + Edge' : 'Solid'}
-          </p>
-
-          <img
-            src={assets.dropdown}
-            alt=""
-            className={`h-[0.8rem] w-[0.8rem] transition-transform duration-200 ${showModeDropdown ? 'rotate-180' : ''}`}
-          />
-        </div>
       </div>
 
-      {/* 3. View Mode Toggle Pill */}
-      <div className="flex h-[1.5rem] items-center rounded-[1rem] bg-[#FFFFFF] p-[0.35rem]">
-        {/* 2D */}
-        <button
-          onClick={() => onViewModeChange('2d')}
-          className={`flex h-full items-center justify-center gap-[0.4rem] rounded-[1rem] border-none px-[0.4rem] transition-all duration-200 ${viewMode === '2d' ? 'bg-[#DCE6F2]' : 'bg-transparent hover:bg-[#DCE6F2]'}`}
-        >
-          <img
-            src={viewMode === '2d' ? assets.active_2d : assets.icon_2d}
-            alt="2d"
-            className="h-[0.8rem] w-auto"
-          />
-        </button>
-
-        {/* 3D */}
-        <button
-          onClick={() => onViewModeChange('3d')}
-          className={`flex h-full items-center justify-center gap-[0.4rem] rounded-[1rem] border-none px-[0.5rem] transition-all duration-200 ${viewMode === '3d' ? 'bg-[#DCE6F2]' : 'bg-transparent hover:bg-[#DCE6F2]'}`}
-        >
-          <img
-            src={viewMode === '3d' ? assets.active_3d : assets.icon_3d}
-            alt="3d"
-            className="h-[0.8rem] w-auto"
-          />
-        </button>
-      </div>
+      {/* Edge colour, only when edges are shown */}
+      {isWireframeVisible && (
+        <>
+          <span className={styles.divider} aria-hidden="true" />
+          <div className={styles.segment}>
+            <span className={styles.segmentLabel}>Edges</span>
+            <div className={styles.swatches}>
+              <button
+                type="button"
+                onClick={() => handleColorChange('#000000')}
+                className={`${styles.swatch} ${wireframeColor === '#000000' ? styles.swatchActive : ''}`}
+                title="Black edges"
+                aria-label="Black edges"
+                aria-pressed={wireframeColor === '#000000'}
+              >
+                <span className={styles.swatchDot} style={{ background: '#000000' }} />
+              </button>
+              <button
+                type="button"
+                onClick={() => handleColorChange('#FFFFFF')}
+                className={`${styles.swatch} ${wireframeColor === '#FFFFFF' ? styles.swatchActive : ''}`}
+                title="White edges"
+                aria-label="White edges"
+                aria-pressed={wireframeColor === '#FFFFFF'}
+              >
+                <span className={styles.swatchDot} style={{ background: '#FFFFFF' }} />
+              </button>
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 };

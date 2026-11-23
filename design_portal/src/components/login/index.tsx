@@ -1,6 +1,7 @@
+import AuthShowcase from '@/components/auth/AuthShowcase';
+import styles from '@/components/auth/auth.module.css';
 import InputField from '@/components/inputfields/InputField';
 import Loading_style from '@/components/loading.module.css';
-import styles from '@/components/login/login.module.css';
 import { API_ENDPOINT } from '@/services/ApiEndPoints';
 import CommonService from '@/services/CommonService';
 import { REDIRECT } from '@/services/CommonStatus';
@@ -9,6 +10,7 @@ import { LoginForm } from '@/types/formTypes';
 import Cookies from 'js-cookie';
 import { useRouter } from 'next/router';
 import { ChangeEvent, FormEvent, useState } from 'react';
+import { LuArrowRight, LuShieldCheck } from 'react-icons/lu';
 import { handleFormData } from '../utils/formDataHandler';
 
 const Login = () => {
@@ -84,9 +86,9 @@ const Login = () => {
 
   const fields = [
     {
-      label: 'Email *',
+      label: 'Email address *',
       type: 'email',
-      placeholder: 'Enter your email',
+      placeholder: 'you@company.com',
       onChange: (e: ChangeEvent<HTMLInputElement>) => setEmail(e.target.value),
       error: emailError,
     },
@@ -94,7 +96,7 @@ const Login = () => {
       label: 'Password *',
       icon: null,
       type: 'password',
-      placeholder: 'Enter your password',
+      placeholder: 'Your password',
       showPassword,
       onChange: (e: ChangeEvent<HTMLInputElement>) => setPassword(e.target.value),
       onClickShowPassword: handleClickShowPassword,
@@ -111,26 +113,24 @@ const Login = () => {
         </div>
       )}
 
-      <div className={styles.card}>
-        <div className={styles.left_side}>
-          <div className={styles.popup_logo}>
-            <img src={assets.popup_logo} alt="Popup Logo" />
-          </div>
-          <h1>
-            3D Models of <span>wooden sheet cutting</span>
-          </h1>
-          <p>Make your design and nesting with 3D to less wastage</p>
-          <div className={styles.login_logo}>
-            <img src={assets.loginimage} alt="loginpage image" />
-          </div>
-          <div className={styles.logo}>
-            <img src={assets.Logo} alt="Bravento Logo" />
-          </div>
-        </div>
+      {/* ── Showcase panel (decorative) ─────────────────────── */}
+      <AuthShowcase
+        title="Design it in 3D."
+        highlight="Build it with precision."
+        lead="Plan kitchens, wardrobes and full interiors in 3D, then send cut lists, optimised nesting and CNC-ready files straight to your workshop."
+      />
 
-        <div className={styles.right_side}>
-          <h2>Login</h2>
-          <p>Login to access your Bravento account</p>
+      {/* ── Sign-in form ────────────────────────────────────── */}
+      <section className={styles.formPanel}>
+        <div className={styles.formInner}>
+          <div className={styles.brandRow}>
+            <img src={assets.Logo} alt="Bravento" className={styles.brandLogo} />
+          </div>
+
+          <h2 className={styles.title}>Welcome back</h2>
+          <p className={styles.subtitle}>
+            Sign in to your workspace to continue designing and producing.
+          </p>
 
           <form className={styles.form} onSubmit={(e) => e.preventDefault()}>
             <div className={styles.inputGroup}>
@@ -167,7 +167,8 @@ const Login = () => {
             {/* 🔒 BUTTON WRAPPER UNCHANGED */}
             <div className={styles.buttonContainer}>
               <button className={styles.loginButton} onClick={handleLogin} disabled={isLoading}>
-                Login
+                <span>Sign in</span>
+                <LuArrowRight aria-hidden="true" />
               </button>
             </div>
 
@@ -175,14 +176,19 @@ const Login = () => {
             <div className={styles.linkContainer}>
               <div className={styles.registerLinkContainer}>
                 <p>
-                  Don&apos;t have an account?{' '}
-                  <span onClick={() => router.push(REDIRECT.REGISTER)}>Sign up</span>
+                  New to Bravento?{' '}
+                  <span onClick={() => router.push(REDIRECT.REGISTER)}>Create an account</span>
                 </p>
               </div>
             </div>
           </form>
+
+          <p className={styles.legal}>
+            <LuShieldCheck aria-hidden="true" />
+            Secure sign-in · © {new Date().getFullYear()} Bravento Technologies
+          </p>
         </div>
-      </div>
+      </section>
     </div>
   );
 };

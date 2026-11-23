@@ -945,8 +945,8 @@ export default function PanelDesigner() {
                   cornerTypes,
                   curveControls
                 )}
-                fill="rgba(57, 37, 121, 0.15)"
-                stroke="#392579"
+                fill="rgba(84, 83, 51, 0.14)"
+                stroke="#545333"
                 strokeWidth={1}
                 hitStrokeWidth={20}
                 fillRule="evenodd"
@@ -1004,7 +1004,7 @@ export default function PanelDesigner() {
                   <Line
                     key={`panel-edge-${i}`}
                     points={[p.x, p.y, nextP.x, nextP.y]}
-                    stroke={isHovered || isSelected ? '#12086f' : 'transparent'}
+                    stroke={isHovered || isSelected ? '#2B2A1A' : 'transparent'}
                     strokeWidth={3}
                     hitStrokeWidth={20}
                     listening={false}
@@ -1070,12 +1070,12 @@ export default function PanelDesigner() {
                   height={10}
                   fill={
                     selectedCornerIndex === i
-                      ? '#12086f'
+                      ? '#2B2A1A'
                       : hoveredCornerIndex === i
-                        ? '#12086f'
+                        ? '#2B2A1A'
                         : 'white'
                   }
-                  stroke="#12086f"
+                  stroke="#2B2A1A"
                   strokeWidth={1}
                   opacity={
                     selectedCornerIndex === i ||
@@ -1137,7 +1137,7 @@ export default function PanelDesigner() {
                   fill: hole.type === 'slotting' ? 'rgba(255, 165, 0, 0.3)' : 'rgba(0,0,0,0.2)',
                   stroke:
                     selectedHoleIndex === index || hoveredHoleIndex === index
-                      ? '#12086f'
+                      ? '#2B2A1A'
                       : hole.type === 'slotting'
                         ? '#e67e22'
                         : 'black',
@@ -1188,7 +1188,7 @@ export default function PanelDesigner() {
                             <Line
                               key={`h-${index}-edge-${pIdx}`}
                               points={[p.x, p.y, nextP.x, nextP.y]}
-                              stroke={isEdgeHovered || isEdgeSelected ? '#12086f' : 'transparent'}
+                              stroke={isEdgeHovered || isEdgeSelected ? '#2B2A1A' : 'transparent'}
                               strokeWidth={3}
                               hitStrokeWidth={20 / stageScale}
                               listening={false}
@@ -1236,8 +1236,8 @@ export default function PanelDesigner() {
                             y={p.y - 5}
                             width={10}
                             height={10}
-                            fill={hoveredHolePointIndex === pIdx ? '#12086f' : 'white'}
-                            stroke="#12086f"
+                            fill={hoveredHolePointIndex === pIdx ? '#2B2A1A' : 'white'}
+                            stroke="#2B2A1A"
                             strokeWidth={1}
                             opacity={0.8}
                             listening={false}
@@ -1333,7 +1333,7 @@ export default function PanelDesigner() {
                               <Line
                                 key={`h-${index}-edge-${pIdx}`}
                                 points={[p.x, p.y, nextP.x, nextP.y]}
-                                stroke={isEdgeHovered || isEdgeSelected ? '#12086f' : 'transparent'}
+                                stroke={isEdgeHovered || isEdgeSelected ? '#2B2A1A' : 'transparent'}
                                 strokeWidth={3}
                                 hitStrokeWidth={0}
                                 listening={false}
@@ -1401,12 +1401,12 @@ export default function PanelDesigner() {
                               height={10}
                               fill={
                                 selectedPointIndex === pIdx
-                                  ? '#12086f'
+                                  ? '#2B2A1A'
                                   : hoveredHolePointIndex === pIdx
-                                    ? '#12086f'
+                                    ? '#2B2A1A'
                                     : 'white'
                               }
-                              stroke="#12086f"
+                              stroke="#2B2A1A"
                               strokeWidth={1}
                               listening={false}
                             />
@@ -1496,7 +1496,7 @@ export default function PanelDesigner() {
                               <Line
                                 key={`h-${index}-edge-${pIdx}`}
                                 points={[p.x, p.y, nextP.x, nextP.y]}
-                                stroke={isEdgeHovered || isEdgeSelected ? '#12086f' : 'transparent'}
+                                stroke={isEdgeHovered || isEdgeSelected ? '#2B2A1A' : 'transparent'}
                                 strokeWidth={3}
                                 hitStrokeWidth={0}
                                 listening={false}
@@ -1543,12 +1543,12 @@ export default function PanelDesigner() {
                               height={10}
                               fill={
                                 selectedPointIndex === pIdx
-                                  ? '#12086f'
+                                  ? '#2B2A1A'
                                   : hoveredHolePointIndex === pIdx
-                                    ? '#12086f'
+                                    ? '#2B2A1A'
                                     : 'white'
                               }
-                              stroke="#12086f"
+                              stroke="#2B2A1A"
                               strokeWidth={1}
                               opacity={0.8}
                               listening={false}

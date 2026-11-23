@@ -2011,18 +2011,21 @@ const Sidebar: React.FC = () => {
         ref={sidebarRef}
         className={
           isSidebarOpen
-            ? `absolute top-[3.7rem] right-[0] bottom-[0] z-[10] mt-[0.3rem] flex h-[91vh] w-[15rem] flex-col overflow-hidden rounded-t-[0.6rem] bg-[var(--primary-white)]`
-            : `absolute top-[3.7rem] right-[0] bottom-[0] z-[10] mt-[0.3rem] block h-auto w-[15rem] overflow-y-auto rounded-t-[0.6rem] bg-transparent [&::-webkit-scrollbar]:w-[0.3rem] [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-[rgba(57,37,121,0)] hover:[&::-webkit-scrollbar-thumb]:bg-[rgba(57,37,121,0.25)] [&::-webkit-scrollbar-track]:bg-transparent`
+            ? `bv-inspector bv-inspector-open absolute top-[3.7rem] right-[0] bottom-[0] z-[10] mt-[0.3rem] flex h-[91vh] w-[15rem] flex-col overflow-hidden rounded-t-[0.6rem] bg-[var(--primary-white)]`
+            : `bv-inspector absolute top-[3.7rem] right-[0] bottom-[0] z-[10] mt-[0.3rem] block h-auto w-[15rem] overflow-y-auto rounded-t-[0.6rem] bg-transparent [&::-webkit-scrollbar]:w-[0.3rem] [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-[rgba(84,83,51,0)] hover:[&::-webkit-scrollbar-thumb]:bg-[rgba(84,83,51,0.25)] [&::-webkit-scrollbar-track]:bg-transparent`
         }
       >
         {/* ================= TITLE ================= */}
         <div
           onClick={toggleSidebar}
-          className={`fixed right-[0] z-[20] mt-[0.3rem] flex h-[1.8rem] w-[15rem] cursor-pointer items-center justify-around gap-[1rem] rounded-t-[0.6rem] bg-[var(--primary-color)] ${isSidebarOpen ? 'top-[3.7rem] right-[0]' : 'right-[0] bottom-[0]'} `}
+          className={`bv-inspector-title ${isSidebarOpen ? 'bv-inspector-title-open' : ''} fixed right-[0] z-[20] mt-[0.3rem] flex h-[1.8rem] w-[15rem] cursor-pointer items-center justify-around gap-[1rem] rounded-t-[0.6rem] bg-[var(--primary-color)] ${isSidebarOpen ? 'top-[3.7rem] right-[0]' : 'right-[0] bottom-[0]'} `}
         >
-          <p className="ml-[0rem] text-center text-[0.7rem] leading-[10px] font-[700] tracking-normal text-[var(--primary-white)]">
-            {getSidebarTitle()}
-          </p>
+          <span className="bv-inspector-heading">
+            <span className="bv-inspector-eyebrow">Inspector</span>
+            <p className="ml-[0rem] text-center text-[0.7rem] leading-[10px] font-[700] tracking-normal text-[var(--primary-white)]">
+              {getSidebarTitle()}
+            </p>
+          </span>
 
           <img
             src={assets.up_arrow}
@@ -2036,11 +2039,11 @@ const Sidebar: React.FC = () => {
         {isSidebarOpen && (
           <>
             {/* ================= SWITCH ================= */}
-            <div className="mt-[2.1rem] ml-[0.8rem] flex h-[1.5rem] shrink-0 gap-[0.5rem]">
+            <div className="bv-insp-switch mt-[2.1rem] ml-[0.8rem] flex h-[1.5rem] shrink-0 gap-[0.5rem]">
               {selectedObject?.type !== OBJECT_TYPES.MODEL && (
                 <button
                   onClick={handleSetting}
-                  className={`w-[4rem] border-[0rem] p-[0rem] font-[comfortaa] text-[0.7rem] active:bg-[var(--toolbarhover-color)] ${
+                  className={`bv-insp-tab ${isSettingOpen ? 'bv-insp-tab-active' : ''} w-[4rem] border-[0rem] p-[0rem] font-[comfortaa] text-[0.7rem] active:bg-[var(--toolbarhover-color)] ${
                     isSettingOpen
                       ? 'rounded-[0.1rem] bg-[var(--toolbarhover-color)] px-4 py-2 text-[var(--primary-color)]'
                       : 'bg-transparent text-[rgba(160,174,192,1)] hover:text-[var(--primary-color)]'
@@ -2052,7 +2055,7 @@ const Sidebar: React.FC = () => {
 
               <button
                 onClick={handleNavigation}
-                className={`w-[4.5rem] border-[0rem] p-[0rem] font-[poppins] text-[0.7rem] active:bg-[var(--toolbarhover-color)] ${
+                className={`bv-insp-tab ${isNavOpen ? 'bv-insp-tab-active' : ''} w-[4.5rem] border-[0rem] p-[0rem] font-[poppins] text-[0.7rem] active:bg-[var(--toolbarhover-color)] ${
                   isNavOpen
                     ? 'rounded-[0.1rem] bg-[var(--toolbarhover-color)] px-4 py-2 text-[var(--primary-color)]'
                     : 'bg-transparent text-[rgba(160,174,192,1)] hover:text-[var(--primary-color)]'
@@ -2064,10 +2067,10 @@ const Sidebar: React.FC = () => {
 
             <hr className="my-[0.2rem] shrink-0 opacity-20" />
 
-            <div className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto pb-[0.5rem] [&::-webkit-scrollbar]:w-[0.3rem] [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-[rgba(57,37,121,0)] hover:[&::-webkit-scrollbar-thumb]:bg-[rgba(57,37,121,0.25)] [&::-webkit-scrollbar-track]:bg-transparent">
+            <div className="bv-insp-body min-h-0 flex-1 overflow-x-hidden overflow-y-auto pb-[0.5rem] [&::-webkit-scrollbar]:w-[0.3rem] [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-[rgba(84,83,51,0)] hover:[&::-webkit-scrollbar-thumb]:bg-[rgba(84,83,51,0.25)] [&::-webkit-scrollbar-track]:bg-transparent">
               {/* ================= NAV IMAGE ================= */}
               {isNavOpen && (
-                <div className="mx-auto mt-4 w-[12rem]">
+                <div className="bv-insp-nav mx-auto mt-4 w-[12rem]">
                   {selectedObject?.type === OBJECT_TYPES.MODEL ? (
                     <div className="rounded-[0.4rem] border-[0.1rem] border-[var(--primary-color)] bg-[var(--primary-white)] p-[0.6rem] shadow-sm">
                       <p className="mb-[0.6rem] text-center text-[0.75rem] font-[700] text-[var(--primary-color)]">
@@ -2093,12 +2096,14 @@ const Sidebar: React.FC = () => {
 
               {/* ================= NO SELECTION ================= */}
               {isSettingOpen && !selectedObject && !isInvisibleBox && (
-                <p className="mt-8 text-center text-[0.8rem] text-[#392579]">No Item Selected</p>
+                <p className="mt-8 text-center text-[0.8rem] text-[var(--bv-text-muted)]">
+                  No Item Selected
+                </p>
               )}
 
               {/* ================= INVISIBLE BOX ================= */}
               {isSettingOpen && isInvisibleBox && (
-                <p className="mt-8 text-center text-[0.8rem] text-[#392579]">
+                <p className="mt-8 text-center text-[0.8rem] text-[var(--bv-text-muted)]">
                   Add parts to see properties
                 </p>
               )}
@@ -2107,19 +2112,19 @@ const Sidebar: React.FC = () => {
               {isSettingOpen && selectedObject && (
                 <>
                   {/* your existing code – NO CHANGES inside */}
-                  <div className="w-[15rem] bg-white p-3 shadow-sm">
+                  <div className="bv-insp-card w-[15rem] bg-white p-3 shadow-sm">
                     {/* ================= WALL PROPERTIES ================= */}
                     {isWallSelected && (
                       <>
                         {/* Wall – Layout (Dimensions) */}
-                        <div className="mb-[0rem] ml-[1rem] pb-[0rem]">
-                          <div className="mb-[0rem] flex items-center justify-between">
+                        <div className="bv-insp-section mb-[0rem] ml-[1rem] pb-[0rem]">
+                          <div className="bv-insp-head mb-[0rem] flex items-center justify-between">
                             <p className="text-[0.7rem] font-[700] text-[var(--primary-color)]">
                               Wall Layout
                             </p>
                             <button
                               onClick={() => toggleSection('layout')}
-                              className="mr-[0.75rem] flex h-[0.8rem] w-[0.8rem] flex-shrink-0 items-center justify-center border-0 bg-[var(--primary-white)] p-0"
+                              className="bv-insp-toggle mr-[0.75rem] flex h-[0.8rem] w-[0.8rem] flex-shrink-0 items-center justify-center border-0 bg-[var(--primary-white)] p-0"
                             >
                               <img
                                 src={collapsed.layout ? assets.plusIcon : assets.minusIcon}
@@ -2163,15 +2168,15 @@ const Sidebar: React.FC = () => {
                     {/* ================= Minifix & Grooving ================= */}
                     {!isWallSelected && (
                       <>
-                        <div className="mb-[0rem] ml-[1rem] pb-[0rem]">
+                        <div className="bv-insp-section mb-[0rem] ml-[1rem] pb-[0rem]">
                           {/* Header */}
-                          <div className="relative mb-[0rem] flex items-center justify-between">
+                          <div className="bv-insp-head relative mb-[0rem] flex items-center justify-between">
                             <p className="flex-1 text-[0.7rem] font-[600] text-[var(--primary-color)]">
                               Minifix & Grooving
                             </p>
                             <button
                               onClick={() => toggleSection('minifix')}
-                              className="absolute top-1/2 right-[0.75rem] flex h-[0.8rem] w-[0.8rem] -translate-y-1/2 items-center justify-center border-0 bg-[var(--primary-white)] p-0"
+                              className="bv-insp-toggle absolute top-1/2 right-[0.75rem] flex h-[0.8rem] w-[0.8rem] -translate-y-1/2 items-center justify-center border-0 bg-[var(--primary-white)] p-0"
                             >
                               <img
                                 src={collapsed.minifix ? assets.plusIcon : assets.minusIcon}
@@ -2352,14 +2357,14 @@ const Sidebar: React.FC = () => {
                         <hr className="mx-[0.2rem] my-[0.2rem] ml-[0rem] w-[15rem] pl-[0rem] opacity-20" />
 
                         {/* ================= Camlock Screw Hole ================= */}
-                        <div className="mt-[0] mb-[0.7rem] ml-[1rem] flex flex-col">
-                          <div className="relative flex items-center justify-between gap-[0.5rem]">
+                        <div className="bv-insp-section mt-[0] mb-[0.7rem] ml-[1rem] flex flex-col">
+                          <div className="bv-insp-head relative flex items-center justify-between gap-[0.5rem]">
                             <p className="mb-[0] flex flex-1 text-[0.7rem] font-[700] text-[var(--primary-color)]">
                               Camlock Screw Hole
                             </p>
                             <button
                               onClick={() => toggleSection('camlock')}
-                              className="absolute top-1/2 right-[0.75rem] flex h-[0.8rem] w-[0.8rem] -translate-y-1/2 items-center justify-center border-0 bg-[var(--primary-white)] p-0"
+                              className="bv-insp-toggle absolute top-1/2 right-[0.75rem] flex h-[0.8rem] w-[0.8rem] -translate-y-1/2 items-center justify-center border-0 bg-[var(--primary-white)] p-0"
                             >
                               <img
                                 src={collapsed.camlock ? assets.plusIcon : assets.minusIcon}
@@ -2461,14 +2466,14 @@ const Sidebar: React.FC = () => {
                   </div>
                   {!isQuickHideActive && isSettingOpen && isPlankSelected && !isWallSelected && (
                     <>
-                      <div className="mt-[0] mb-[0.7rem] ml-[1rem] flex flex-col gap-[0.5rem]">
-                        <div className="flex items-center justify-between gap-[0.5rem]">
+                      <div className="bv-insp-section mt-[0] mb-[0.7rem] ml-[1rem] flex flex-col gap-[0.5rem]">
+                        <div className="bv-insp-head flex items-center justify-between gap-[0.5rem]">
                           <p className="mb-[0] flex flex-1 text-[0.7rem] font-[700] text-[var(--primary-color)]">
                             Shelf
                           </p>
                           <button
                             onClick={() => toggleSection('shelf')}
-                            className="mr-[0.75rem] flex h-[0.8rem] w-[0.8rem] flex-shrink-0 items-center justify-center border-0 bg-[var(--primary-white)] p-0"
+                            className="bv-insp-toggle mr-[0.75rem] flex h-[0.8rem] w-[0.8rem] flex-shrink-0 items-center justify-center border-0 bg-[var(--primary-white)] p-0"
                           >
                             <img
                               src={collapsed.shelf ? assets.plusIcon : assets.minusIcon}
@@ -2507,14 +2512,14 @@ const Sidebar: React.FC = () => {
                   {/* Edge Banding Controls for Planks */}
                   {!isQuickHideActive && isSettingOpen && isPlankSelected && !isWallSelected && (
                     <>
-                      <div className="mt-[0] mb-[0.7rem] ml-[1rem] flex flex-col gap-[0.5rem]">
-                        <div className="flex items-center justify-between gap-[0.5rem]">
+                      <div className="bv-insp-section mt-[0] mb-[0.7rem] ml-[1rem] flex flex-col gap-[0.5rem]">
+                        <div className="bv-insp-head flex items-center justify-between gap-[0.5rem]">
                           <p className="mb-[0] flex flex-1 text-[0.7rem] font-[700] text-[var(--primary-color)]">
                             Edge Banding
                           </p>
                           <button
                             onClick={() => toggleSection('plankBanding')}
-                            className="mr-[0.75rem] flex h-[0.8rem] w-[0.8rem] flex-shrink-0 items-center justify-center border-0 bg-[var(--primary-white)] p-0"
+                            className="bv-insp-toggle mr-[0.75rem] flex h-[0.8rem] w-[0.8rem] flex-shrink-0 items-center justify-center border-0 bg-[var(--primary-white)] p-0"
                           >
                             <img
                               src={collapsed.plankBanding ? assets.plusIcon : assets.minusIcon}
@@ -2576,14 +2581,14 @@ const Sidebar: React.FC = () => {
                         {sideBarMenuConfig.map((menu) => (
                           <div key={menu.subMenu}>
                             {/* HEADER */}
-                            <div className="mb-[0rem] ml-[1rem] flex flex-col">
-                              <div className="relative mb-[0rem] flex items-center justify-between gap-[0.5rem]">
+                            <div className="bv-insp-section mb-[0rem] ml-[1rem] flex flex-col">
+                              <div className="bv-insp-head relative mb-[0rem] flex items-center justify-between gap-[0.5rem]">
                                 <p className="flex-1 text-[0.7rem] font-[700] text-[var(--primary-color)]">
                                   {menu.title}
                                 </p>
                                 <button
                                   onClick={() => toggleSection('layout')}
-                                  className="absolute top-1/2 right-[0.75rem] flex h-[0.8rem] w-[0.8rem] -translate-y-1/2 items-center justify-center border-0 bg-[var(--primary-white)] p-0"
+                                  className="bv-insp-toggle absolute top-1/2 right-[0.75rem] flex h-[0.8rem] w-[0.8rem] -translate-y-1/2 items-center justify-center border-0 bg-[var(--primary-white)] p-0"
                                 >
                                   <img
                                     src={collapsed.layout ? assets.plusIcon : assets.minusIcon}
@@ -2771,15 +2776,15 @@ const Sidebar: React.FC = () => {
                     )}
                   {!isQuickHideActive && isSettingOpen && isPlankSelected && !isWallSelected && (
                     <>
-                      <div className="mb-[0.7rem] ml-[1rem] flex flex-col gap-[0.5rem]">
-                        <div className="relative flex items-center justify-between gap-[0.5rem]">
+                      <div className="bv-insp-section mb-[0.7rem] ml-[1rem] flex flex-col gap-[0.5rem]">
+                        <div className="bv-insp-head relative flex items-center justify-between gap-[0.5rem]">
                           {/* Title */}
                           <p className="mt-[0rem] mb-[0rem] flex-1 text-[0.7rem] font-[700] text-[var(--primary-color)]">
                             Position Move
                           </p>
                           <button
                             onClick={() => toggleSection('positionMove')}
-                            className="absolute top-1/2 right-[0.75rem] flex h-[0.8rem] w-[0.8rem] -translate-y-1/2 items-center justify-center border-0 bg-[var(--primary-white)] p-0"
+                            className="bv-insp-toggle absolute top-1/2 right-[0.75rem] flex h-[0.8rem] w-[0.8rem] -translate-y-1/2 items-center justify-center border-0 bg-[var(--primary-white)] p-0"
                           >
                             <img
                               src={collapsed.positionMove ? assets.plusIcon : assets.minusIcon}
@@ -2813,15 +2818,15 @@ const Sidebar: React.FC = () => {
                   {/* ================= Main Object Position ================= */}
                   {!isQuickHideActive && isSettingOpen && isMainObject && !isWallSelected && (
                     <>
-                      <div className="mb-[0.7rem] ml-[1rem] flex flex-col gap-[0.5rem]">
-                        <div className="relative flex items-center justify-between gap-[0.5rem]">
+                      <div className="bv-insp-section mb-[0.7rem] ml-[1rem] flex flex-col gap-[0.5rem]">
+                        <div className="bv-insp-head relative flex items-center justify-between gap-[0.5rem]">
                           {/* Title */}
                           <p className="mt-[0rem] mb-[0rem] flex-1 text-[0.7rem] font-[700] text-[var(--primary-color)]">
                             Position
                           </p>
                           <button
                             onClick={() => toggleSection('mainPosition')}
-                            className="absolute top-1/2 right-[0.75rem] flex h-[0.8rem] w-[0.8rem] -translate-y-1/2 items-center justify-center border-0 bg-[var(--primary-white)] p-0"
+                            className="bv-insp-toggle absolute top-1/2 right-[0.75rem] flex h-[0.8rem] w-[0.8rem] -translate-y-1/2 items-center justify-center border-0 bg-[var(--primary-white)] p-0"
                           >
                             <img
                               src={collapsed.mainPosition ? assets.plusIcon : assets.minusIcon}
@@ -2892,14 +2897,14 @@ const Sidebar: React.FC = () => {
                   {/* ================= Top Plank ================= */}
                   {!isQuickHideActive && isSettingOpen && isFullCupboard && (
                     <>
-                      <div className="mt-[0] mb-[0.7rem] ml-[1rem] flex flex-col gap-[0.5rem]">
-                        <div className="relative flex items-center justify-between gap-[0.5rem]">
+                      <div className="bv-insp-section mt-[0] mb-[0.7rem] ml-[1rem] flex flex-col gap-[0.5rem]">
+                        <div className="bv-insp-head relative flex items-center justify-between gap-[0.5rem]">
                           <p className="mb-[0] flex flex-1 text-[0.7rem] font-[700] text-[var(--primary-color)]">
                             Top Plank
                           </p>
                           <button
                             onClick={() => toggleSection('topPlank')}
-                            className="absolute top-1/2 right-[0.75rem] flex h-[0.8rem] w-[0.8rem] -translate-y-1/2 items-center justify-center border-0 bg-[var(--primary-white)] p-0"
+                            className="bv-insp-toggle absolute top-1/2 right-[0.75rem] flex h-[0.8rem] w-[0.8rem] -translate-y-1/2 items-center justify-center border-0 bg-[var(--primary-white)] p-0"
                           >
                             <img
                               src={collapsed.topPlank ? assets.plusIcon : assets.minusIcon}
@@ -2950,14 +2955,14 @@ const Sidebar: React.FC = () => {
 
                       {/* ================= Base ================= */}
 
-                      <div className="mt-[0] mb-[0.7rem] ml-[1rem] flex flex-col gap-[0.5rem]">
-                        <div className="relative flex items-center justify-between gap-[0.5rem]">
+                      <div className="bv-insp-section mt-[0] mb-[0.7rem] ml-[1rem] flex flex-col gap-[0.5rem]">
+                        <div className="bv-insp-head relative flex items-center justify-between gap-[0.5rem]">
                           <p className="mb-[0] flex flex-1 text-[0.7rem] font-[700] text-[var(--primary-color)]">
                             Base
                           </p>
                           <button
                             onClick={() => toggleSection('base')}
-                            className="absolute top-1/2 right-[0.75rem] flex h-[0.8rem] w-[0.8rem] -translate-y-1/2 items-center justify-center border-0 bg-[var(--primary-white)] p-0"
+                            className="bv-insp-toggle absolute top-1/2 right-[0.75rem] flex h-[0.8rem] w-[0.8rem] -translate-y-1/2 items-center justify-center border-0 bg-[var(--primary-white)] p-0"
                           >
                             <img
                               src={collapsed.base ? assets.plusIcon : assets.minusIcon}
@@ -3073,14 +3078,14 @@ const Sidebar: React.FC = () => {
 
                   {!isQuickHideActive && isSettingOpen && isDoorSelected && (
                     <>
-                      <div className="mt-[0] mb-[0.7rem] ml-[1rem] flex flex-col gap-[0rem]">
-                        <div className="flex items-center justify-between gap-[0.5rem]">
+                      <div className="bv-insp-section mt-[0] mb-[0.7rem] ml-[1rem] flex flex-col gap-[0rem]">
+                        <div className="bv-insp-head flex items-center justify-between gap-[0.5rem]">
                           <p className="mb-[0] flex flex-1 text-[0.7rem] font-[700] text-[var(--primary-color)]">
                             Door
                           </p>
                           <button
                             onClick={() => toggleSection('shelf')}
-                            className="mr-[0.75rem] flex h-[0.8rem] w-[0.8rem] flex-shrink-0 items-center justify-center border-0 bg-[var(--primary-white)] p-0"
+                            className="bv-insp-toggle mr-[0.75rem] flex h-[0.8rem] w-[0.8rem] flex-shrink-0 items-center justify-center border-0 bg-[var(--primary-white)] p-0"
                           >
                             <img
                               src={collapsed.shelf ? assets.plusIcon : assets.minusIcon}
@@ -3134,14 +3139,14 @@ const Sidebar: React.FC = () => {
 
                   {!isQuickHideActive && isSettingOpen && isDoorSelected && (
                     <>
-                      <div className="mt-[0] mb-[0.7rem] ml-[1rem] flex flex-col gap-[0rem]">
-                        <div className="flex items-center justify-between gap-[0.5rem]">
+                      <div className="bv-insp-section mt-[0] mb-[0.7rem] ml-[1rem] flex flex-col gap-[0rem]">
+                        <div className="bv-insp-head flex items-center justify-between gap-[0.5rem]">
                           <p className="mb-[0] flex flex-1 text-[0.7rem] font-[700] text-[var(--primary-color)]">
                             Door
                           </p>
                           <button
                             onClick={() => toggleSection('layout')}
-                            className="mr-[0.75rem] flex h-[0.8rem] w-[0.8rem] flex-shrink-0 items-center justify-center border-0 bg-[var(--primary-white)] p-0"
+                            className="bv-insp-toggle mr-[0.75rem] flex h-[0.8rem] w-[0.8rem] flex-shrink-0 items-center justify-center border-0 bg-[var(--primary-white)] p-0"
                           >
                             <img
                               src={collapsed.layout ? assets.plusIcon : assets.minusIcon}
@@ -3197,14 +3202,14 @@ const Sidebar: React.FC = () => {
 
                   {!isQuickHideActive && isSettingOpen && isDrawerSelected && (
                     <>
-                      <div className="mt-[0] mb-[0.7rem] ml-[1rem] flex flex-col gap-[0rem]">
-                        <div className="flex items-center justify-between gap-[0.5rem]">
+                      <div className="bv-insp-section mt-[0] mb-[0.7rem] ml-[1rem] flex flex-col gap-[0rem]">
+                        <div className="bv-insp-head flex items-center justify-between gap-[0.5rem]">
                           <p className="mb-[0] flex flex-1 text-[0.7rem] font-[700] text-[var(--primary-color)]">
                             Drawer
                           </p>
                           <button
                             onClick={() => toggleSection('shelf')}
-                            className="mr-[0.75rem] flex h-[0.8rem] w-[0.8rem] flex-shrink-0 items-center justify-center border-0 bg-[var(--primary-white)] p-0"
+                            className="bv-insp-toggle mr-[0.75rem] flex h-[0.8rem] w-[0.8rem] flex-shrink-0 items-center justify-center border-0 bg-[var(--primary-white)] p-0"
                           >
                             <img
                               src={collapsed.shelf ? assets.plusIcon : assets.minusIcon}
@@ -3259,13 +3264,13 @@ const Sidebar: React.FC = () => {
                   )}
 
                   {/* ================= MATERIAL ================= */}
-                  <div className="relative flex items-center justify-between gap-[0.5rem]">
+                  <div className="bv-insp-head relative flex items-center justify-between gap-[0.5rem]">
                     <p className="mb-2 ml-[1rem] flex-1 text-[0.7rem] font-[700] text-[var(--primary-color)]">
                       Material
                     </p>
                     <button
                       onClick={() => toggleSection('material')}
-                      className="absolute top-1/2 right-[0.75rem] flex h-[0.8rem] w-[0.8rem] -translate-y-1/2 items-center justify-center border-0 bg-[var(--primary-white)] p-0"
+                      className="bv-insp-toggle absolute top-1/2 right-[0.75rem] flex h-[0.8rem] w-[0.8rem] -translate-y-1/2 items-center justify-center border-0 bg-[var(--primary-white)] p-0"
                     >
                       <img
                         src={collapsed.material ? assets.plusIcon : assets.minusIcon}
@@ -3367,7 +3372,7 @@ const Sidebar: React.FC = () => {
                             </button>
 
                             {/* Texture Grain Input */}
-                            <div className="relative flex h-[1.2rem] w-[4.5rem] flex-1 appearance-none items-center rounded-[0.1rem] border-[0.1rem] border-[rgba(120,110,170,0.5)] bg-[white] p-[0rem]">
+                            <div className="relative flex h-[1.2rem] w-[4.5rem] flex-1 appearance-none items-center rounded-[0.1rem] border-[0.1rem] border-[rgba(84,83,51,0.3)] bg-[white] p-[0rem]">
                               <select
                                 value={textureGrain}
                                 onChange={(e) =>
@@ -3388,18 +3393,18 @@ const Sidebar: React.FC = () => {
 
                         {/* Texture List */}
                         {isTextureListOpen && (
-                          <div className="fixed top-[3.7rem] right-[15rem] z-[100] flex h-[85.1vh] w-[11.5rem] flex-col rounded-[0.6rem] border border-[var(--border-color)] bg-[var(--primary-white)] shadow-[-4px_0_10px_rgba(0,0,0,0.05)]">
+                          <div className="bv-texture-panel fixed top-[3.7rem] right-[15rem] z-[100] flex h-[85.1vh] w-[11.5rem] flex-col rounded-[0.6rem] border border-[var(--border-color)] bg-[var(--primary-white)] shadow-[-4px_0_10px_rgba(0,0,0,0.05)]">
                             {/* Search Field */}
-                            <div className="border-b border-[rgba(57,37,121,0.1)] p-[0.6rem]">
+                            <div className="bv-texture-search border-b border-[rgba(84,83,51,0.1)] p-[0.6rem]">
                               <input
                                 type="text"
                                 placeholder="Search textures..."
                                 value={textureSearchQuery}
                                 onChange={(e) => setTextureSearchQuery(e.target.value)}
-                                className="w-[9.2rem] rounded-full border border-[rgba(57,37,121,0.2)] px-[0.5rem] py-[0.4rem] font-[comfortaa] text-[0.65rem] font-[500] text-[var(--primary-color)] placeholder:text-[rgba(57,37,121,0.4)] focus:border-[var(--primary-color)] focus:outline-none"
+                                className="w-[9.2rem] rounded-full border border-[rgba(84,83,51,0.2)] px-[0.5rem] py-[0.4rem] font-[comfortaa] text-[0.65rem] font-[500] text-[var(--primary-color)] placeholder:text-[rgba(84,83,51,0.4)] focus:border-[var(--primary-color)] focus:outline-none"
                               />
                               {textureSearchQuery && (
-                                <div className="mt-[0.3rem] text-[0.55rem] font-[500] text-[rgba(57,37,121,0.6)]">
+                                <div className="mt-[0.3rem] text-[0.55rem] font-[500] text-[rgba(84,83,51,0.6)]">
                                   {filteredTextures.length} result
                                   {filteredTextures.length !== 1 ? 's' : ''}
                                 </div>
@@ -3407,13 +3412,13 @@ const Sidebar: React.FC = () => {
                             </div>
                             {/* Scrollable grid area */}
                             <div
-                              className={`flex-1 ${visibleCount > LOAD_MORE_INCREMENT ? 'overflow-y-auto' : 'overflow-y-auto'} p-[0.6rem] [&::-webkit-scrollbar]:w-[0.3rem] [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-[rgba(57,37,121,0.1)] hover:[&::-webkit-scrollbar-thumb]:bg-[rgba(57,37,121,0.25)] [&::-webkit-scrollbar-track]:bg-transparent`}
+                              className={`flex-1 ${visibleCount > LOAD_MORE_INCREMENT ? 'overflow-y-auto' : 'overflow-y-auto'} p-[0.6rem] [&::-webkit-scrollbar]:w-[0.3rem] [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-[rgba(84,83,51,0.1)] hover:[&::-webkit-scrollbar-thumb]:bg-[rgba(84,83,51,0.25)] [&::-webkit-scrollbar-track]:bg-transparent`}
                             >
                               <div className="grid grid-cols-3 gap-[0.2rem] p-[0rem]">
                                 {/* Add New Texture Button */}
                                 <div
                                   onClick={() => setIsAddTexturePopupOpen(true)}
-                                  className="flex aspect-square w-full cursor-pointer flex-col items-center justify-center gap-[0rem] bg-[var(--primary-color)] transition-transform active:scale-[0.95]"
+                                  className="bv-texture-add flex aspect-square w-full cursor-pointer flex-col items-center justify-center gap-[0rem] bg-[var(--primary-color)] transition-transform active:scale-[0.95]"
                                 >
                                   <button className="pointer-events-none flex cursor-pointer flex-col items-center justify-center gap-[0.1rem] border-[0rem] bg-transparent p-[0rem]">
                                     <div className="flex h-[1rem] w-[1rem] items-center justify-center rounded border-[0rem]">
@@ -3432,10 +3437,10 @@ const Sidebar: React.FC = () => {
 
                                 {filteredTextures.length === 0 && !isFetchingTextures ? (
                                   <div className="col-span-3 flex flex-col items-center justify-center py-[2rem] text-center">
-                                    <span className="text-[0.7rem] font-[500] text-[rgba(57,37,121,0.6)]">
+                                    <span className="text-[0.7rem] font-[500] text-[rgba(84,83,51,0.6)]">
                                       No textures found
                                     </span>
-                                    <span className="mt-[0.3rem] text-[0.6rem] font-[400] text-[rgba(57,37,121,0.4)]">
+                                    <span className="mt-[0.3rem] text-[0.6rem] font-[400] text-[rgba(84,83,51,0.4)]">
                                       Try a different search term
                                     </span>
                                   </div>
@@ -3443,7 +3448,7 @@ const Sidebar: React.FC = () => {
                                   filteredTextures.map((m, idx) => (
                                     <div
                                       key={`${m.option}-${idx}`}
-                                      className="group relative flex aspect-square w-full cursor-pointer items-center justify-center overflow-hidden text-center active:scale-[0.95]"
+                                      className="bv-texture-tile group relative flex aspect-square w-full cursor-pointer items-center justify-center overflow-hidden text-center active:scale-[0.95]"
                                       onClick={() => handleTextureSelect(m)}
                                     >
                                       <img

@@ -21,18 +21,21 @@ export const SaveToLibraryPopup: React.FC<SaveToLibraryPopupProps> = ({
   return (
     <div className={styles.createpopupOverlay}>
       <div className={styles.createpopup}>
-        <img src={assets.save || '/placeholder.svg'} className={styles.createicon} alt="save" />
-
-        <img
-          src={assets.close || '/placeholder.svg'}
-          className={styles.createclose}
-          alt="close"
-          onClick={onClose}
-        />
+        <div className={styles.popupHead}>
+          <span className={styles.createicon}>
+            <img src={assets.save || '/placeholder.svg'} alt="" />
+          </span>
+          <div className={styles.popupHeadText}>
+            <span className={styles.popupEyebrow}>Catalogue</span>
+            <h2>Save to Library</h2>
+            <p>Reuse this piece in other designs.</p>
+          </div>
+          <button type="button" className={styles.createclose} onClick={onClose} aria-label="Close">
+            <img src={assets.close || '/placeholder.svg'} alt="" />
+          </button>
+        </div>
 
         <div className={styles.create_right_side}>
-          <h2>Save to Library</h2>
-
           <form
             className={styles.form}
             onSubmit={(e) => {

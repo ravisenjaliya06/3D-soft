@@ -4,10 +4,26 @@ import Header from '@/components/header/header';
 import Sidebar from '@/components/sidebar/sidebar';
 import { API_ENDPOINT } from '@/services/ApiEndPoints';
 import CommonService from '@/services/CommonService';
+import { REDIRECT } from '@/services/CommonStatus';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { useRouter } from 'next/router';
 import { useEffect, useRef, useState } from 'react';
+import {
+  LuArrowLeft,
+  LuArrowRight,
+  LuChevronDown,
+  LuChevronsDown,
+  LuClipboardList,
+  LuDownload,
+  LuFileCode2,
+  LuFileSpreadsheet,
+  LuFileText,
+  LuLayers,
+  LuLayoutGrid,
+  LuPackageOpen,
+  LuReceiptText,
+} from 'react-icons/lu';
 import { useSelector } from 'react-redux';
 import * as XLSX from 'xlsx-js-style';
 import styles from '../mes/nesting.module.css';
@@ -1913,13 +1929,37 @@ const Nesting = () => {
       <Sidebar />
 
       <div className={styles.rightside}>
-        <Header isBorderRadius={true} dashboardName="MES" />
+        <Header isBorderRadius={true} dashboardName="Production" />
 
         <div className={styles.maincontent}>
           <div className={styles.designs}>
             <div className={styles.mesdesigncontent}>
+              {/* Hero + exports */}
               <div className={styles.headerRow}>
-                <h2>Design Data</h2>
+                <div className={styles.headerText}>
+                  <button
+                    type="button"
+                    className={styles.backLink}
+                    onClick={() => router.push(REDIRECT.MES)}
+                  >
+                    <LuArrowLeft aria-hidden="true" />
+                    Production floor
+                  </button>
+                  <h2>
+                    Cut list <span>&amp; exports</span>
+                  </h2>
+                  <p>
+                    Every panel in this design, ready for the saw. Export a quotation, bill of
+                    materials or CNC files, or open the sheet layout.
+                  </p>
+                  <div className={styles.headerChips}>
+                    <span className={styles.headerChip}>
+                      <LuLayers aria-hidden="true" />
+                      {isLoadingTable ? '–' : displayData.length}{' '}
+                      {displayData.length === 1 ? 'part' : 'parts'}
+                    </span>
+                  </div>
+                </div>
 
                 <div className={styles.toolbarmenu}>
                   <div className={styles.exportDropdown}>
@@ -1928,10 +1968,19 @@ const Nesting = () => {
                         setOpenDropdown((prev) => (prev === 'quotation' ? null : 'quotation'))
                       }
                       disabled={isGeneratingQuote || displayData.length === 0}
-                      className={styles.viewDetailsButton}
-                      style={{ marginRight: '1rem', backgroundColor: '#392579', color: 'white' }}
+                      className={styles.exportButton}
                     >
-                      Quotation ▾
+                      <span className={styles.exportIcon}>
+                        <LuReceiptText aria-hidden="true" />
+                      </span>
+                      <span className={styles.exportText}>
+                        <strong>Quotation</strong>
+                        <small>Price for the client</small>
+                      </span>
+                      <LuChevronDown
+                        className={`${styles.exportChevron} ${openDropdown === 'quotation' ? styles.exportChevronOpen : ''}`}
+                        aria-hidden="true"
+                      />
                     </button>
                     {openDropdown === 'quotation' && (
                       <div className={styles.dropdownMenu}>
@@ -1942,6 +1991,7 @@ const Nesting = () => {
                             handleGenerateQuotation('excel');
                           }}
                         >
+                          <LuFileSpreadsheet aria-hidden="true" />
                           Excel
                         </button>
                         <button
@@ -1951,6 +2001,7 @@ const Nesting = () => {
                             handleGenerateQuotation('pdf');
                           }}
                         >
+                          <LuFileText aria-hidden="true" />
                           PDF
                         </button>
                       </div>
@@ -1960,10 +2011,19 @@ const Nesting = () => {
                     <button
                       onClick={() => setOpenDropdown((prev) => (prev === 'bom' ? null : 'bom'))}
                       disabled={isGeneratingBOM || displayData.length === 0}
-                      className={styles.viewDetailsButton}
-                      style={{ marginRight: '1rem', backgroundColor: '#392579', color: 'white' }}
+                      className={styles.exportButton}
                     >
-                      BOM Data ▾
+                      <span className={styles.exportIcon}>
+                        <LuClipboardList aria-hidden="true" />
+                      </span>
+                      <span className={styles.exportText}>
+                        <strong>BOM data</strong>
+                        <small>Panels, edging, hardware</small>
+                      </span>
+                      <LuChevronDown
+                        className={`${styles.exportChevron} ${openDropdown === 'bom' ? styles.exportChevronOpen : ''}`}
+                        aria-hidden="true"
+                      />
                     </button>
                     {openDropdown === 'bom' && (
                       <div className={styles.dropdownMenu}>
@@ -1974,6 +2034,7 @@ const Nesting = () => {
                             handleGenerateBOM('excel');
                           }}
                         >
+                          <LuFileSpreadsheet aria-hidden="true" />
                           Excel
                         </button>
                         <button
@@ -1983,6 +2044,7 @@ const Nesting = () => {
                             handleGenerateBOM('pdf');
                           }}
                         >
+                          <LuFileText aria-hidden="true" />
                           PDF
                         </button>
                       </div>
@@ -2020,10 +2082,16 @@ const Nesting = () => {
                       }
                     }}
                     disabled={isDownloadingXML || displayData.length === 0}
-                    className={styles.viewDetailsButton}
-                    style={{ marginRight: '1rem', backgroundColor: '#392579', color: 'white' }}
+                    className={styles.exportButton}
                   >
-                    XMLs
+                    <span className={styles.exportIcon}>
+                      <LuFileCode2 aria-hidden="true" />
+                    </span>
+                    <span className={styles.exportText}>
+                      <strong>CNC XMLs</strong>
+                      <small>Zip for the machine</small>
+                    </span>
+                    <LuDownload className={styles.exportChevron} aria-hidden="true" />
                   </button>
                   {/* ✅ View Details Button */}
                   <button
@@ -2042,67 +2110,96 @@ const Nesting = () => {
                     className={styles.viewDetailsButton}
                     disabled={displayData.length === 0}
                   >
-                    View Details
+                    <LuLayoutGrid aria-hidden="true" />
+                    View sheet layout
+                    <LuArrowRight aria-hidden="true" />
                   </button>
                 </div>
               </div>
 
               {/* ✅ Table */}
-              <div className={styles.tablecontainer}>
-                <table>
-                  <thead>
-                    <tr>
-                      <th>ID</th>
-                      <th>Name</th>
-                      <th>Width</th>
-                      <th>Height</th>
-                      <th>Depth</th>
-                    </tr>
-                  </thead>
+              <div className={styles.tableCard}>
+                <div className={styles.tableCardHead}>
+                  <h3>Panels</h3>
+                  {!isLoadingTable && displayData.length > 0 && (
+                    <span className={styles.countPill}>
+                      Showing {Math.min(visibleDesigns, displayData.length)} of {displayData.length}
+                    </span>
+                  )}
+                </div>
+                <div className={styles.tablecontainer}>
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>ID</th>
+                        <th>Name</th>
+                        <th>Width</th>
+                        <th>Height</th>
+                        <th>Depth</th>
+                      </tr>
+                    </thead>
 
-                  <tbody>
-                    {isLoadingTable ? (
-                      <tr>
-                        <td colSpan={5} style={{ textAlign: 'center', padding: '2rem' }}>
-                          Loading cupboard details from backend...
-                        </td>
-                      </tr>
-                    ) : displayData.length === 0 ? (
-                      <tr>
-                        <td colSpan={5} style={{ textAlign: 'center', padding: '2rem' }}>
-                          No data available for nesting please create design first.
-                        </td>
-                      </tr>
-                    ) : (
-                      displayData.slice(0, visibleDesigns).map((item: any, index: number) => (
-                        <tr key={item.id || index}>
-                          <td>
-                            {item['Unique ID'] || item.unique_id || item.ID || item.id || index + 1}
-                          </td>
-                          <td>{item.name || item.Name || 'Unknown'}</td>
-                          <td>
-                            {formatDimension(item?.dimensions?.width ?? item?.width, item?.type)}
-                          </td>
-                          <td>
-                            {formatDimension(item?.dimensions?.height ?? item?.height, item?.type)}
-                          </td>
-                          <td>
-                            {formatDimension(item?.dimensions?.depth ?? item?.depth, item?.type)}
+                    <tbody>
+                      {isLoadingTable ? (
+                        <tr>
+                          <td colSpan={5} className={styles.stateCell}>
+                            <span className={styles.spinner} aria-hidden="true" />
+                            Loading cabinet parts…
                           </td>
                         </tr>
-                      ))
-                    )}
-                  </tbody>
-                </table>
+                      ) : displayData.length === 0 ? (
+                        <tr>
+                          <td colSpan={5} className={styles.stateCell}>
+                            <span className={styles.emptyIcon}>
+                              <LuPackageOpen aria-hidden="true" />
+                            </span>
+                            <strong>No panels to nest yet</strong>
+                            <span className={styles.stateHint}>
+                              Add cabinets to this design first, then come back here.
+                            </span>
+                          </td>
+                        </tr>
+                      ) : (
+                        displayData.slice(0, visibleDesigns).map((item: any, index: number) => (
+                          <tr key={item.id || index}>
+                            <td className={styles.idCell}>
+                              {item['Unique ID'] ||
+                                item.unique_id ||
+                                item.ID ||
+                                item.id ||
+                                index + 1}
+                            </td>
+                            <td className={styles.nameCell}>
+                              {item.name || item.Name || 'Unknown'}
+                            </td>
+                            <td className={styles.dimCell}>
+                              {formatDimension(item?.dimensions?.width ?? item?.width, item?.type)}
+                            </td>
+                            <td className={styles.dimCell}>
+                              {formatDimension(
+                                item?.dimensions?.height ?? item?.height,
+                                item?.type
+                              )}
+                            </td>
+                            <td className={styles.dimCell}>
+                              {formatDimension(item?.dimensions?.depth ?? item?.depth, item?.type)}
+                            </td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
 
-                {/* ✅ Load More */}
-                {!isLoadingTable && visibleDesigns < displayData.length && (
-                  <div className={styles.designsLoadMore}>
-                    <div className={styles.loadmore} onClick={handleLoadMore}>
-                      <p>Load More</p>
+                  {/* ✅ Load More */}
+                  {!isLoadingTable && visibleDesigns < displayData.length && (
+                    <div className={styles.designsLoadMore}>
+                      <div className={styles.loadmore} onClick={handleLoadMore}>
+                        <LuChevronsDown aria-hidden="true" />
+                        <p>Load more</p>
+                      </div>
                     </div>
-                  </div>
-                )}
+                  )}
+                </div>
               </div>
               {/* ✅ End Table */}
             </div>

@@ -65,7 +65,10 @@ export const PanelHeader: React.FC<PanelHeaderProps> = ({
   return (
     <>
       <div className={styles.header}>
-        <div className={styles.headerLeft}>Panel Designer</div>
+        <div className={styles.headerLeft}>
+          <span className={styles.headerEyebrow}>Workshop</span>
+          Panel Designer
+        </div>
         <div className={styles.headerCenter}>
           {tools.map(({ name, icon }) => (
             <div

@@ -3,10 +3,6 @@
 const MaintenanceFullPage = () => {
   return (
     <div className="maintenance-wrapper">
-      <link
-        href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600&display=swap"
-        rel="stylesheet"
-      />
       <div className="glow"></div>
       <div className="container">
         <div className="logo">BRAVENTO</div>
@@ -25,10 +21,10 @@ const MaintenanceFullPage = () => {
             <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"></path>
           </svg>
         </div>
-        <h1>System Update in Progress</h1>
+        <h1>Workshop upgrade in progress</h1>
         <p>
-          We're currently updating our servers to bring you new features. We'll be back online in
-          just a few minutes.
+          We&apos;re fitting new features into Bravento. Your designs and cut lists are safe, and
+          we&apos;ll be back in a few minutes.
         </p>
         <div className="progress-bar">
           <div></div>
@@ -37,17 +33,21 @@ const MaintenanceFullPage = () => {
 
       <style jsx>{`
         .maintenance-wrapper {
-          --bg: #0a0a0a;
-          --primary: #6366f1;
-          --secondary: #a855f7;
-          --text: #ffffff;
-          --text-dim: #94a3b8;
+          --bg: var(--bv-ink-2);
+          --primary: var(--bv-accent);
+          --secondary: var(--bv-accent-light);
+          --text: var(--bv-on-ink);
+          --text-dim: var(--bv-on-ink-muted);
 
           position: fixed;
           inset: 0;
           z-index: 9999;
-          font-family: 'Outfit', sans-serif;
+          font-family: var(--bv-font);
           background-color: var(--bg);
+          background-image:
+            linear-gradient(var(--bv-glass) 1px, transparent 1px),
+            linear-gradient(90deg, var(--bv-glass) 1px, transparent 1px);
+          background-size: 28px 28px;
           color: var(--text);
           display: flex;
           align-items: center;
@@ -70,14 +70,14 @@ const MaintenanceFullPage = () => {
           -webkit-background-clip: text;
           background-clip: text;
           -webkit-text-fill-color: transparent;
-          letter-spacing: -1px;
+          letter-spacing: 0.08em;
         }
 
         .status-icon {
           width: 80px;
           height: 80px;
           margin: 0 auto 2rem;
-          border: 3px solid rgba(255, 255, 255, 0.1);
+          border: 3px solid var(--bv-glass-border);
           border-radius: 50%;
           display: flex;
           align-items: center;
@@ -113,7 +113,7 @@ const MaintenanceFullPage = () => {
         .progress-bar {
           width: 200px;
           height: 4px;
-          background: rgba(255, 255, 255, 0.1);
+          background: var(--bv-glass-border);
           margin: 0 auto;
           border-radius: 2px;
           overflow: hidden;
@@ -151,7 +151,7 @@ const MaintenanceFullPage = () => {
           position: absolute;
           width: 400px;
           height: 400px;
-          background: radial-gradient(circle, rgba(99, 102, 241, 0.15) 0%, rgba(0, 0, 0, 0) 70%);
+          background: radial-gradient(circle, var(--bv-accent-glow) 0%, transparent 70%);
           top: 50%;
           left: 50%;
           transform: translate(-50%, -50%);

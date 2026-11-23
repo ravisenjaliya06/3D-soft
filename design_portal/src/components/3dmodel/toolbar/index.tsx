@@ -15,6 +15,7 @@ import { assets } from '@/svgPaths';
 import { OrbitControls, Stage, useGLTF } from '@react-three/drei';
 import { Canvas } from '@react-three/fiber';
 import React, { Suspense, useEffect, useRef, useState } from 'react';
+import { LuPackagePlus } from 'react-icons/lu';
 import { useSelector } from 'react-redux';
 import { toast } from 'react-toastify';
 import * as THREE from 'three';
@@ -1138,6 +1139,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
                 className={activeOption === option ? styles.icon_active : styles.icon}
               >
                 <img src={icon} alt={`${option} Icon`} />
+                <span>{name}</span>
               </div>
             ))}
           </div>
@@ -1155,7 +1157,14 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
                   {!options.some((item) => item.option === activeOption) && (
                     <img src={assets.back} onClick={handleback} alt="Back" />
                   )}
-                  <p>{activeOptionName}</p>
+                  <div className={styles.drawerTitle}>
+                    <span className={styles.drawerEyebrow}>
+                      {options.some((item) => item.option === activeOption)
+                        ? 'Workbench'
+                        : 'Add to room'}
+                    </span>
+                    <p>{activeOptionName}</p>
+                  </div>
                 </div>
               )}
               <img
@@ -1283,7 +1292,15 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
           >
             <div className={styles.submenuHeader}>
               <div className={styles.submenuHeaderTitle}>
-                <h3 className={styles.headerTitle}>{selectedFurnitureCategory}</h3>
+                <div className={styles.drawerTitle}>
+                  <span className={styles.drawerEyebrow}>Catalogue</span>
+                  <h3 className={styles.headerTitle}>
+                    {selectedFurnitureCategory}
+                    <span className={styles.submenuCount}>
+                      {getFilteredCabinetItems(selectedFurnitureCategory).length}
+                    </span>
+                  </h3>
+                </div>
                 <img
                   src={assets.close}
                   alt="close"
@@ -1340,6 +1357,9 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
                   }}
                   title={item.description || item.name}
                 >
+                  <span className={styles.submenuPlace} aria-hidden="true">
+                    + Add
+                  </span>
                   <img
                     src={
                       item.image
@@ -1399,48 +1419,56 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
                 : styles.createpopup
             }
           >
-            <img
-              src={assets.createicon || '/placeholder.svg'}
-              className={styles.createicon}
-              alt="createicon"
-            />
-            <h2>Add {formatEnumLabel(selectedCabinetItem.name)}</h2>
-            <img
-              src={assets.close || '/placeholder.svg'}
-              className={styles.createclose}
-              alt="close"
-              onClick={closePopup}
-            />
+            <div className={styles.addHead}>
+              <span className={styles.createicon}>
+                <LuPackagePlus aria-hidden="true" />
+              </span>
+              <div className={styles.addHeadText}>
+                <span className={styles.addEyebrow}>Add to room</span>
+                <h2>Add {formatEnumLabel(selectedCabinetItem.name)}</h2>
+              </div>
+              <button
+                type="button"
+                className={styles.createclose}
+                onClick={closePopup}
+                aria-label="Close"
+              >
+                <img src={assets.close || '/placeholder.svg'} alt="" />
+              </button>
+            </div>
             {selectedCabinetItem.type === PART_TYPES.L_SHAPE_OBJECT ||
             selectedCabinetItem.type === PART_TYPES.U_SHAPE_OBJECT ? (
               <div className={styles.arrowContainer}>
-                <div className={styles.arrowButtonsContainer}>
+                <p className={styles.arrowHint}>Which side should it extend to?</p>
+                <div className={styles.compass}>
                   <button
-                    className={styles.arrowButtons}
+                    className={`${styles.arrowButtons} ${styles.compassUp}`}
                     onClick={() => handleSideObjectAdd(DIRECTION_TYPES.TOP)}
                   >
                     <img src={assets.uparrow} alt="uparrow" />
                     Up
                   </button>
-                  <button className={styles.disableArrowButton} disabled={true}>
-                    <img src={assets.downarrow} alt="downarrow" />
-                    Down
-                  </button>
-                </div>
-                <div className={styles.arrowButtonsContainer}>
                   <button
-                    className={styles.arrowButtons}
+                    className={`${styles.arrowButtons} ${styles.compassLeft}`}
                     onClick={() => handleSideObjectAdd(DIRECTION_TYPES.LEFT)}
                   >
                     <img src={assets.leftarrow} alt="leftarrow" />
                     Left
                   </button>
+                  <span className={styles.compassCenter} aria-hidden="true" />
                   <button
-                    className={styles.arrowButtons}
+                    className={`${styles.arrowButtons} ${styles.compassRight}`}
                     onClick={() => handleSideObjectAdd(DIRECTION_TYPES.RIGHT)}
                   >
                     <img src={assets.rightarrow} alt="rightarrow" />
                     Right
+                  </button>
+                  <button
+                    className={`${styles.disableArrowButton} ${styles.compassDown}`}
+                    disabled={true}
+                  >
+                    <img src={assets.downarrow} alt="downarrow" />
+                    Down
                   </button>
                 </div>
               </div>
@@ -1487,7 +1515,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
             <div className={styles.uploadHeader}>
               <div className={styles.headerTitleGroup}>
                 <div className={styles.uploadHeaderIcon}>
-                  <img src={assets.createicon} alt="upload icon" />
+                  <LuPackagePlus aria-hidden="true" />
                 </div>
                 <h2>Upload {selectedFurnitureCategory || 'Model'}</h2>
               </div>

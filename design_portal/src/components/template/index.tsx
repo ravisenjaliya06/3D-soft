@@ -2,9 +2,16 @@ import Header from '@/components/header/header';
 import Loading_style from '@/components/loading.module.css';
 import Sidebar from '@/components/sidebar/sidebar';
 import styles from '@/components/template/template.module.css';
-import { assets } from '@/svgPaths';
 import { useRouter } from 'next/router';
 import React, { useState } from 'react';
+import {
+  LuArrowRight,
+  LuRuler,
+  LuSearch,
+  LuSearchX,
+  LuSquareDashed,
+  LuWandSparkles,
+} from 'react-icons/lu';
 import { useDispatch } from 'react-redux';
 import { resetStoreForNewDesign } from '../3dmodel/store';
 
@@ -19,10 +26,10 @@ const Template = () => {
   // Focusing on high-fidelity, professional starting points
   const TemplateDesigns = [
     {
-      name: 'Blank Artist Canvas',
+      name: 'Blank workspace',
       description:
-        'A pure, infinite template for custom modeling. The ultimate starting point for original masterpieces.',
-      icon: assets.blank,
+        'An empty 3D workspace for fully custom furniture: cabinets, wardrobes, kitchens or any interior piece.',
+      Icon: LuSquareDashed,
       tag: 'Custom',
     },
   ];
@@ -54,9 +61,7 @@ const Template = () => {
       {loading && (
         <div className={Loading_style.loadingOverlay}>
           <div className={Loading_style.loadingSpinner} />
-          <p style={{ marginTop: '1rem', fontWeight: 600, color: '#392579' }}>
-            Initializing Design Studio...
-          </p>
+          <p className={styles.loadingText}>Preparing your design studio…</p>
         </div>
       )}
 
@@ -65,36 +70,52 @@ const Template = () => {
         <Header isBorderRadius={true} dashboardName="Studio Setup" />
 
         <div className={styles.maincontent}>
-          {/* Top Notch Header */}
+          {/* Top header */}
           <div className={styles.createdesigns}>
             <div className={styles.createdesignscontent}>
-              <h2 className={styles.createdesignstext}>Select Your Template</h2>
+              <span className={styles.eyebrow}>
+                <LuRuler aria-hidden="true" />
+                New design · Choose a starting point
+              </span>
+              <h2 className={styles.createdesignstext}>
+                How would you like to <span>start building?</span>
+              </h2>
               <p className={styles.createdesignssubtext}>
-                Begin with a pre-configured masterpiece or unleash your creativity with a blank
-                design environment.
+                Open a blank workspace and build your cabinets, wardrobes and kitchens piece by
+                piece.
               </p>
             </div>
 
-            <div className={styles.createdesignButton} onClick={handleCreateDesign}>
-              <div className={styles.createdesignButtoncontent}>
-                <div className={styles.createdesingtext}>
-                  <h4>Smart Template Mode</h4>
-                  <p>Auto-generate architectural foundations</p>
-                </div>
-                <div className={styles.createbuttonimage}>
-                  <img src={assets.createtemplatehome} alt="Bravento Studio" />
-                </div>
-              </div>
-            </div>
+            <button
+              type="button"
+              className={styles.createdesignButton}
+              onClick={handleCreateDesign}
+            >
+              <span className={styles.createIcon}>
+                <LuWandSparkles aria-hidden="true" />
+              </span>
+              <span className={styles.createdesingtext}>
+                <strong>Smart template mode</strong>
+                <small>Auto-generate a ready base to build on</small>
+              </span>
+              <LuArrowRight className={styles.createArrow} aria-hidden="true" />
+            </button>
           </div>
 
           <div className={styles.designs}>
             <div className={styles.designfirstpart}>
+              <div>
+                <h3 className={styles.sectionTitle}>Templates</h3>
+                <p className={styles.sectionSub}>
+                  {filteredTemplates.length}{' '}
+                  {filteredTemplates.length === 1 ? 'template' : 'templates'} available
+                </p>
+              </div>
               <div className={styles.searchWrapper}>
-                <img src={assets.search} alt="Search" className={styles.searchIcon} />
+                <LuSearch className={styles.searchIcon} aria-hidden="true" />
                 <input
                   type="text"
-                  placeholder="Search templates..."
+                  placeholder="Search templates…"
                   value={searchQuery}
                   onChange={handleSearchChange}
                   className={styles.searchInput}
@@ -102,21 +123,35 @@ const Template = () => {
               </div>
             </div>
 
-            {/* High-Fidelity Template Selection */}
+            {/* Template selection */}
             <div className={styles.templateBox}>
               {filteredTemplates.map((item, index) => (
                 <div className={styles.templateBoxContent} key={index} onClick={handleCreateDesign}>
-                  <div className={styles.tag}>{item.tag}</div>
                   <div className={styles.imgWrapper}>
-                    <img src={item.icon} alt={item.name} />
+                    <div className={styles.tag}>{item.tag}</div>
+                    <item.Icon className={styles.templateIcon} aria-hidden="true" />
+                    <span className={styles.dimTop}>W × H × D</span>
                   </div>
-                  <button className={styles.templateBoxButton}>Open in Studio</button>
                   <div className={styles.templateInfo}>
                     <h5>{item.name}</h5>
                     <p>{item.description}</p>
                   </div>
+                  <button className={styles.templateBoxButton}>
+                    Open in studio
+                    <LuArrowRight aria-hidden="true" />
+                  </button>
                 </div>
               ))}
+
+              {filteredTemplates.length === 0 && (
+                <div className={styles.emptyState}>
+                  <span className={styles.emptyIcon}>
+                    <LuSearchX aria-hidden="true" />
+                  </span>
+                  <strong>No templates match &ldquo;{searchQuery}&rdquo;</strong>
+                  <p>Try another name, or start with the blank workspace.</p>
+                </div>
+              )}
             </div>
           </div>
         </div>

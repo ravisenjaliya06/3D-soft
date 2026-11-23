@@ -1,11 +1,13 @@
+import AuthShowcase from '@/components/auth/AuthShowcase';
+import styles from '@/components/auth/auth.module.css';
 import InputField from '@/components/inputfields/InputField.jsx';
-import styles from '@/components/register/register.module.css';
 import { handleSignIn } from '@/components/register/utils';
 import { REDIRECT } from '@/services/CommonStatus';
 import { assets } from '@/svgPaths';
 import { RegisterForm } from '@/types/formTypes';
 import { useRouter } from 'next/router';
 import { ChangeEvent, useState } from 'react';
+import { LuArrowRight, LuShieldCheck } from 'react-icons/lu';
 import PasswordStrengthBar from 'react-password-strength-bar';
 
 const Register = () => {
@@ -84,18 +86,18 @@ const Register = () => {
 
   const firstfieldsgroup = [
     {
-      label: 'Name *',
+      label: 'Full name *',
       type: 'text',
-      placeholder: 'Enter name',
+      placeholder: 'Your full name',
       value: name,
       onChange: (e: ChangeEvent<HTMLInputElement>) => setName(e.target.value),
       error: nameError,
       smallField: true,
     },
     {
-      label: 'Email *',
+      label: 'Work email *',
       type: 'email',
-      placeholder: 'Enter email',
+      placeholder: 'you@company.com',
       value: email,
       onChange: (e: ChangeEvent<HTMLInputElement>) => setEmail(e.target.value),
       error: emailError,
@@ -108,16 +110,16 @@ const Register = () => {
       label: 'Username *',
       type: 'text',
       smallField: true,
-      placeholder: 'Enter username',
+      placeholder: 'Choose a username',
       value: username,
       onChange: (e: ChangeEvent<HTMLInputElement>) => setUsername(e.target.value),
       error: usernameError,
     },
     {
-      label: 'Phone Number *',
+      label: 'Phone number *',
       type: 'text',
       smallField: true,
-      placeholder: 'phone number',
+      placeholder: '10-digit mobile number',
       value: phone,
       onChange: (e: ChangeEvent<HTMLInputElement>) => {
         const val = e.target.value.replace(/\D/g, '');
@@ -131,9 +133,9 @@ const Register = () => {
 
   const thirdfieldsgroup = [
     {
-      label: 'Organization Name *',
+      label: 'Company / workshop name *',
       type: 'text',
-      placeholder: 'Enter organization name',
+      placeholder: 'e.g. Oakline Interiors',
       value: organizationName,
       onChange: (e: ChangeEvent<HTMLInputElement>) => setOrganizationName(e.target.value),
       onClickShowPassword: handleClickShowConfirmPassword,
@@ -142,7 +144,7 @@ const Register = () => {
     {
       label: 'Password *',
       type: 'password',
-      placeholder: 'Enter password',
+      placeholder: 'At least 8 characters',
       showPassword,
       value: password,
       onChange: (e: ChangeEvent<HTMLInputElement>) => setPassword(e.target.value),
@@ -150,9 +152,9 @@ const Register = () => {
       error: passwordError,
     },
     {
-      label: 'Confirm Password *',
+      label: 'Confirm password *',
       type: 'password',
-      placeholder: 'Enter confirm password',
+      placeholder: 'Repeat password',
       showPassword: showConfirmPassword,
       value: confirmPassword,
       onChange: (e: ChangeEvent<HTMLInputElement>) => setConfirmPassword(e.target.value),
@@ -162,100 +164,137 @@ const Register = () => {
   ];
 
   return (
-    <>
-      <div className={styles.container}>
-        <div className={styles.card}>
-          <div className={styles.left_side}>
-            <div className={styles.popup_logo}>
-              <img src={assets.popup_logo} alt="Popup Logo" />
-            </div>
-            <h1>
-              3D Models of <span>wooden sheet cutting</span>
-            </h1>
-            <p>Make your design and nesting with 3D to less wastage</p>
-            <div className={styles.login_image}>
-              <img src={assets.loginimage} alt="loginpage image" />
-            </div>
-            <div className={styles.logo}>
-              <img src={assets.Logo} alt="Bravento Logo" />
-            </div>
+    <div className={styles.container}>
+      {/* ── Showcase panel (decorative) ─────────────────────── */}
+      <AuthShowcase
+        eyebrow="Free workspace for furniture makers"
+        title="Set up your workshop."
+        highlight="Start building today."
+        lead="Create your Bravento workspace to design furniture in 3D, generate accurate cut lists and nest every board for less waste."
+      />
+
+      {/* ── Sign-up form ────────────────────────────────────── */}
+      <section className={styles.formPanel}>
+        <div className={`${styles.formInner} ${styles.wide}`}>
+          <div className={styles.brandRow}>
+            <img src={assets.Logo} alt="Bravento" className={styles.brandLogo} />
           </div>
-          <div className={styles.right_side}>
-            <h2>Sign up</h2>
-            <p>Let&apos;s get you all set up so you can access your personal account.</p>
-            <form className={styles.form} onSubmit={(e) => e.preventDefault()}>
-              <div className={styles.inputGroup1}>
-                {firstfieldsgroup.map((field, index) => (
-                  <InputField
-                    className={styles.inputField}
-                    key={index}
-                    {...field}
-                    borderColor="var(--primary-color-grey-2 )"
-                  />
-                ))}
-              </div>
-              <div className={styles.inputGroup1}>
-                {secondfieldsgroup.map((field, index) => (
-                  <InputField
-                    className={styles.inputField}
-                    key={index}
-                    {...field}
-                    borderColor="var(--primary-color-grey-2 )"
-                  />
-                ))}
-              </div>
-              <div className={styles.inputGroup}>
-                {thirdfieldsgroup.map((field, index) => (
-                  <InputField
-                    className={styles.inputField}
-                    key={index}
-                    {...field}
-                    borderColor="var(--primary-color-grey-2 )"
-                  />
-                ))}
-              </div>
-              <div className={styles.passwordStrengthBar} aria-live="polite">
-                <PasswordStrengthBar
-                  password={password}
-                  minLength={8}
-                  scoreWords={['Weak', 'Fair', 'Good', 'Strong', 'Strong']}
-                  shortScoreWord="Too short"
+
+          <h2 className={styles.title}>Create your account</h2>
+          <p className={styles.subtitle}>
+            It takes a minute. We&apos;ll send a code to verify your email.
+          </p>
+
+          <form className={styles.form} onSubmit={(e) => e.preventDefault()}>
+            <div className={styles.sectionLabel}>Your details</div>
+            <div className={`${styles.inputGroup} ${styles.fieldRow}`}>
+              {firstfieldsgroup.map((field, index) => (
+                <InputField
+                  className={styles.inputField}
+                  key={index}
+                  {...field}
+                  borderColor="var(--primary-color-grey-2 )"
                 />
-              </div>
-              {error && <p className={styles.registererrorMessage}>{error}</p>}
-              <div className={styles.termsContainer}>
-                <input
-                  type="checkbox"
-                  id="terms"
-                  className={styles.termsCheckbox}
-                  checked={termsAccepted}
-                  onChange={() => setTermsAccepted(!termsAccepted)}
+              ))}
+            </div>
+            <div className={`${styles.inputGroup} ${styles.fieldRow}`}>
+              {secondfieldsgroup.map((field, index) => (
+                <InputField
+                  className={styles.inputField}
+                  key={index}
+                  {...field}
+                  borderColor="var(--primary-color-grey-2 )"
                 />
-                <label htmlFor="terms">
-                  I agree to all the <a>Terms</a> and <a>Privacy Policies</a>
-                </label>
+              ))}
+            </div>
+
+            <div className={styles.sectionLabel}>Company</div>
+            <div className={`${styles.inputGroup} ${styles.fieldStack}`}>
+              {thirdfieldsgroup.slice(0, 1).map((field, index) => (
+                <InputField
+                  className={styles.inputField}
+                  key={index}
+                  {...field}
+                  borderColor="var(--primary-color-grey-2 )"
+                />
+              ))}
+            </div>
+
+            <div className={styles.sectionLabel}>Security</div>
+            <div className={`${styles.inputGroup} ${styles.fieldRow}`}>
+              {thirdfieldsgroup.slice(1).map((field, index) => (
+                <InputField
+                  className={styles.inputField}
+                  key={index + 1}
+                  {...field}
+                  borderColor="var(--primary-color-grey-2 )"
+                />
+              ))}
+            </div>
+            <div className={styles.strength} aria-live="polite">
+              <PasswordStrengthBar
+                password={password}
+                minLength={8}
+                scoreWords={['Weak', 'Fair', 'Good', 'Strong', 'Strong']}
+                shortScoreWord="Too short"
+                barColors={[
+                  'var(--bv-border)',
+                  'var(--bv-danger)',
+                  'var(--bv-warning)',
+                  'var(--bv-accent)',
+                  'var(--bv-success)',
+                ]}
+              />
+            </div>
+
+            {error && (
+              <div className={styles.errorContainer}>
+                <p className={styles.errorMessage}>{error}</p>
               </div>
-              {termsError && <p className={styles.registererrorMessage}>{termsError}</p>}
-              <div className={styles.buttonContainer}>
-                <button
-                  className={styles.registerButton}
-                  onClick={handleSignInWrapper}
-                  disabled={isLoading}
-                >
-                  {isLoading ? 'Loading...' : 'Create account'}
-                </button>
-              </div>
-            </form>
-            <div className={styles.loginLinkContainer}>
+            )}
+
+            <div className={styles.terms}>
+              <input
+                type="checkbox"
+                id="terms"
+                className={styles.rememberMeCheckbox}
+                checked={termsAccepted}
+                onChange={() => setTermsAccepted(!termsAccepted)}
+              />
+              <label htmlFor="terms">
+                I agree to the <a>Terms of Service</a> and <a>Privacy Policy</a>
+              </label>
+            </div>
+            {termsError && <p className={styles.fieldError}>{termsError}</p>}
+
+            <div className={styles.buttonContainer}>
+              <button
+                className={styles.primaryButton}
+                onClick={handleSignInWrapper}
+                disabled={isLoading}
+              >
+                <span>{isLoading ? 'Creating account…' : 'Create account'}</span>
+                {!isLoading && <LuArrowRight aria-hidden="true" />}
+              </button>
+            </div>
+          </form>
+
+          <div className={styles.linkContainer}>
+            <div className={styles.registerLinkContainer}>
               <p>
                 Already have an account?{' '}
-                <span onClick={() => router.push(REDIRECT.LOGIN)}>Login</span>
+                <span onClick={() => router.push(REDIRECT.LOGIN)}>Sign in</span>
               </p>
             </div>
           </div>
+
+          <p className={styles.legal}>
+            <LuShieldCheck aria-hidden="true" />
+            Your data is encrypted · © {new Date().getFullYear()} Bravento Technologies
+          </p>
         </div>
-      </div>
-    </>
+      </section>
+    </div>
   );
 };
 

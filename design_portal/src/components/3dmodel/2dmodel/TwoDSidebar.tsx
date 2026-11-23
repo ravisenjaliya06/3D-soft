@@ -64,9 +64,9 @@ export const TwoDSidebar: React.FC<TwoDSidebarProps> = ({
         <div className={styles.sidebarTitle}>Dimensions</div>
         {selectedWall ? (
           <>
-            <div className={styles.sidebarRow} style={{ marginTop: '0.75rem' }}>
-              <span style={{ fontWeight: 500, color: '#555' }}>Length (ft):</span>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <div className={`${styles.sidebarRow} ${styles.wallRow}`}>
+              <span className={styles.wallLabel}>Length (ft):</span>
+              <div className={styles.wallField}>
                 <input
                   type="text"
                   value={wallLengthFt}
@@ -82,21 +82,14 @@ export const TwoDSidebar: React.FC<TwoDSidebarProps> = ({
                   }}
                   onBlur={handleWallLengthChangeFt}
                   onKeyDown={(e) => e.key === 'Enter' && handleWallLengthChangeFt()}
-                  style={{
-                    width: '5rem',
-                    padding: '0.25rem 0.5rem',
-                    border: '1px solid #ccc',
-                    borderRadius: '0.25rem',
-                    fontSize: '0.875rem',
-                    textAlign: 'right',
-                  }}
+                  className={styles.wallInput}
                 />
-                <span style={{ fontSize: '0.75rem', color: '#888', fontWeight: 600 }}>FT</span>
+                <span className={styles.wallUnit}>FT</span>
               </div>
             </div>
-            <div className={styles.sidebarRow} style={{ marginTop: '0.75rem' }}>
-              <span style={{ fontWeight: 500, color: '#555' }}>Length (mm):</span>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <div className={`${styles.sidebarRow} ${styles.wallRow}`}>
+              <span className={styles.wallLabel}>Length (mm):</span>
+              <div className={styles.wallField}>
                 <input
                   type="text"
                   value={wallLengthMm}
@@ -112,41 +105,23 @@ export const TwoDSidebar: React.FC<TwoDSidebarProps> = ({
                   }}
                   onBlur={handleWallLengthChangeMm}
                   onKeyDown={(e) => e.key === 'Enter' && handleWallLengthChangeMm()}
-                  style={{
-                    width: '5rem',
-                    padding: '0.25rem 0.5rem',
-                    border: '1px solid #ccc',
-                    borderRadius: '0.25rem',
-                    fontSize: '0.875rem',
-                    textAlign: 'right',
-                  }}
+                  className={styles.wallInput}
                 />
-                <span style={{ fontSize: '0.75rem', color: '#888', fontWeight: 600 }}>MM</span>
+                <span className={styles.wallUnit}>MM</span>
               </div>
             </div>
           </>
         ) : (
-          <div style={{ fontSize: '0.75rem', color: '#777', marginTop: '0.5rem' }}>
-            Select a wall to edit dimensions.
-          </div>
+          <div className={styles.wallEmpty}>Select a wall to edit dimensions.</div>
         )}
       </div>
       <div className={styles.sidebarSection}>
         <div className={styles.sidebarTitle}>Points Selection</div>
-        <div
-          style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginTop: '0.75rem' }}
-        >
+        <div className={styles.pointModes} role="radiogroup" aria-label="Points selection">
           {(['internal', 'center', 'external'] as const).map((mode) => (
             <label
               key={mode}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.5rem',
-                fontSize: '0.8rem',
-                color: '#444',
-                cursor: 'pointer',
-              }}
+              className={`${styles.pointMode} ${pointMode === mode ? styles.pointModeActive : ''}`}
             >
               <input
                 type="radio"
@@ -154,7 +129,7 @@ export const TwoDSidebar: React.FC<TwoDSidebarProps> = ({
                 checked={pointMode === mode}
                 onChange={() => onPointModeChange(mode)}
               />
-              <span style={{ textTransform: 'capitalize' }}>{mode}</span>
+              <span>{mode}</span>
             </label>
           ))}
         </div>

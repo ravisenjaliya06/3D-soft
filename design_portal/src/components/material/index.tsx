@@ -192,11 +192,11 @@ const Material: React.FC = () => {
   }, []);
 
   return (
-    <div className="flex h-screen flex-row overflow-hidden bg-[var(--background-color)]">
+    <div className={styles.page}>
       <Sidebar />
 
-      <div className="relative flex flex-1 flex-col overflow-hidden">
-        <Header isBorderRadius={true} dashboardName="Material" />
+      <div className={styles.pageRight}>
+        <Header isBorderRadius={true} dashboardName="Materials" />
 
         {!addMaterialPopup ? (
           <div className={styles.maincontainer}>
@@ -215,7 +215,7 @@ const Material: React.FC = () => {
               setMaterialType={setSelectedType}
             />
 
-            <div className="flex min-w-0 flex-1 flex-col gap-[0.75rem] overflow-hidden px-[0.5rem]">
+            <div className={styles.materialrightside}>
               <MaterialToolbar
                 searchQuery={searchQuery}
                 onSearchChange={setSearchQuery}

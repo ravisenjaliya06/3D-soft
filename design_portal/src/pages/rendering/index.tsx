@@ -7,6 +7,18 @@ import commonService from '@/services/CommonService';
 import { assets } from '@/svgPaths';
 import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
+import {
+  LuArrowLeft,
+  LuCamera,
+  LuImage,
+  LuImageOff,
+  LuSofa,
+  LuSparkles,
+  LuTriangleAlert,
+  LuVideo,
+  LuX,
+  LuZoomIn,
+} from 'react-icons/lu';
 import styles from './rendering.module.css';
 
 interface RenderImage {
@@ -159,7 +171,7 @@ export default function RenderingPage() {
         const state = store.getState();
         const scene_data = {
           catalogs: state.data.objects,
-        }
+        };
 
         const projectFormData = new FormData();
         projectFormData.append('name', `Design ${id}`);
@@ -256,41 +268,44 @@ export default function RenderingPage() {
     <div className={styles.container}>
       {isZoomed && finalImage && (
         <div className={styles.zoomOverlay} onClick={() => setIsZoomed(false)}>
+          <span className={styles.zoomHint}>
+            <LuX aria-hidden="true" />
+            Click anywhere to close
+          </span>
           <img src={finalImage} alt="Zoomed Enhanced" className={styles.zoomedImage} />
         </div>
       )}
-      <div className={styles.sidebar}>
-        <div className={styles.sidebarHeader}>
+      {/* Top bar: brand, way back, title, image / video switch */}
+      <header className={styles.topBar}>
+        <div className={styles.topStart}>
           <img src={assets.logo} alt="Logo" className={styles.logo} />
+          <span className={styles.topDivider} aria-hidden="true" />
+          <button className={styles.backBtn} onClick={() => router.push(`/design/${designId}`)}>
+            <LuArrowLeft aria-hidden="true" />
+            Back to Design
+          </button>
         </div>
-        <button className={styles.backBtn} onClick={() => router.push(`/design/${designId}`)}>
-          ← Back to Design
-        </button>
-        <h3>Captured Angles ({images.length})</h3>
-        <div className={styles.imageList}>
-          {images.map((img, i) => (
-            <img key={img.id} src={img.image} alt={`Angle ${i + 1}`} className={styles.thumbnail} />
-          ))}
-        </div>
-      </div>
 
-      <div className={styles.main}>
-        {errorMsg ? (
-          <div className={styles.error}>{errorMsg}</div>
-        ) : !finalImage && !finalVideo ? (
-          <div className={styles.loaderArea}>
-            <div className={styles.spinner}></div>
-            <p>{loadingText}</p>
-          </div>
-        ) : (
-          <div className={styles.resultArea}>
+        <div className={styles.topTitle}>
+          <span className={styles.topEyebrow}>
+            <LuSparkles aria-hidden="true" />
+            Render studio
+          </span>
+          <h1>
+            Your design, <span>photo-real</span>
+          </h1>
+        </div>
+
+        <div className={styles.topEnd}>
+          {!errorMsg && (finalImage || finalVideo) && (
             <div className={styles.buttonGroup}>
               <button
                 className={`${styles.iconBtn} ${viewMode === 'image' ? styles.active : ''}`}
                 onClick={() => setViewMode('image')}
                 title="View Enhanced Image"
               >
-                📸 Image
+                <LuImage aria-hidden="true" />
+                Image
               </button>
               <button
                 className={`${styles.iconBtn} ${viewMode === 'video' ? styles.active : ''}`}
@@ -298,27 +313,92 @@ export default function RenderingPage() {
                 title="View Video"
                 disabled={!finalVideo}
               >
-                🎥 Video {finalVideo ? '' : '(Processing)'}
+                <LuVideo aria-hidden="true" />
+                Video {finalVideo ? '' : '(Processing)'}
               </button>
             </div>
+          )}
+        </div>
+      </header>
 
-            <div className={styles.mediaContainer}>
-              {viewMode === 'image' && finalImage && (
-                <img
-                  src={finalImage}
-                  alt="Enhanced"
-                  className={styles.fullMedia}
-                  style={{ cursor: 'zoom-in' }}
-                  onClick={() => setIsZoomed(true)}
-                />
-              )}
-              {viewMode === 'video' && finalVideo && (
-                <video src={finalVideo} controls autoPlay loop className={styles.fullMedia} />
-              )}
+      <main className={styles.main}>
+        <div className={styles.stage}>
+          {errorMsg ? (
+            <div className={styles.error}>
+              <span className={styles.stateIcon}>
+                <LuTriangleAlert aria-hidden="true" />
+              </span>
+              <strong>We couldn&apos;t render this design</strong>
+              <p>{errorMsg}</p>
+              <button
+                className={styles.errorBtn}
+                onClick={() => router.push(`/design/${designId}`)}
+              >
+                <LuArrowLeft aria-hidden="true" />
+                Back to Design
+              </button>
             </div>
+          ) : !finalImage && !finalVideo ? (
+            <div className={styles.loaderArea}>
+              <div className={styles.spinner}>
+                <LuSofa aria-hidden="true" />
+              </div>
+              <p>{loadingText}</p>
+              <small>
+                This can take a few minutes. Keep this tab open while we light the room.
+              </small>
+            </div>
+          ) : (
+            <div className={styles.resultArea}>
+              <div className={styles.mediaContainer}>
+                {viewMode === 'image' && finalImage && (
+                  <>
+                    <img
+                      src={finalImage}
+                      alt="Enhanced"
+                      className={styles.fullMedia}
+                      style={{ cursor: 'zoom-in' }}
+                      onClick={() => setIsZoomed(true)}
+                    />
+                    <span className={styles.mediaHint}>
+                      <LuZoomIn aria-hidden="true" />
+                      Click to enlarge
+                    </span>
+                  </>
+                )}
+                {viewMode === 'video' && finalVideo && (
+                  <video src={finalVideo} controls autoPlay loop className={styles.fullMedia} />
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+        {/* Film strip: the captured angles */}
+        <section className={styles.filmStrip} aria-label="Captured angles">
+          <div className={styles.filmHead}>
+            <h3>
+              <LuCamera aria-hidden="true" />
+              Captured Angles
+              <span className={styles.countPill}>{images.length}</span>
+            </h3>
+            <p>Photo-real visuals of your kitchen, wardrobe or room, made from these angles.</p>
           </div>
-        )}
-      </div>
+          <div className={styles.imageList}>
+            {images.length === 0 && (
+              <div className={styles.thumbEmpty}>
+                <LuImageOff aria-hidden="true" />
+                No angles captured yet
+              </div>
+            )}
+            {images.map((img, i) => (
+              <div key={img.id} className={styles.thumbItem}>
+                <img src={img.image} alt={`Angle ${i + 1}`} className={styles.thumbnail} />
+                <span className={styles.thumbLabel}>Angle {i + 1}</span>
+              </div>
+            ))}
+          </div>
+        </section>
+      </main>
     </div>
   );
 }

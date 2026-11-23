@@ -7,6 +7,39 @@ import { API_ENDPOINT } from '@/services/ApiEndPoints';
 import CommonService from '@/services/CommonService';
 import { assets } from '@/svgPaths';
 import { ChangeEvent, useEffect, useRef, useState } from 'react';
+import type { IconType } from 'react-icons';
+import {
+  LuBox,
+  LuBuilding2,
+  LuCamera,
+  LuChevronRight,
+  LuCircleAlert,
+  LuCircleCheck,
+  LuCircleDot,
+  LuCrosshair,
+  LuEye,
+  LuFactory,
+  LuGhost,
+  LuIdCard,
+  LuImageUp,
+  LuLandmark,
+  LuLayoutGrid,
+  LuLock,
+  LuMailOpen,
+  LuPencil,
+  LuPlus,
+  LuReceiptText,
+  LuRuler,
+  LuSave,
+  LuSend,
+  LuTrash2,
+  LuUserCheck,
+  LuUserMinus,
+  LuUserPlus,
+  LuUserRound,
+  LuUsers,
+  LuX,
+} from 'react-icons/lu';
 import { useDispatch, useSelector } from 'react-redux';
 import InputField from '../inputfields/InputField';
 import { Member, Organization, TeamRole, User, addmember } from './interface';
@@ -993,6 +1026,114 @@ const Settings = () => {
     }
   };
 
+  const SETTINGS_MENU: { key: string; label: string; hint: string; icon: IconType }[] = [
+    { key: 'profile', label: 'Profile', hint: 'Your name, photo and contact', icon: LuUserRound },
+    { key: 'team', label: 'Team', hint: 'Designers, MES and catalog roles', icon: LuUsers },
+    {
+      key: 'organizations',
+      label: 'Organizations',
+      hint: 'Workshop name and logo',
+      icon: LuBuilding2,
+    },
+    {
+      key: 'Design setting',
+      label: 'Design setting',
+      hint: 'Sheet sizes, units, hardware',
+      icon: LuRuler,
+    },
+    {
+      key: 'billing',
+      label: 'Billing Details',
+      hint: 'Company and bank details for quotes',
+      icon: LuReceiptText,
+    },
+  ];
+
+  const SECTION_INTRO: Record<string, { eyebrow: string; title: string; text: string }> = {
+    profile: {
+      eyebrow: 'Account',
+      title: 'Your profile',
+      text: 'How you appear to your team across designs, MES and the catalog.',
+    },
+    team: {
+      eyebrow: 'Workshop crew',
+      title: 'Team management',
+      text: 'Invite designers and production staff, and choose what each person can work on.',
+    },
+    organizations: {
+      eyebrow: 'Company',
+      title: 'Organization',
+      text: 'The furniture studio or factory this workspace belongs to.',
+    },
+    'Design setting': {
+      eyebrow: 'Defaults',
+      title: 'Design preferences',
+      text: 'Board sizes, measuring units and hardware drilling used for every new design.',
+    },
+    billing: {
+      eyebrow: 'Quotations',
+      title: 'Billing details',
+      text: 'Printed on the header and footer of every quotation you send to clients.',
+    },
+  };
+
+  const intro = SECTION_INTRO[activeMenu];
+  const activeIndex = Math.max(
+    0,
+    SETTINGS_MENU.findIndex((m) => m.key === activeMenu)
+  );
+  const activeItem = SETTINGS_MENU[activeIndex];
+  const ActiveIcon = activeItem?.icon || LuUserRound;
+
+  const getInitials = (value?: string | null) =>
+    (value || '?')
+      .split(/[\s@._-]+/)
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((part) => part.charAt(0).toUpperCase())
+      .join('');
+
+  const renderToasts = (withError: boolean) => (
+    <>
+      {successMessage && (
+        <div className={`${styles.toast} ${styles.successPopup}`}>
+          <LuCircleCheck aria-hidden="true" />
+          <p>{successMessage}</p>
+        </div>
+      )}
+      {withError && errorMessage && (
+        <div className={`${styles.toast} ${styles.errorPopup}`}>
+          <LuCircleAlert aria-hidden="true" />
+          <p>{errorMessage}</p>
+        </div>
+      )}
+    </>
+  );
+
+  const renderOrgCard = (org: Organization, isActive: boolean, onSelect: () => void) => {
+    const logoUrl = toPublicUrl(org.logo) || null;
+    return (
+      <button
+        key={org.id}
+        onClick={onSelect}
+        className={`${styles.ghostCard} ${isActive ? styles.ghostCardActive : ''}`}
+      >
+        <div className={styles.ghostLogoWrapper}>
+          {logoUrl ? (
+            <img src={logoUrl} alt={org.name} className={styles.ghostLogo} />
+          ) : (
+            <div className={styles.ghostLogoPlaceholder}>{org.name?.charAt(0).toUpperCase()}</div>
+          )}
+        </div>
+        <div className={styles.ghostCardText}>
+          <div className={styles.ghostOrgName}>{org.name}</div>
+          <div className={styles.ghostOrgDisplayName}>{org.display_name}</div>
+        </div>
+        {isActive && <LuCircleCheck className={styles.ghostCheck} aria-hidden="true" />}
+      </button>
+    );
+  };
+
   return (
     <div className={styles.container}>
       <div className={styles.sidebarWrapper}>
@@ -1000,849 +1141,730 @@ const Settings = () => {
       </div>
       <div className={styles.rightside}>
         <Header isBorderRadius={true} dashboardName="Settings" />
-        <div
-          className={`${styles.mainContent} ${activeMenu === 'profile' ? styles.mainContentProfile : ''}`}
-        >
-          {/* ─── Sidebar Menu ─── */}
-          <div className={styles.profileMenu}>
-            <div className={styles.menuItemsEmail}>
-              <img src={assets.account_profile} className={styles.accountprofile} alt="profile" />
-              <p className={styles.useremail}>{UserDetails?.email}</p>
-            </div>
-
-            <div
-              className={activeMenu === 'profile' ? styles.activeMenu : styles.menuItems}
-              onClick={() => handleActiveMenu('profile')}
-            >
-              <img
-                src={activeMenu === 'profile' ? assets.account_svg : assets.account_not_selected}
-                alt="profile"
-              />
-              <p className={activeMenu === 'profile' ? styles.activeMenuTitle : styles.menuTitle}>
-                Profile
-              </p>
-            </div>
-
-            <div
-              className={activeMenu === 'team' ? styles.activeMenu : styles.menuItems}
-              onClick={() => handleActiveMenu('team')}
-            >
-              <img
-                src={activeMenu === 'team' ? assets.team_not_selected : assets.team_svg}
-                alt="team"
-              />
-              <p className={activeMenu === 'team' ? styles.activeMenuTitle : styles.menuTitle}>
-                Team
-              </p>
-            </div>
-
-            <div
-              className={activeMenu === 'organizations' ? styles.activeMenu : styles.menuItems}
-              onClick={() => handleActiveMenu('organizations')}
-            >
-              <img
-                src={
-                  activeMenu === 'organizations'
-                    ? assets.organization_not_selected
-                    : assets.organizations_svg
-                }
-                alt="organizations"
-              />
-              <p
-                className={
-                  activeMenu === 'organizations' ? styles.activeMenuTitle : styles.menuTitle
-                }
-              >
-                Organizations
-              </p>
-            </div>
-
-            <div
-              className={activeMenu === 'Design setting' ? styles.activeMenu : styles.menuItems}
-              onClick={() => handleActiveMenu('Design setting')}
-            >
-              <img
-                src={assets.designmenuicon_not}
-                alt="Design setting"
-                style={{ opacity: activeMenu === 'Design setting' ? 1 : 0.6 }}
-              />
-              <p
-                className={
-                  activeMenu === 'Design setting' ? styles.activeMenuTitle : styles.menuTitle
-                }
-              >
-                Design setting
-              </p>
-            </div>
-
-            <div
-              className={activeMenu === 'billing' ? styles.activeMenu : styles.menuItems}
-              onClick={() => handleActiveMenu('billing')}
-            >
-              <img
-                src={activeMenu === 'billing' ? assets.activemoney : assets.money}
-                alt="billing"
-              />
-              <p className={activeMenu === 'billing' ? styles.activeMenuTitle : styles.menuTitle}>
-                Billing Details
-              </p>
-            </div>
-          </div>
-
-          {/* ─── Main Content Area ─── */}
-          <div
-            className={`${styles.profile} ${activeMenu === 'profile' ? styles.profileNoScroll : ''}`}
-          >
-            {/* 1. Profile Tab */}
-            {activeMenu === 'profile' && (
-              <>
-                <div className={styles.profileImage}>
-                  <img
-                    src={
-                      profileUrl ||
-                      (UserDetails?.profile_picture &&
-                        `${process.env.NEXT_PUBLIC_PUBLIC_API}/${UserDetails.profile_picture}`) ||
-                      assets.user
-                    }
-                    alt="profile"
-                    onClick={handleImageClick}
-                  />
-                  <input
-                    type="file"
-                    id="fileInput"
-                    style={{ display: 'none' }}
-                    accept="image/*"
-                    onChange={handleProfileImageChange}
-                  />
-                  <p>{UserDetails?.username}</p>
+        <div className={styles.mainContent}>
+          {/* ─── Masthead: account + section tabs ─── */}
+          <header className={styles.settingsMast}>
+            <div className={styles.mastTop}>
+              <div className={styles.menuItemsEmail}>
+                <span className={styles.menuAvatar}>
+                  {getInitials(UserDetails?.name || UserDetails?.username || UserDetails?.email)}
+                </span>
+                <div className={styles.menuUser}>
+                  <strong>{UserDetails?.name || UserDetails?.username || 'Your account'}</strong>
+                  <p className={styles.useremail}>{UserDetails?.email}</p>
                 </div>
+              </div>
+              <div className={styles.mastMeta}>
+                <span className={styles.mastEyebrow}>Workshop settings</span>
+                <span className={styles.mastStep}>
+                  {activeIndex + 1} / {SETTINGS_MENU.length}
+                </span>
+              </div>
+            </div>
 
-                <form className={styles.form} onSubmit={(e) => e.preventDefault()}>
-                  <div className={styles.inputGroup}>
-                    {firstfieldsgroup.map((field, index) => (
-                      <InputField
-                        key={index}
-                        className={styles.profileInputField}
-                        {...field}
-                        borderColor="#e2e8f0"
-                      />
-                    ))}
-                  </div>
-                  <div className={styles.inputGroup}>
-                    {secordfieldsgroup.map((field, index) => (
-                      <InputField
-                        key={index}
-                        className={styles.profileInputField}
-                        {...field}
-                        borderColor="#e2e8f0"
-                      />
-                    ))}
-                  </div>
-                  <button className={styles.saveButton} onClick={handleSave}>
-                    Save Changes
+            <nav className={styles.menuList} role="tablist" aria-label="Settings sections">
+              {SETTINGS_MENU.map((item) => {
+                const MenuIcon = item.icon;
+                const isActive = activeMenu === item.key;
+                return (
+                  <button
+                    type="button"
+                    role="tab"
+                    aria-selected={isActive}
+                    key={item.key}
+                    className={isActive ? styles.activeMenu : styles.menuItems}
+                    onClick={() => handleActiveMenu(item.key)}
+                  >
+                    <MenuIcon className={styles.menuIcon} aria-hidden="true" />
+                    <span className={styles.menuTitle}>{item.label}</span>
                   </button>
-                </form>
+                );
+              })}
+            </nav>
+          </header>
 
-                {successMessage && (
-                  <div className={styles.successPopup}>
-                    <img src={assets.success} alt="Success" />
-                    <p>{successMessage}</p>
-                  </div>
-                )}
-                {errorMessage && (
-                  <div className={styles.errorPopup}>
-                    <img src={assets.error} alt="Error" />
-                    <p>{errorMessage}</p>
-                  </div>
-                )}
-              </>
+          {/* ─── Body: section guide + forms ─── */}
+          <div className={styles.settingsBody}>
+            {intro && activeItem && (
+              <aside className={styles.sectionIntro}>
+                <span className={styles.introBadge}>
+                  <ActiveIcon aria-hidden="true" />
+                </span>
+                <span className={styles.eyebrow}>{intro.eyebrow}</span>
+                <h2>{intro.title}</h2>
+                <p>{intro.text}</p>
+                <div className={styles.introHint}>
+                  <LuChevronRight aria-hidden="true" />
+                  <span>{activeItem.hint}</span>
+                </div>
+              </aside>
             )}
 
-            {/* 1.5 Billing Tab */}
-            {activeMenu === 'billing' && (
-              <>
-                <div className={styles.heading_containar}>
-                  <h4>Company Details</h4>
-                  <p className={styles.description}>
-                    These details will be used as the Header context in your Quotation output.
-                  </p>
-                </div>
-                <form className={styles.form} onSubmit={(e) => e.preventDefault()}>
-                  <div
-                    className={styles.inputGroup}
-                    style={{ flexWrap: 'wrap', gap: '1.5rem 3rem' }}
-                  >
-                    {companyDetailsFields.map((field, index) => (
-                      <InputField
-                        key={index}
-                        className={styles.inputField}
-                        {...field}
-                        borderColor="#e2e8f0"
+            <section className={styles.profile}>
+              {/* 1. Profile Tab */}
+              {activeMenu === 'profile' && (
+                <>
+                  <div className={styles.profileHero}>
+                    <div className={styles.profileImage} onClick={handleImageClick}>
+                      <img
+                        src={
+                          profileUrl ||
+                          (UserDetails?.profile_picture &&
+                            `${process.env.NEXT_PUBLIC_PUBLIC_API}/${UserDetails.profile_picture}`) ||
+                          assets.user
+                        }
+                        alt="profile"
                       />
-                    ))}
-                  </div>
-
-                  <div
-                    className={styles.heading_containar}
-                    style={{ marginBottom: '1.5rem', marginTop: '2.5rem' }}
-                  >
-                    <h4>Banking Details</h4>
-                    <p className={styles.description}>
-                      These banking details will appear at the bottom of your Quotations.
-                    </p>
-                  </div>
-
-                  <div
-                    className={styles.inputGroup}
-                    style={{ flexWrap: 'wrap', gap: '1.5rem 3rem' }}
-                  >
-                    {bankingDetailsFields1.map((field, index) => (
-                      <InputField
-                        key={index}
-                        className={styles.inputField}
-                        {...field}
-                        borderColor="#e2e8f0"
-                      />
-                    ))}
-                  </div>
-
-                  <button className={styles.saveButton} onClick={updateOrganizationDetails}>
-                    Save Details
-                  </button>
-                </form>
-
-                {successMessage && (
-                  <div className={styles.successPopup}>
-                    <img src={assets.success} alt="Success" />
-                    <p>{successMessage}</p>
-                  </div>
-                )}
-                {errorMessage && (
-                  <div className={styles.errorPopup}>
-                    <img src={assets.error} alt="Error" />
-                    <p>{errorMessage}</p>
-                  </div>
-                )}
-              </>
-            )}
-
-            {/* 2. Organizations Tab */}
-            {activeMenu === 'organizations' && (
-              <>
-                <div className={styles.organizationupperpart}>
-                  <div className={styles.organizationImage}>
-                    <img
-                      src={
-                        organizationUrl ||
-                        (organization?.logo &&
-                          `${process.env.NEXT_PUBLIC_PUBLIC_API}/${organization.logo}`) ||
-                        assets.organization_blank_image
-                      }
-                      alt="organization"
-                      onClick={handleOrganizationImageFile}
-                    />
+                      <span className={styles.avatarEdit} title="Change photo">
+                        <LuCamera aria-hidden="true" />
+                      </span>
+                    </div>
                     <input
                       type="file"
-                      id="organizationImageFile"
+                      id="fileInput"
                       style={{ display: 'none' }}
-                      onChange={handleOrganizationImageChange}
+                      accept="image/*"
+                      onChange={handleProfileImageChange}
                     />
+                    <div className={styles.profileHeroText}>
+                      <strong>{UserDetails?.name || UserDetails?.username}</strong>
+                      <span>@{UserDetails?.username}</span>
+                      <small>Click the photo to upload a new one.</small>
+                    </div>
                   </div>
 
-                  <div style={{ width: '100%' }}>
-                    <label
-                      style={{
-                        display: 'block',
-                        marginBottom: '0.5rem',
-                        fontWeight: 600,
-                        color: '#475569',
-                        fontSize: '0.9rem',
-                      }}
-                    >
-                      Organization Name
-                    </label>
-                    <input
-                      type="text"
-                      className={`${styles.organizationInputfild} ${
-                        organizationNameError ? styles.errorInput : ''
-                      }`}
-                      placeholder="Enter Organization Name"
-                      onChange={(e: ChangeEvent<HTMLInputElement>) => {
-                        setOrganizationName(e.target.value);
-                        setOrganizationNameError(null);
-                      }}
-                      value={organizationName}
-                    />
+                  <form className={styles.form} onSubmit={(e) => e.preventDefault()}>
+                    <div className={styles.formCard}>
+                      <h3 className={styles.cardTitle}>
+                        <LuLock aria-hidden="true" />
+                        Sign-in details
+                        <span className={styles.cardTag}>Read only</span>
+                      </h3>
+                      <div className={styles.fieldGrid}>
+                        {firstfieldsgroup.map((field, index) => (
+                          <InputField
+                            key={index}
+                            {...field}
+                            borderColor="var(--bv-border-strong)"
+                          />
+                        ))}
+                      </div>
+                    </div>
+                    <div className={styles.formCard}>
+                      <h3 className={styles.cardTitle}>
+                        <LuIdCard aria-hidden="true" />
+                        Personal details
+                      </h3>
+                      <div className={styles.fieldGrid}>
+                        {secordfieldsgroup.map((field, index) => (
+                          <InputField
+                            key={index}
+                            {...field}
+                            borderColor="var(--bv-border-strong)"
+                          />
+                        ))}
+                      </div>
+                    </div>
+                    <div className={styles.formActions}>
+                      <button className={styles.saveButton} onClick={handleSave}>
+                        <LuSave aria-hidden="true" />
+                        Save Changes
+                      </button>
+                    </div>
+                  </form>
+
+                  {renderToasts(true)}
+                </>
+              )}
+
+              {/* 1.5 Billing Tab */}
+              {activeMenu === 'billing' && (
+                <>
+                  <form className={styles.form} onSubmit={(e) => e.preventDefault()}>
+                    <div className={styles.formCard}>
+                      <h3 className={styles.cardTitle}>
+                        <LuBuilding2 aria-hidden="true" />
+                        Company details
+                      </h3>
+                      <p className={styles.cardText}>Shown in the header of your quotations.</p>
+                      <div className={`${styles.fieldGrid} ${styles.fieldGrid3}`}>
+                        {companyDetailsFields.map((field, index) => (
+                          <InputField
+                            key={index}
+                            {...field}
+                            borderColor="var(--bv-border-strong)"
+                          />
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className={styles.formCard}>
+                      <h3 className={styles.cardTitle}>
+                        <LuLandmark aria-hidden="true" />
+                        Banking details
+                      </h3>
+                      <p className={styles.cardText}>
+                        Printed at the bottom of your quotations so clients know where to pay.
+                      </p>
+                      <div className={`${styles.fieldGrid} ${styles.fieldGrid3}`}>
+                        {bankingDetailsFields1.map((field, index) => (
+                          <InputField
+                            key={index}
+                            {...field}
+                            borderColor="var(--bv-border-strong)"
+                          />
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className={styles.formActions}>
+                      <button className={styles.saveButton} onClick={updateOrganizationDetails}>
+                        <LuSave aria-hidden="true" />
+                        Save Details
+                      </button>
+                    </div>
+                  </form>
+
+                  {renderToasts(true)}
+                </>
+              )}
+
+              {/* 2. Organizations Tab */}
+              {activeMenu === 'organizations' && (
+                <>
+                  <div className={styles.formCard}>
+                    <div className={styles.organizationupperpart}>
+                      <div
+                        className={styles.organizationImage}
+                        onClick={handleOrganizationImageFile}
+                      >
+                        <img
+                          src={
+                            organizationUrl ||
+                            (organization?.logo &&
+                              `${process.env.NEXT_PUBLIC_PUBLIC_API}/${organization.logo}`) ||
+                            assets.organization_blank_image
+                          }
+                          alt="organization"
+                        />
+                        <span className={styles.avatarEdit} title="Change logo">
+                          <LuImageUp aria-hidden="true" />
+                        </span>
+                        <input
+                          type="file"
+                          id="organizationImageFile"
+                          style={{ display: 'none' }}
+                          onChange={handleOrganizationImageChange}
+                        />
+                      </div>
+
+                      <div className={styles.orgField}>
+                        <label htmlFor="organizationNameInput">Organization name</label>
+                        <input
+                          id="organizationNameInput"
+                          type="text"
+                          className={`${styles.organizationInputfild} ${
+                            organizationNameError ? styles.errorInput : ''
+                          }`}
+                          placeholder="e.g. Oakline Interiors"
+                          onChange={(e: ChangeEvent<HTMLInputElement>) => {
+                            setOrganizationName(e.target.value);
+                            setOrganizationNameError(null);
+                          }}
+                          value={organizationName}
+                        />
+                        {organizationNameError && (
+                          <p className={styles.errorMessage}>{organizationNameError}</p>
+                        )}
+                      </div>
+
+                      <button
+                        className={styles.organizationTitleButton}
+                        onClick={handalInputOrganization}
+                      >
+                        <LuSave aria-hidden="true" />
+                        Save Details
+                      </button>
+                    </div>
                   </div>
 
-                  <button
-                    className={styles.organizationTitleButton}
-                    onClick={handalInputOrganization}
-                  >
-                    Save Details
-                  </button>
-                </div>
-
-                {organizationNameError && (
-                  <p
-                    className={styles.errorMessage}
-                    style={{ color: 'red', fontSize: '0.8rem', marginTop: '0.5rem' }}
-                  >
-                    {organizationNameError}
-                  </p>
-                )}
-
-                {UserDetails?.is_ghost && (
-                  <div className={styles.ghostAccessContainer}>
-                    <div>
-                      <div className={styles.ghostHeaderRow}>
-                        <label
-                          className={`${styles.ghostAccessTitle} ${styles.ghostTitleNoMargin}`}
-                        >
-                          My Organizations
-                        </label>
-                      </div>
-
-                      <div className={styles.ghostGrid}>
-                        {myOrganizations.map((org) => {
-                          const logoUrl = toPublicUrl(org.logo) || null;
-                          return (
-                            <button
-                              key={org.id}
-                              onClick={() => handleMyOrgChange(org.id || '')}
-                              className={`${styles.ghostCard} ${selectedMyOrgId === org.id ? styles.ghostCardActive : ''}`}
-                            >
-                              <div className={styles.ghostLogoWrapper}>
-                                {logoUrl ? (
-                                  <img src={logoUrl} alt={org.name} className={styles.ghostLogo} />
-                                ) : (
-                                  <div className={styles.ghostLogoPlaceholder}>
-                                    {org.name?.charAt(0).toUpperCase()}
-                                  </div>
-                                )}
-                              </div>
-                              <div className={styles.ghostCardText}>
-                                <div className={styles.ghostOrgName}>{org.name}</div>
-                                <div className={styles.ghostOrgDisplayName}>{org.display_name}</div>
-                              </div>
-                            </button>
-                          );
-                        })}
-                      </div>
-
-                      <div className={styles.ghostSubHeaderRow}>
-                        <label
-                          className={`${styles.ghostAccessTitle} ${styles.ghostTitleNoMargin}`}
-                        >
-                          Ghost Access Organizations
-                        </label>
-                        <div className={styles.ghostAccessTypeRow}>
-                          <span className={styles.ghostAccessTypeLabel}>Ghost Access Type:</span>
-                          <div className={styles.ghostAccessTypeToggle}>
-                            <button
-                              onClick={() => handleGhostPermissionChange('view')}
-                              className={`${styles.ghostAccessTypeButton} ${ghostAccessType === 'view' ? styles.ghostAccessTypeButtonActive : ''}`}
-                            >
-                              View Only
-                            </button>
-                            <button
-                              onClick={() => handleGhostPermissionChange('full')}
-                              className={`${styles.ghostAccessTypeButton} ${ghostAccessType === 'full' ? styles.ghostAccessTypeButtonActive : ''}`}
-                            >
-                              Full Access
-                            </button>
-                          </div>
+                  {UserDetails?.is_ghost && (
+                    <div className={styles.ghostAccessContainer}>
+                      <div className={styles.formCard}>
+                        <div className={styles.ghostHeaderRow}>
+                          <h3 className={styles.cardTitle}>
+                            <LuBuilding2 aria-hidden="true" />
+                            My Organizations
+                          </h3>
+                        </div>
+                        <div className={styles.ghostGrid}>
+                          {myOrganizations.map((org) =>
+                            renderOrgCard(org, selectedMyOrgId === org.id, () =>
+                              handleMyOrgChange(org.id || '')
+                            )
+                          )}
                         </div>
                       </div>
 
-                      <div className={styles.ghostGrid}>
-                        {ghostOrganizations.map((org) => {
-                          const logoUrl = toPublicUrl(org.logo) || null;
-                          return (
-                            <button
-                              key={org.id}
-                              onClick={() => handleGhostOrgChange(org.id || '')}
-                              className={`${styles.ghostCard} ${selectedGhostOrgId === org.id ? styles.ghostCardActive : ''}`}
-                            >
-                              <div className={styles.ghostLogoWrapper}>
-                                {logoUrl ? (
-                                  <img src={logoUrl} alt={org.name} className={styles.ghostLogo} />
-                                ) : (
-                                  <div className={styles.ghostLogoPlaceholder}>
-                                    {org.name?.charAt(0).toUpperCase()}
-                                  </div>
-                                )}
-                              </div>
-                              <div className={styles.ghostCardText}>
-                                <div className={styles.ghostOrgName}>{org.name}</div>
-                                <div className={styles.ghostOrgDisplayName}>{org.display_name}</div>
-                              </div>
-                            </button>
-                          );
-                        })}
+                      <div className={styles.formCard}>
+                        <div className={styles.ghostSubHeaderRow}>
+                          <h3 className={styles.cardTitle}>
+                            <LuGhost aria-hidden="true" />
+                            Ghost Access Organizations
+                          </h3>
+                          <div className={styles.ghostAccessTypeRow}>
+                            <span className={styles.ghostAccessTypeLabel}>Access type</span>
+                            <div className={styles.ghostAccessTypeToggle}>
+                              <button
+                                onClick={() => handleGhostPermissionChange('view')}
+                                className={`${styles.ghostAccessTypeButton} ${ghostAccessType === 'view' ? styles.ghostAccessTypeButtonActive : ''}`}
+                              >
+                                <LuEye aria-hidden="true" />
+                                View Only
+                              </button>
+                              <button
+                                onClick={() => handleGhostPermissionChange('full')}
+                                className={`${styles.ghostAccessTypeButton} ${ghostAccessType === 'full' ? styles.ghostAccessTypeButtonActive : ''}`}
+                              >
+                                <LuPencil aria-hidden="true" />
+                                Full Access
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className={styles.ghostGrid}>
+                          {ghostOrganizations.map((org) =>
+                            renderOrgCard(org, selectedGhostOrgId === org.id, () =>
+                              handleGhostOrgChange(org.id || '')
+                            )
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {!UserDetails?.is_ghost && (
+                    <div className={styles.currentOrg}>
+                      <span className={styles.currentOrgIcon}>
+                        <LuFactory aria-hidden="true" />
+                      </span>
+                      <div>
+                        <span className={styles.currentOrgLabel}>Current organization</span>
+                        <strong>{organization?.name || 'Loading...'}</strong>
+                        <small>{organization?.display_name}</small>
+                      </div>
+                    </div>
+                  )}
+
+                  {renderToasts(false)}
+                </>
+              )}
+
+              {/* 3. Design Setting Tab */}
+              {activeMenu === 'Design setting' && (
+                <>
+                  <div className={styles.designGrid}>
+                    <div className={styles.formCard}>
+                      <h3 className={styles.cardTitle}>
+                        <LuLayoutGrid aria-hidden="true" />
+                        Nesting sheet size
+                      </h3>
+                      <p className={styles.cardText}>
+                        Default board size used when nesting panels.
+                      </p>
+                      <div className={styles.fieldGrid}>
+                        {designFirstInputFields.map((field, index) => (
+                          <InputField
+                            key={index}
+                            {...field}
+                            borderColor="var(--bv-border-strong)"
+                          />
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className={styles.formCard}>
+                      <h3 className={styles.cardTitle}>
+                        <LuBox aria-hidden="true" />
+                        3D view design size
+                        <span className={styles.cardTag}>Read only</span>
+                      </h3>
+                      <p className={styles.cardText}>Room size of the 3D design canvas.</p>
+                      <div className={styles.fieldGrid}>
+                        {designSecondInputFields.map((field, index) => (
+                          <InputField
+                            key={index}
+                            {...field}
+                            borderColor="var(--bv-border-strong)"
+                          />
+                        ))}
                       </div>
                     </div>
                   </div>
-                )}
 
-                {!UserDetails?.is_ghost && (
-                  <div
-                    style={{
-                      marginTop: '2rem',
-                      padding: '1.5rem',
-                      background: '#f8fafc',
-                      borderRadius: '12px',
-                      border: '1px solid #e2e8f0',
-                    }}
-                  >
-                    <div style={{ fontSize: '0.9rem', color: '#64748b', marginBottom: '0.5rem' }}>
-                      Current Organization
-                    </div>
-                    <div style={{ fontSize: '1.1rem', fontWeight: 700, color: '#1e293b' }}>
-                      {organization?.name || 'Loading...'}
-                    </div>
-                    <div style={{ fontSize: '0.8rem', color: '#94a3b8', marginTop: '0.2rem' }}>
-                      {organization?.display_name}
-                    </div>
-                  </div>
-                )}
-
-                {successMessage && (
-                  <div className={styles.successPopup}>
-                    <img src={assets.success} alt="Success" />
-                    <p>{successMessage}</p>
-                  </div>
-                )}
-              </>
-            )}
-
-            {/* 3. Design Setting Tab */}
-            {activeMenu === 'Design setting' && (
-              <>
-                <div className={`${styles.heading_containar} ${styles.designSettingsMainTitle}`}>
-                  <h4>Set your default design preferences</h4>
-                </div>
-
-                <div className={styles.mainContentdesign}>
-                  <div className={styles.firstbox}>
-                    <p>Nesting Sheet Size</p>
-                    <div className={styles.firstfieldsgroupdesign}>
-                      {designFirstInputFields.map((field, index) => (
-                        <InputField key={index} {...field} borderColor="#e2e8f0" />
+                  <div className={styles.formCard}>
+                    <h3 className={styles.cardTitle}>
+                      <LuRuler aria-hidden="true" />
+                      Design unit size
+                    </h3>
+                    <p className={styles.cardText}>Unit used for measurements in the designer.</p>
+                    <div className={styles.rediogroup}>
+                      {[
+                        { value: 'mm', label: 'MM', hint: 'Millimetres' },
+                        { value: 'cm', label: 'CM', hint: 'Centimetres' },
+                        { value: 'inch', label: 'Inch', hint: 'Inches' },
+                        { value: 'feet', label: 'Feet', hint: 'Feet' },
+                      ].map((unit) => (
+                        <label
+                          key={unit.value}
+                          className={`${styles.label} ${designUnit === unit.value ? styles.labelActive : ''}`}
+                        >
+                          <input
+                            type="radio"
+                            name="option"
+                            value={unit.value}
+                            className={styles.option}
+                            checked={designUnit === unit.value}
+                            onChange={(e) => setDesignUnit(e.target.value)}
+                          />
+                          <span className={styles.customRadio}></span>
+                          <span className={styles.unitText}>
+                            <strong>{unit.label}</strong>
+                            <small>{unit.hint}</small>
+                          </span>
+                        </label>
                       ))}
                     </div>
                   </div>
 
-                  <div className={styles.firstbox}>
-                    <p>3D View Design Size</p>
-                    <div className={styles.firstfieldsgroupdesign}>
-                      {designSecondInputFields.map((field, index) => (
-                        <InputField key={index} {...field} borderColor="#e2e8f0" />
-                      ))}
+                  <div className={styles.designGrid}>
+                    <div className={styles.formCard}>
+                      <h3 className={styles.cardTitle}>
+                        <LuCircleDot aria-hidden="true" />
+                        Minifix setting
+                      </h3>
+                      <p className={styles.cardText}>Cam connector drilling for cabinet joints.</p>
+                      <div className={styles.fieldGrid}>
+                        {designMinifixInputFields.map((field, index) => (
+                          <InputField
+                            key={index}
+                            {...field}
+                            borderColor="var(--bv-border-strong)"
+                          />
+                        ))}
+                      </div>
+                    </div>
+                    <div className={styles.formCard}>
+                      <h3 className={styles.cardTitle}>
+                        <LuCrosshair aria-hidden="true" />
+                        Camlock screw hole
+                      </h3>
+                      <p className={styles.cardText}>Hole size for camlock screws.</p>
+                      <div className={`${styles.fieldGrid} ${styles.fieldGrid3}`}>
+                        {designCamlockInputFields.map((field, index) => (
+                          <InputField
+                            key={index}
+                            {...field}
+                            borderColor="var(--bv-border-strong)"
+                          />
+                        ))}
+                      </div>
                     </div>
                   </div>
-                </div>
 
-                <div className={styles.design_unit_size}>Design Unit Size</div>
-                <div className={styles.rediogroup}>
-                  <label className={styles.label}>
-                    <input
-                      type="radio"
-                      name="option"
-                      value="mm"
-                      className={styles.option}
-                      checked={designUnit === 'mm'}
-                      onChange={(e) => setDesignUnit(e.target.value)}
-                    />
-                    <span className={styles.customRadio}></span>
-                    MM
-                  </label>
-                  <label className={styles.label}>
-                    <input
-                      type="radio"
-                      name="option"
-                      value="cm"
-                      className={styles.option}
-                      checked={designUnit === 'cm'}
-                      onChange={(e) => setDesignUnit(e.target.value)}
-                    />
-                    <span className={styles.customRadio}></span>
-                    CM
-                  </label>
-                  <label className={styles.label}>
-                    <input
-                      type="radio"
-                      name="option"
-                      value="inch"
-                      className={styles.option}
-                      checked={designUnit === 'inch'}
-                      onChange={(e) => setDesignUnit(e.target.value)}
-                    />
-                    <span className={styles.customRadio}></span>
-                    Inch
-                  </label>
-                  <label className={styles.label}>
-                    <input
-                      type="radio"
-                      name="option"
-                      value="feet"
-                      className={styles.option}
-                      checked={designUnit === 'feet'}
-                      onChange={(e) => setDesignUnit(e.target.value)}
-                    />
-                    <span className={styles.customRadio}></span>
-                    Feet
-                  </label>
-                </div>
-
-                <div className={styles.mainContentminifix}>
-                  <div className={styles.firstbox}>
-                    <p>Minifix Setting</p>
-                    <div className={styles.minifixfieldsgroupdesign}>
-                      {designMinifixInputFields.map((field, index) => (
-                        <InputField key={index} {...field} borderColor="#e2e8f0" />
-                      ))}
-                    </div>
-                  </div>
-                </div>
-                <div className={`${styles.mainContentminifix} ${styles.lastbox}`}>
-                  <div className={styles.firstbox}>
-                    <p>Camlock Screw Hole</p>
-                    <div className={styles.minifixfieldsgroupdesign}>
-                      {designCamlockInputFields.map((field, index) => (
-                        <InputField key={index} {...field} borderColor="#e2e8f0" />
-                      ))}
-                    </div>
-                  </div>
-                </div>
-
-                <div className={styles.lastbox}>
-                  <div
-                    className={styles.lastboxindiv}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      width: '100%',
-                      gap: '2rem',
-                    }}
-                  >
+                  <div className={styles.formActions}>
                     <button
                       className={styles.design_profile_save_button}
                       onClick={handleSaveDesignSettings}
                     >
+                      <LuSave aria-hidden="true" />
                       Save Settings
                     </button>
                   </div>
-                </div>
 
-                {successMessage && (
-                  <div className={styles.successPopup}>
-                    <img src={assets.success} alt="Success" />
-                    <p>{successMessage}</p>
-                  </div>
-                )}
-              </>
-            )}
+                  {renderToasts(false)}
+                </>
+              )}
 
-            {/* 4. Team Tab */}
-            {activeMenu === 'team' && (
-              <>
-                <div className={styles.team}>
-                  <div className={styles.designsettingTitle}>
-                    <p className={styles.designsettingTitleText} style={{ marginBottom: '0.5rem' }}>
-                      Team Management
-                    </p>
-                    <p style={{ color: '#64748b', fontSize: '0.9rem' }}>
-                      Manage your team members and their roles here.
-                    </p>
-                  </div>
-
-                  <div className={styles.teamTopBar}>
-                    <div className={styles.toggleContainer}>
-                      <button
-                        className={`${styles.toggleButton} ${activeTab === 'active' ? styles.active : ''}`}
-                        onClick={() => setActiveTab('active')}
-                      >
-                        Active Members
-                      </button>
-                      <button
-                        className={`${styles.toggleButton} ${activeTab === 'invited' ? styles.active : ''}`}
-                        onClick={() => setActiveTab('invited')}
-                      >
-                        Invited
-                      </button>
-                    </div>
-
-                    <button
-                      className={styles.teantopbarleftButton}
-                      onClick={() => setAddMambarPopup(true)}
-                    >
-                      <img src={assets.addmembar} alt="addmember" />
-                      Invite New Member
-                    </button>
-                  </div>
-
-                  <div className={styles.tableContainer} ref={tableContainerRef}>
-                    <table>
-                      <thead>
-                        <tr>
-                          <th>Name</th>
-                          <th>Email</th>
-                          <th>Role</th>
-                          <th className={styles.actioncolumn}>Action</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {filteredMembers.map((member) => (
-                          <tr key={member.id}>
-                            <td style={{ fontWeight: 500 }}>
-                              {member.displayName ||
-                                member.name ||
-                                member.username ||
-                                member.email?.split('@')?.[0] ||
-                                'N/A'}
-                            </td>
-                            <td className={styles.emailbox}>{member.email}</td>
-                            <td className={styles.rolebox}>
-                              <div className={styles.roleContainer}>
-                                {member.groups.map((role, index) => (
-                                  <span key={index} className={styles.roleBadge}>
-                                    {role}
-                                    <img
-                                      src={assets.close}
-                                      alt="close"
-                                      className={styles.closeteam}
-                                      onClick={() => handleRoleRemove(role, member.id)}
-                                    />
-                                  </span>
-                                ))}
-                                <div
-                                  className={styles.roleaddicon}
-                                  onClick={(e) => handleRoleAddClick(e, member.id)}
-                                >
-                                  <img
-                                    src={assets.roleaddicon}
-                                    alt="add role"
-                                    style={{
-                                      width: '100%',
-                                      height: '100%',
-                                      filter: 'invert(1) brightness(2)',
-                                    }}
-                                  />
-                                </div>
-                              </div>
-                            </td>
-                            <td className={styles.actioncolumn}>
-                              <img
-                                src={
-                                  isDeleteHovered == member.id
-                                    ? assets.deleteteamicon
-                                    : assets.delete_not_icon
-                                }
-                                alt="delete"
-                                className={styles.teamdeleteicon}
-                                onClick={() => handleDeleteMember(member.id)}
-                                onMouseEnter={() => handleMouseEnter(member.id)}
-                                onMouseLeave={handleMouseLeave}
-                              />
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-
-                {successMessage && (
-                  <div className={styles.successPopup}>
-                    <img src={assets.success} alt="Success" />
-                    <p>{successMessage}</p>
-                  </div>
-                )}
-
-                {/* Role Dropdown Popup */}
-                {openDropdown && dropdownPosition && (
-                  <div
-                    ref={dropdownRef}
-                    className={styles.roleDropdownPopup}
-                    style={{
-                      top: `${dropdownPosition.y}px`,
-                      left: `${dropdownPosition.x}px`,
-                    }}
-                  >
-                    {rolesList.map((role, index) => (
-                      <div
-                        key={index}
-                        className={styles.dropdownItem}
-                        onClick={() => selectedMemberId && handleRoleSelect(role, selectedMemberId)}
-                      >
-                        <span
-                          style={{
-                            width: '8px',
-                            height: '8px',
-                            borderRadius: '50%',
-                            backgroundColor: '#392579',
-                            display: 'inline-block',
-                          }}
-                        ></span>
-                        {role}
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </>
-            )}
-
-            {/* Add Member Popup */}
-            {addMambarPopup && (
-              <div className={styles.createpopupOverlay}>
-                <div className={styles.createpopup}>
-                  <div className={styles.invitePopupHeader}>
-                    <h5 className={styles.addmembartitle}>Invite New Member</h5>
-                    <img
-                      src={assets.addmemberclose}
-                      className={styles.createclose}
-                      alt="close"
-                      onClick={() => {
-                        setAddMambarPopup(false);
-                        setErrorMessage('');
-                      }}
-                    />
-                  </div>
-
-                  <div className={styles.create_right_side}>
-                    <form className={styles.form} onSubmit={(e) => e.preventDefault()}>
-                      {errorMessage && (
-                        <p
-                          className={styles.erroemessage}
-                          style={{ color: 'red', fontSize: '0.85rem' }}
+              {/* 4. Team Tab */}
+              {activeMenu === 'team' && (
+                <>
+                  <div className={styles.team}>
+                    <div className={styles.teamTopBar}>
+                      <div className={styles.toggleContainer}>
+                        <button
+                          className={`${styles.toggleButton} ${activeTab === 'active' ? styles.active : ''}`}
+                          onClick={() => setActiveTab('active')}
                         >
-                          {errorMessage}
-                        </p>
-                      )}
-
-                      <div className={styles.createinputGroup}>
-                        {addmemberfields.map((field, index) => (
-                          <InputField
-                            className={styles.popupInputField}
-                            key={index}
-                            borderColor="#e2e8f0"
-                            {...field}
-                            error=""
-                            fullWidth={true}
-                            mediumField={true}
-                          />
-                        ))}
+                          <LuUserCheck aria-hidden="true" />
+                          Active Members
+                        </button>
+                        <button
+                          className={`${styles.toggleButton} ${activeTab === 'invited' ? styles.active : ''}`}
+                          onClick={() => setActiveTab('invited')}
+                        >
+                          <LuMailOpen aria-hidden="true" />
+                          Invited
+                        </button>
                       </div>
 
-                      <p className={styles.membertitle}>Assign Roles</p>
-
-                      <div className={styles.checkboxgroup}>
-                        {['Account Manager', 'Mes Editor', 'Catalog Manager', 'Designer'].map(
-                          (role) => (
-                            <label key={role} htmlFor={role} className={styles.roleItem}>
-                              <input
-                                type="checkbox"
-                                id={role}
-                                onChange={handleCheckboxChange}
-                                className={styles.roleCheckbox}
-                              />
-                              <span>{role}</span>
-                            </label>
-                          )
-                        )}
-                      </div>
-                    </form>
-                  </div>
-                  <div className={styles.createButtonGrop}>
-                    <button className={styles.invitebutton} onClick={handleAddMemberClick}>
-                      Send Invitation
-                    </button>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {memberToDelete && (
-              <div className={styles.createpopupOverlay}>
-                <div className={styles.deletepopup}>
-                  <div
-                    className={styles.firstpart}
-                    style={{
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'center',
-                      marginBottom: '1rem',
-                    }}
-                  >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
-                      <img
-                        src={assets.deleteteamicon}
-                        alt="delete user"
-                        style={{ width: '24px', height: '24px', margin: 0 }}
-                      />
-                      <h5 className={styles.addmembartitle} style={{ margin: 0 }}>
-                        Remove Team Member
-                      </h5>
+                      <button
+                        className={styles.teantopbarleftButton}
+                        onClick={() => setAddMambarPopup(true)}
+                      >
+                        <LuUserPlus aria-hidden="true" />
+                        Invite New Member
+                      </button>
                     </div>
-                    <img
-                      src={assets.addmemberclose}
-                      className={styles.createclose}
-                      alt="close"
-                      onClick={() => setMemberToDelete(null)}
-                      style={{ marginTop: 0, position: 'relative', top: 0, right: 0 }}
-                    />
+
+                    <div className={styles.tableContainer} ref={tableContainerRef}>
+                      <table>
+                        <thead>
+                          <tr>
+                            <th>Name</th>
+                            <th>Email</th>
+                            <th>Role</th>
+                            <th className={styles.actioncolumn}>Action</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {filteredMembers.length === 0 && (
+                            <tr>
+                              <td colSpan={4} className={styles.emptyCell}>
+                                <span className={styles.emptyIcon}>
+                                  <LuUsers aria-hidden="true" />
+                                </span>
+                                <strong>
+                                  {activeTab === 'active' ? 'No members yet' : 'No pending invites'}
+                                </strong>
+                                <span className={styles.emptyHint}>
+                                  Invite a designer or production manager to get started.
+                                </span>
+                              </td>
+                            </tr>
+                          )}
+                          {filteredMembers.map((member) => {
+                            const memberName =
+                              member.displayName ||
+                              member.name ||
+                              member.username ||
+                              member.email?.split('@')?.[0] ||
+                              'N/A';
+                            return (
+                              <tr key={member.id}>
+                                <td>
+                                  <div className={styles.memberCell}>
+                                    <span className={styles.memberAvatar}>
+                                      {getInitials(memberName)}
+                                    </span>
+                                    <span className={styles.memberName}>{memberName}</span>
+                                  </div>
+                                </td>
+                                <td className={styles.emailbox}>{member.email}</td>
+                                <td className={styles.rolebox}>
+                                  <div className={styles.roleContainer}>
+                                    {member.groups.map((role, index) => (
+                                      <span key={index} className={styles.roleBadge}>
+                                        {role}
+                                        <button
+                                          type="button"
+                                          className={styles.closeteam}
+                                          aria-label={`Remove ${role}`}
+                                          onClick={() => handleRoleRemove(role, member.id)}
+                                        >
+                                          <LuX aria-hidden="true" />
+                                        </button>
+                                      </span>
+                                    ))}
+                                    <div
+                                      className={styles.roleaddicon}
+                                      title="Add role"
+                                      onClick={(e) => handleRoleAddClick(e, member.id)}
+                                    >
+                                      <LuPlus aria-hidden="true" />
+                                    </div>
+                                  </div>
+                                </td>
+                                <td className={styles.actioncolumn}>
+                                  <button
+                                    type="button"
+                                    aria-label="Remove member"
+                                    title="Remove member"
+                                    className={`${styles.teamdeleteicon} ${
+                                      isDeleteHovered == member.id ? styles.teamdeleteiconHover : ''
+                                    }`}
+                                    onClick={() => handleDeleteMember(member.id)}
+                                    onMouseEnter={() => handleMouseEnter(member.id)}
+                                    onMouseLeave={handleMouseLeave}
+                                  >
+                                    <LuTrash2 aria-hidden="true" />
+                                  </button>
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
                   </div>
 
-                  <div className={styles.create_right_side}>
-                    <p style={{ margin: '0 0 1.5rem 0', color: '#475569', fontSize: '1rem' }}>
-                      Are you sure you want to remove this team member? This action cannot be undone
-                      and they will lose access to the organization immediately.
-                    </p>
-                  </div>
+                  {renderToasts(false)}
 
-                  <div
-                    className={styles.createButtonGrop}
-                    style={{ display: 'flex', gap: '1rem', marginTop: '1.5rem', padding: 0 }}
-                  >
-                    <button
-                      className={styles.cancelButton}
-                      onClick={() => setMemberToDelete(null)}
+                  {/* Role Dropdown Popup */}
+                  {openDropdown && dropdownPosition && (
+                    <div
+                      ref={dropdownRef}
+                      className={styles.roleDropdownPopup}
                       style={{
-                        flex: 1,
-                        padding: '0.85rem',
-                        borderRadius: '12px',
-                        background: 'white',
-                        border: '1px solid #cbd5e1',
-                        color: '#475569',
-                        fontWeight: 600,
-                        cursor: 'pointer',
+                        top: `${dropdownPosition.y}px`,
+                        left: `${dropdownPosition.x}px`,
                       }}
                     >
-                      Cancel
-                    </button>
-                    <button
-                      className={styles.confirmDeleteButton}
-                      onClick={() => confirmDelete(memberToDelete)}
-                      style={{
-                        flex: 1,
-                        padding: '0.85rem',
-                        borderRadius: '12px',
-                        background: '#ef4444',
-                        border: 'none',
-                        color: 'white',
-                        fontWeight: 600,
-                        cursor: 'pointer',
-                        boxShadow: '0 4px 12px rgba(239, 68, 68, 0.2)',
-                      }}
-                    >
-                      Yes, Remove Member
-                    </button>
+                      <span className={styles.dropdownLabel}>Add role</span>
+                      {rolesList.map((role, index) => (
+                        <div
+                          key={index}
+                          className={styles.dropdownItem}
+                          onClick={() =>
+                            selectedMemberId && handleRoleSelect(role, selectedMemberId)
+                          }
+                        >
+                          <span className={styles.dropdownDot}></span>
+                          {role}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </>
+              )}
+
+              {/* Add Member Popup */}
+              {addMambarPopup && (
+                <div className={styles.createpopupOverlay}>
+                  <div className={styles.createpopup}>
+                    <div className={styles.invitePopupHeader}>
+                      <span className={styles.popupIcon}>
+                        <LuUserPlus aria-hidden="true" />
+                      </span>
+                      <div>
+                        <h5 className={styles.addmembartitle}>Invite New Member</h5>
+                        <p className={styles.popupText}>
+                          They will get an email to join your workspace.
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        className={styles.createclose}
+                        aria-label="Close"
+                        onClick={() => {
+                          setAddMambarPopup(false);
+                          setErrorMessage('');
+                        }}
+                      >
+                        <LuX aria-hidden="true" />
+                      </button>
+                    </div>
+
+                    <div className={styles.create_right_side}>
+                      <form className={styles.form} onSubmit={(e) => e.preventDefault()}>
+                        {errorMessage && (
+                          <p className={styles.erroemessage}>
+                            <LuCircleAlert aria-hidden="true" />
+                            {errorMessage}
+                          </p>
+                        )}
+
+                        <div className={`${styles.fieldGrid} ${styles.fieldGrid1}`}>
+                          {addmemberfields.map((field, index) => (
+                            <InputField
+                              key={index}
+                              borderColor="var(--bv-border-strong)"
+                              {...field}
+                              error=""
+                              fullWidth={true}
+                              mediumField={true}
+                            />
+                          ))}
+                        </div>
+
+                        <p className={styles.membertitle}>Assign roles</p>
+
+                        <div className={styles.checkboxgroup}>
+                          {['Account Manager', 'Mes Editor', 'Catalog Manager', 'Designer'].map(
+                            (role) => (
+                              <label key={role} htmlFor={role} className={styles.roleItem}>
+                                <input
+                                  type="checkbox"
+                                  id={role}
+                                  onChange={handleCheckboxChange}
+                                  className={styles.roleCheckbox}
+                                />
+                                <span>{role}</span>
+                              </label>
+                            )
+                          )}
+                        </div>
+                      </form>
+                    </div>
+                    <div className={styles.createButtonGrop}>
+                      <button
+                        className={styles.cancelButton}
+                        onClick={() => {
+                          setAddMambarPopup(false);
+                          setErrorMessage('');
+                        }}
+                      >
+                        Cancel
+                      </button>
+                      <button className={styles.invitebutton} onClick={handleAddMemberClick}>
+                        <LuSend aria-hidden="true" />
+                        Send Invitation
+                      </button>
+                    </div>
                   </div>
                 </div>
-              </div>
-            )}
+              )}
+
+              {memberToDelete && (
+                <div className={styles.createpopupOverlay}>
+                  <div className={styles.deletepopup}>
+                    <button
+                      type="button"
+                      className={styles.createclose}
+                      aria-label="Close"
+                      onClick={() => setMemberToDelete(null)}
+                    >
+                      <LuX aria-hidden="true" />
+                    </button>
+                    <span className={styles.deleteIcon}>
+                      <LuUserMinus aria-hidden="true" />
+                    </span>
+                    <h5 className={styles.addmembartitle}>Remove team member?</h5>
+                    <p className={styles.popupText}>
+                      They will lose access to this organization immediately. This can&apos;t be
+                      undone.
+                    </p>
+
+                    <div className={styles.createButtonGrop}>
+                      <button
+                        className={styles.cancelButton}
+                        onClick={() => setMemberToDelete(null)}
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        className={styles.confirmDeleteButton}
+                        onClick={() => confirmDelete(memberToDelete)}
+                      >
+                        <LuTrash2 aria-hidden="true" />
+                        Yes, Remove Member
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </section>
           </div>
         </div>
       </div>

@@ -7,10 +7,6 @@ const BackendDownOverlay = () => {
 
   return (
     <div className="backend-down-wrapper">
-      <link
-        href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@300;400;500;600;700&display=swap"
-        rel="stylesheet"
-      />
       <div className="glow"></div>
       <div className="container">
         <div className="logo">BRAVENTO</div>
@@ -24,7 +20,7 @@ const BackendDownOverlay = () => {
             strokeWidth="2"
             strokeLinecap="round"
             strokeLinejoin="round"
-            style={{ color: '#9078dd' }}
+            style={{ color: 'var(--bv-accent-light)' }}
           >
             <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
             <line x1="12" y1="9" x2="12" y2="13"></line>
@@ -44,17 +40,21 @@ const BackendDownOverlay = () => {
 
       <style jsx>{`
         .backend-down-wrapper {
-          --bg: rgba(10, 10, 10, 0.95);
-          --primary: #392579;
-          --secondary: #9078dd;
-          --text: #ffffff;
-          --text-dim: #94a3b8;
+          --bg: var(--bv-ink-2);
+          --primary: var(--bv-accent);
+          --secondary: var(--bv-accent-light);
+          --text: var(--bv-on-ink);
+          --text-dim: var(--bv-on-ink-muted);
 
           position: fixed;
           inset: 0;
           z-index: 2147483647;
-          font-family: 'Comfortaa', sans-serif;
+          font-family: var(--bv-font);
           background-color: var(--bg);
+          background-image:
+            linear-gradient(var(--bv-glass) 1px, transparent 1px),
+            linear-gradient(90deg, var(--bv-glass) 1px, transparent 1px);
+          background-size: 28px 28px;
           backdrop-filter: blur(10px);
           color: var(--text);
           display: flex;
@@ -79,10 +79,10 @@ const BackendDownOverlay = () => {
           position: relative;
           z-index: 1;
           max-width: 500px;
-          background: rgba(255, 255, 255, 0.03);
-          border: 1px solid rgba(255, 255, 255, 0.1);
+          background: var(--bv-glass);
+          border: 1px solid var(--bv-glass-border);
           border-radius: 2rem;
-          box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+          box-shadow: var(--bv-shadow-lg);
         }
 
         .logo {
@@ -93,14 +93,14 @@ const BackendDownOverlay = () => {
           -webkit-background-clip: text;
           background-clip: text;
           -webkit-text-fill-color: transparent;
-          letter-spacing: -1px;
+          letter-spacing: 0.08em;
         }
 
         .status-icon {
           width: 80px;
           height: 80px;
           margin: 0 auto 2rem;
-          border: 3px solid rgba(144, 120, 221, 0.2);
+          border: 3px solid var(--bv-glass-border);
           border-radius: 50%;
           display: flex;
           align-items: center;
@@ -112,15 +112,15 @@ const BackendDownOverlay = () => {
         @keyframes pulse {
           0% {
             transform: scale(1);
-            box-shadow: 0 0 0 0 rgba(144, 120, 221, 0.4);
+            box-shadow: 0 0 0 0 var(--bv-accent-glow);
           }
           70% {
             transform: scale(1.05);
-            box-shadow: 0 0 0 20px rgba(144, 120, 221, 0);
+            box-shadow: 0 0 0 20px transparent;
           }
           100% {
             transform: scale(1);
-            box-shadow: 0 0 0 0 rgba(144, 120, 221, 0);
+            box-shadow: 0 0 0 0 transparent;
           }
         }
 
@@ -128,7 +128,7 @@ const BackendDownOverlay = () => {
           font-size: 2.2rem;
           margin-bottom: 1rem;
           font-weight: 600;
-          color: #fff;
+          color: var(--text);
         }
 
         p {
@@ -145,22 +145,23 @@ const BackendDownOverlay = () => {
         }
 
         .refresh-button {
-          background: linear-gradient(135deg, var(--primary), var(--secondary));
-          color: white;
+          background: var(--primary);
+          color: var(--bv-on-accent);
           border: none;
+          font-family: var(--bv-font);
           padding: 1rem 2.5rem;
           font-size: 1.1rem;
           font-weight: 600;
-          border-radius: 1rem;
+          border-radius: var(--bv-radius-pill);
           cursor: pointer;
           transition: all 0.3s ease;
-          box-shadow: 0 10px 15px -3px rgba(57, 37, 121, 0.3);
+          box-shadow: var(--bv-shadow-md);
         }
 
         .refresh-button:hover {
           transform: translateY(-2px);
-          box-shadow: 0 20px 25px -5px rgba(57, 37, 121, 0.4);
-          filter: brightness(1.1);
+          background: var(--bv-accent-hover);
+          box-shadow: var(--bv-shadow-lg);
         }
 
         .refresh-button:active {
@@ -171,7 +172,7 @@ const BackendDownOverlay = () => {
           position: absolute;
           width: 600px;
           height: 600px;
-          background: radial-gradient(circle, rgba(144, 120, 221, 0.1) 0%, rgba(0, 0, 0, 0) 70%);
+          background: radial-gradient(circle, var(--bv-accent-glow) 0%, transparent 70%);
           top: 50%;
           left: 50%;
           transform: translate(-50%, -50%);

@@ -1,0 +1,1047 @@
+/* ─────────────────────────────────────────────────────────────
+   Auth pages (login, register, forgot, OTP) — shared layout & form styles
+   Style-only; see DESIGN_RULES.md
+   ───────────────────────────────────────────────────────────── */
+
+.container {
+  display: grid;
+  grid-template-columns: minmax(0, 1.08fr) minmax(0, 1fr);
+  gap: 1rem;
+  width: 100%;
+  height: calc(100vh - var(--banner-offset, 0px));
+  padding: 1rem;
+  box-sizing: border-box;
+  font-family: var(--bv-font);
+  color: var(--bv-text);
+  background: var(--bv-bg);
+}
+
+/* ── Showcase panel ────────────────────────────────────────── */
+
+.showcase {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 1.4rem;
+  min-height: 0;
+  padding: 2.6rem 2.8rem 2.2rem;
+  overflow: hidden;
+  border-radius: 1.6rem;
+  color: var(--bv-on-ink);
+  background-color: var(--bv-ink);
+  background-image:
+    linear-gradient(var(--bv-glass) 1px, transparent 1px),
+    linear-gradient(90deg, var(--bv-glass) 1px, transparent 1px),
+    radial-gradient(circle at 92% 4%, var(--bv-accent-glow) 0%, transparent 42%),
+    linear-gradient(165deg, var(--bv-ink) 0%, var(--bv-ink-2) 55%, var(--bv-primary-hover) 100%);
+  background-size:
+    28px 28px,
+    28px 28px,
+    100% 100%,
+    100% 100%;
+  animation: fadeUp 520ms cubic-bezier(0.2, 0, 0, 1) both;
+}
+
+.showcaseTop {
+  max-width: 34rem;
+}
+
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.38rem 0.8rem;
+  font-size: clamp(11px, 0.72rem, 13px);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--bv-accent-light);
+  background: var(--bv-glass);
+  border: 1px solid var(--bv-glass-border);
+  border-radius: var(--bv-radius-pill);
+}
+
+.eyebrow svg {
+  font-size: 1.1em;
+}
+
+.headline {
+  margin: 1.2rem 0 0;
+  font-family: var(--bv-font);
+  font-size: clamp(26px, 2.5rem, 50px);
+  font-weight: 700;
+  line-height: 1.08;
+  letter-spacing: -0.03em;
+  color: var(--bv-on-primary);
+}
+
+.headline span {
+  display: block;
+  color: var(--bv-accent-light);
+}
+
+.lead {
+  max-width: 30rem;
+  margin: 1rem 0 0;
+  font-size: clamp(13px, 0.92rem, 17px);
+  line-height: 1.6;
+  color: var(--bv-on-ink-muted);
+}
+
+.illustrationWrap {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.illustration {
+  width: 100%;
+  height: 100%;
+  max-height: 24rem;
+  overflow: visible;
+}
+
+.wood {
+  fill: var(--bv-wood);
+}
+
+.woodLight {
+  fill: var(--bv-wood-light);
+}
+
+.woodDark {
+  fill: var(--bv-wood-dark);
+}
+
+.stone {
+  fill: var(--bv-stone);
+}
+
+.leaf {
+  fill: var(--bv-leaf);
+}
+
+.accentFill {
+  fill: var(--bv-accent);
+}
+
+.handle {
+  fill: var(--bv-ink-2);
+  opacity: 0.75;
+}
+
+.floor {
+  stroke: var(--bv-glass-border);
+  stroke-width: 2;
+}
+
+.dim line {
+  stroke: var(--bv-on-ink-muted);
+  stroke-width: 1;
+}
+
+.dimTag {
+  fill: var(--bv-ink-2);
+  stroke: var(--bv-glass-border);
+}
+
+.dim text {
+  font-family: var(--bv-font);
+  font-size: 11px;
+  font-weight: 600;
+  text-anchor: middle;
+  fill: var(--bv-on-ink);
+}
+
+.cutMark rect {
+  fill: none;
+  stroke: var(--bv-on-ink);
+  stroke-width: 2;
+  stroke-dasharray: 7 5;
+  animation: cutDash 6s linear infinite;
+}
+
+.floatChip {
+  position: absolute;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.85rem 0.5rem 0.5rem;
+  font-size: clamp(11px, 0.75rem, 14px);
+  font-weight: 600;
+  color: var(--bv-text);
+  background: var(--bv-surface);
+  border-radius: var(--bv-radius-pill);
+  box-shadow: var(--bv-shadow-lg);
+  animation: floatY 5s ease-in-out infinite;
+}
+
+.floatChip svg {
+  box-sizing: content-box;
+  padding: 0.35rem;
+  font-size: 1.05em;
+  color: var(--bv-primary);
+  background: var(--bv-primary-soft);
+  border-radius: 50%;
+}
+
+.chipNesting {
+  top: 8%;
+  left: 0;
+}
+
+.chipCnc {
+  right: 2%;
+  bottom: 12%;
+  animation-delay: -2.5s;
+}
+
+.chipCnc svg {
+  color: var(--bv-on-accent);
+  background: var(--bv-accent);
+}
+
+.features {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.8rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.features li {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.7rem;
+  padding: 0.9rem;
+  border-radius: 1rem;
+  background: var(--bv-glass);
+  border: 1px solid var(--bv-glass-border);
+}
+
+.featureIcon {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 2.2rem;
+  height: 2.2rem;
+  min-width: 30px;
+  min-height: 30px;
+  font-size: clamp(15px, 1.05rem, 20px);
+  color: var(--bv-on-accent);
+  background: var(--bv-accent);
+  border-radius: 0.7rem;
+}
+
+.features strong {
+  display: block;
+  font-size: clamp(12px, 0.8rem, 15px);
+  font-weight: 600;
+  color: var(--bv-on-primary);
+}
+
+.features small {
+  display: block;
+  margin-top: 0.15rem;
+  font-size: clamp(11px, 0.7rem, 13px);
+  line-height: 1.4;
+  color: var(--bv-on-ink-muted);
+}
+
+/* ── Form panel ────────────────────────────────────────────── */
+
+.formPanel {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.formInner {
+  width: clamp(300px, 24rem, 440px);
+  padding: 1.5rem 0;
+  animation: fadeUp 520ms 80ms cubic-bezier(0.2, 0, 0, 1) both;
+}
+
+.showcaseLogo {
+  display: block;
+  width: clamp(120px, 9rem, 170px);
+  margin-bottom: 1.6rem;
+}
+
+/* Logo artwork is made for dark backgrounds; shown on an ink badge
+   only when the showcase panel is hidden (narrow screens). */
+.brandRow {
+  display: none;
+}
+
+.formInner.wide {
+  width: clamp(340px, 30rem, 560px);
+}
+
+.brandLogo {
+  display: block;
+  width: 130px;
+}
+
+.title {
+  margin: 0;
+  font-family: var(--bv-font);
+  font-size: clamp(24px, 2rem, 38px);
+  font-weight: 700;
+  letter-spacing: -0.025em;
+  color: var(--bv-text);
+}
+
+.subtitle {
+  margin: 0.5rem 0 0;
+  font-size: clamp(13px, 0.88rem, 16px);
+  line-height: 1.55;
+  color: var(--bv-text-muted);
+}
+
+.form {
+  display: block;
+  margin-top: 1.8rem;
+}
+
+.inputGroup {
+  width: 100%;
+}
+
+.inputField {
+  width: 100% !important;
+  margin-bottom: 0.3rem !important;
+  padding: 0;
+}
+
+/* Scoped overrides for the shared MUI InputField (login only) */
+.inputGroup .inputField :global(.MuiInputBase-root) {
+  width: 100% !important;
+  height: clamp(44px, 3rem, 54px) !important;
+}
+
+.inputGroup .inputField :global(.MuiInputBase-input) {
+  height: clamp(44px, 3rem, 54px) !important;
+  box-sizing: border-box;
+  font-family: var(--bv-font) !important;
+  font-size: clamp(13px, 0.9rem, 16px) !important;
+  color: var(--bv-text) !important;
+}
+
+.inputGroup .inputField :global(.MuiOutlinedInput-root) {
+  border-radius: var(--bv-radius);
+  background: var(--bv-surface);
+  transition: box-shadow var(--bv-ease);
+}
+
+.inputGroup .inputField :global(.MuiOutlinedInput-root) fieldset {
+  border: 1px solid var(--bv-border-strong) !important;
+  border-radius: var(--bv-radius) !important;
+  transition: border-color var(--bv-ease);
+}
+
+.inputGroup .inputField :global(.MuiOutlinedInput-root:hover) fieldset {
+  border-color: var(--bv-text-subtle) !important;
+}
+
+.inputGroup .inputField :global(.MuiOutlinedInput-root.Mui-focused) {
+  box-shadow: var(--bv-focus-ring);
+}
+
+.inputGroup .inputField :global(.MuiOutlinedInput-root.Mui-focused) fieldset {
+  border-color: var(--bv-primary) !important;
+}
+
+.inputGroup .inputField :global(.MuiOutlinedInput-root.Mui-error) fieldset {
+  border-color: var(--bv-danger) !important;
+}
+
+.inputGroup .inputField :global(.MuiInputLabel-root) {
+  font-family: var(--bv-font) !important;
+  font-size: clamp(13px, 0.85rem, 15px) !important;
+  color: var(--bv-text-subtle) !important;
+  top: 50% !important;
+  transform: translate(0.9rem, -50%) !important;
+}
+
+.inputGroup .inputField :global(.MuiInputLabel-root.Mui-focused),
+.inputGroup .inputField :global(.MuiInputLabel-root.MuiFormLabel-filled) {
+  top: 0 !important;
+  padding: 0 4px;
+  background: var(--bv-surface);
+  font-size: clamp(11px, 0.72rem, 13px) !important;
+  transform: translate(0.7rem, -50%) !important;
+}
+
+.inputGroup .inputField :global(.MuiInputLabel-root.Mui-focused) {
+  color: var(--bv-primary) !important;
+}
+
+.inputGroup .inputField :global(.MuiInputLabel-root.Mui-error) {
+  color: var(--bv-danger) !important;
+}
+
+.inputGroup .inputField :global(.MuiOutlinedInput-notchedOutline legend) {
+  display: none;
+}
+
+.inputGroup .inputField :global(.MuiIconButton-root) {
+  opacity: 0.7;
+}
+
+.inputGroup .inputField :global(.MuiIconButton-root) img {
+  width: clamp(16px, 1.1rem, 20px) !important;
+  height: clamp(16px, 1.1rem, 20px) !important;
+}
+
+.inputGroup p {
+  font-family: var(--bv-font) !important;
+  font-size: clamp(11px, 0.7rem, 13px) !important;
+  letter-spacing: 0 !important;
+  color: var(--bv-danger) !important;
+  margin: 0.3rem 0 0.2rem 0.2rem !important;
+}
+
+/* ── Form-level error ──────────────────────────────────────── */
+
+.errorContainer {
+  margin: 0.3rem 0 0.7rem;
+}
+
+.errorMessage {
+  font-family: var(--bv-font) !important;
+  font-size: clamp(12px, 0.75rem, 14px) !important;
+  line-height: 1.45;
+  letter-spacing: 0 !important;
+  color: var(--bv-danger) !important;
+  background: var(--bv-danger-soft);
+  border-radius: var(--bv-radius);
+  padding: 0.65rem 0.85rem;
+  margin: 0 !important;
+}
+
+/* ── Remember me / forgot ──────────────────────────────────── */
+
+.forgotContainer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.remembermeContainer {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.remembermeContainer label {
+  margin: 0;
+  font-size: clamp(12px, 0.78rem, 14px);
+  color: var(--bv-text-muted);
+  cursor: pointer;
+  user-select: none;
+}
+
+.rememberMeCheckbox {
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  border: 1.5px solid var(--bv-border-strong);
+  border-radius: 5px;
+  background-color: var(--bv-surface);
+  cursor: pointer;
+  transition:
+    background-color var(--bv-ease),
+    border-color var(--bv-ease);
+}
+
+.rememberMeCheckbox:hover {
+  border-color: var(--bv-primary);
+}
+
+.rememberMeCheckbox:focus-visible {
+  outline: none;
+  box-shadow: var(--bv-focus-ring);
+}
+
+.rememberMeCheckbox:checked {
+  border-color: var(--bv-primary);
+  background-color: var(--bv-primary);
+}
+
+.rememberMeCheckbox::before {
+  content: '✔';
+  font-size: 10px;
+  line-height: 1;
+  color: var(--bv-on-primary);
+  opacity: 0;
+  transition: opacity var(--bv-ease);
+}
+
+.rememberMeCheckbox:checked::before {
+  opacity: 1;
+}
+
+.forgotPasswordContainer {
+  display: flex;
+  align-items: center;
+}
+
+.forgotPassword {
+  font-size: clamp(12px, 0.78rem, 14px);
+  font-weight: 600;
+  color: var(--bv-primary);
+  text-decoration: none;
+  transition: color var(--bv-ease);
+}
+
+.forgotPassword:hover {
+  color: var(--bv-primary-hover);
+  text-decoration: underline;
+}
+
+/* ── Primary action ────────────────────────────────────────── */
+
+.buttonContainer {
+  width: 100%;
+  margin-top: 1.5rem;
+}
+
+.loginButton,
+.primaryButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  width: 100%;
+  height: clamp(44px, 3rem, 54px);
+  padding: 0 1rem;
+  font-family: var(--bv-font);
+  font-size: clamp(14px, 0.92rem, 17px);
+  font-weight: 600;
+  color: var(--bv-on-accent);
+  background-color: var(--bv-accent);
+  border: none;
+  border-radius: var(--bv-radius);
+  box-shadow: var(--bv-shadow-sm);
+  cursor: pointer;
+  transition:
+    background-color var(--bv-ease),
+    box-shadow var(--bv-ease),
+    transform var(--bv-ease);
+}
+
+.loginButton svg,
+.primaryButton svg {
+  transition: transform var(--bv-ease);
+}
+
+.loginButton:hover,
+.primaryButton:hover {
+  background-color: var(--bv-accent-hover);
+  box-shadow: var(--bv-shadow-md);
+  transform: translateY(-1px);
+}
+
+.loginButton:hover svg,
+.primaryButton:hover svg {
+  transform: translateX(3px);
+}
+
+.loginButton:active,
+.primaryButton:active {
+  transform: translateY(0);
+}
+
+.loginButton:focus-visible,
+.primaryButton:focus-visible {
+  outline: none;
+  box-shadow: var(--bv-focus-ring);
+}
+
+.loginButton:disabled,
+.primaryButton:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* ── Sign up link ──────────────────────────────────────────── */
+
+.linkContainer {
+  display: flex;
+  justify-content: center;
+  margin-top: 1.6rem;
+}
+
+.registerLinkContainer {
+  display: flex;
+  align-items: center;
+}
+
+.registerLinkContainer p {
+  margin: 0;
+  font-size: clamp(12px, 0.82rem, 15px);
+  color: var(--bv-text-muted);
+}
+
+.registerLinkContainer span {
+  font-weight: 600;
+  color: var(--bv-primary);
+  cursor: pointer;
+  transition: color var(--bv-ease);
+}
+
+.registerLinkContainer span:hover {
+  color: var(--bv-primary-hover);
+  text-decoration: underline;
+}
+
+.legal {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  margin: 2.4rem 0 0;
+  padding-top: 1.2rem;
+  border-top: 1px solid var(--bv-border);
+  font-size: clamp(11px, 0.7rem, 13px);
+  color: var(--bv-text-subtle);
+}
+
+.legal svg {
+  color: var(--bv-primary);
+}
+
+/* ── Register: grouped, two-column fields ──────────────────── */
+
+.sectionLabel {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin: 1.1rem 0 0.55rem;
+  font-size: clamp(11px, 0.68rem, 13px);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--bv-text-subtle);
+}
+
+.sectionLabel::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--bv-border);
+}
+
+.sectionLabel:first-child {
+  margin-top: 0;
+}
+
+.fieldRow {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  column-gap: 0.8rem;
+}
+
+.fieldRow > *,
+.fieldStack > * {
+  min-width: 0;
+  margin-top: 0.25rem !important;
+  margin-bottom: 0.25rem !important;
+}
+
+.strength {
+  margin: 0.35rem 0 0.2rem;
+  font-family: var(--bv-font);
+}
+
+.strength p {
+  margin: 0.3rem 0 0 !important;
+  font-family: var(--bv-font) !important;
+  font-size: clamp(11px, 0.68rem, 13px) !important;
+  color: var(--bv-text-muted) !important;
+}
+
+.strength > div > div > div {
+  border-radius: var(--bv-radius-pill);
+}
+
+.terms {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.55rem;
+  margin-top: 0.9rem;
+}
+
+.terms label {
+  margin: 0;
+  font-size: clamp(12px, 0.76rem, 14px);
+  line-height: 1.45;
+  color: var(--bv-text-muted);
+  cursor: pointer;
+  user-select: none;
+}
+
+.terms a {
+  font-weight: 600;
+  color: var(--bv-primary);
+  cursor: pointer;
+}
+
+.terms a:hover {
+  text-decoration: underline;
+}
+
+.terms .rememberMeCheckbox {
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.fieldError {
+  margin: 0.4rem 0 0 !important;
+  font-family: var(--bv-font) !important;
+  font-size: clamp(11px, 0.7rem, 13px) !important;
+  color: var(--bv-danger) !important;
+}
+
+/* ── Forgot / OTP: shared bits ─────────────────────────────── */
+
+.backLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin: 0 0 1.8rem;
+  padding: 0.35rem 0.7rem 0.35rem 0.5rem;
+  font-family: var(--bv-font);
+  font-size: clamp(12px, 0.78rem, 14px);
+  font-weight: 600;
+  color: var(--bv-text-muted);
+  background: var(--bv-surface-2);
+  border: 1px solid var(--bv-border);
+  border-radius: var(--bv-radius-pill);
+  cursor: pointer;
+  transition:
+    color var(--bv-ease),
+    border-color var(--bv-ease);
+}
+
+.backLink:hover {
+  color: var(--bv-primary);
+  border-color: var(--bv-primary);
+}
+
+.backLink:hover svg {
+  transform: translateX(-2px);
+}
+
+.backLink svg {
+  transition: transform var(--bv-ease);
+}
+
+.backLink:focus-visible {
+  outline: none;
+  box-shadow: var(--bv-focus-ring);
+}
+
+.iconBadge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: clamp(44px, 3.2rem, 58px);
+  height: clamp(44px, 3.2rem, 58px);
+  margin-bottom: 1.1rem;
+  font-size: clamp(20px, 1.5rem, 28px);
+  color: var(--bv-on-accent);
+  background: var(--bv-accent);
+  border-radius: 1rem;
+  box-shadow: var(--bv-shadow-md);
+}
+
+.emphasis {
+  font-weight: 600;
+  color: var(--bv-text);
+  overflow-wrap: anywhere;
+}
+
+.successMessage {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.55rem;
+  margin: 0.4rem 0 0.2rem;
+  padding: 0.65rem 0.85rem;
+  font-size: clamp(12px, 0.78rem, 14px);
+  line-height: 1.45;
+  color: var(--bv-success);
+  background: var(--bv-success-soft);
+  border-radius: var(--bv-radius);
+}
+
+.successMessage svg {
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+/* ── OTP boxes ─────────────────────────────────────────────── */
+
+.otpRow {
+  display: flex;
+  gap: 0.7rem;
+}
+
+.otpInput {
+  flex: 1;
+  min-width: 0;
+  height: clamp(52px, 3.8rem, 68px);
+  padding: 0;
+  font-family: var(--bv-font);
+  font-size: clamp(20px, 1.5rem, 28px);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+  color: var(--bv-text);
+  background: var(--bv-surface);
+  border: 1.5px solid var(--bv-border-strong);
+  border-radius: 0.9rem;
+  caret-color: var(--bv-accent);
+  transition:
+    border-color var(--bv-ease),
+    box-shadow var(--bv-ease),
+    background-color var(--bv-ease);
+}
+
+.otpInput:hover {
+  border-color: var(--bv-text-subtle);
+}
+
+.otpInput:focus {
+  outline: none;
+  border-color: var(--bv-primary);
+  box-shadow: var(--bv-focus-ring);
+}
+
+.otpFilled {
+  border-color: var(--bv-primary);
+  background: var(--bv-primary-tint);
+}
+
+.resendRow {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin: 1rem 0 0.6rem;
+  font-size: clamp(12px, 0.78rem, 14px);
+}
+
+.timerPill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.3rem 0.65rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--bv-primary);
+  background: var(--bv-primary-soft);
+  border-radius: var(--bv-radius-pill);
+}
+
+.resendHint {
+  margin-left: auto;
+  color: var(--bv-text-muted);
+}
+
+.resendButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0;
+  font-family: var(--bv-font);
+  font-size: inherit;
+  font-weight: 700;
+  color: var(--bv-accent);
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: color var(--bv-ease);
+}
+
+.resendButton:hover:not(:disabled) {
+  color: var(--bv-accent-hover);
+  text-decoration: underline;
+}
+
+.resendButton:disabled {
+  color: var(--bv-text-subtle);
+  cursor: not-allowed;
+}
+
+.resendButton:focus-visible {
+  outline: none;
+  box-shadow: var(--bv-focus-ring);
+  border-radius: 4px;
+}
+
+/* ── Motion ────────────────────────────────────────────────── */
+
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes floatY {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}
+
+@keyframes cutDash {
+  to {
+    stroke-dashoffset: -120;
+  }
+}
+
+/* ── Workshop canvas layout (Phase 2) ─────────────────────────
+   The whole page is the dark workshop board; the form floats on
+   the left as a white card and the brand story fills the right. */
+
+.container {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr);
+  gap: 0;
+  padding: 0;
+  color: var(--bv-on-ink);
+  background-color: var(--bv-ink);
+  background-image:
+    linear-gradient(var(--bv-glass) 1px, transparent 1px),
+    linear-gradient(90deg, var(--bv-glass) 1px, transparent 1px),
+    radial-gradient(circle at 100% 0%, var(--bv-accent-glow) 0%, transparent 45%),
+    linear-gradient(160deg, var(--bv-ink) 0%, var(--bv-ink-2) 60%, var(--bv-primary-hover) 100%);
+  background-size:
+    28px 28px,
+    28px 28px,
+    100% 100%,
+    100% 100%;
+}
+
+.formPanel {
+  order: 1;
+  padding: 1.6rem;
+}
+
+.formInner {
+  padding: 2.2rem 2.2rem 1.8rem;
+  color: var(--bv-text);
+  background: var(--bv-surface);
+  border-radius: 1.4rem;
+  box-shadow: 0 1.6rem 3.6rem rgba(10, 10, 4, 0.35);
+}
+
+/* Terracotta tab on top of the form card */
+.formInner::before {
+  display: block;
+  width: 2.6rem;
+  height: 4px;
+  margin: -2.2rem 0 1.8rem;
+  content: '';
+  background: var(--bv-accent);
+  border-radius: 0 0 4px 4px;
+}
+
+.showcase {
+  order: 2;
+  justify-content: space-between;
+  padding: 2.6rem 3rem 2.4rem;
+  background: none;
+  border-left: 1px solid var(--bv-glass-border);
+  border-radius: 0;
+}
+
+/* Feature list becomes a vertical "spec sheet" */
+.features {
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0;
+  max-width: 30rem;
+  border-top: 1px solid var(--bv-glass-border);
+}
+
+.features li {
+  align-items: center;
+  padding: 0.75rem 0;
+  background: none;
+  border: none;
+  border-bottom: 1px solid var(--bv-glass-border);
+  border-radius: 0;
+}
+
+.featureIcon {
+  border-radius: 50%;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .showcase,
+  .formInner,
+  .floatChip,
+  .cutMark rect {
+    animation: none;
+  }
+}
+
+/* ── Narrow screens: form only ─────────────────────────────── */
+
+@media (max-width: 900px) {
+  .container {
+    grid-template-columns: minmax(0, 1fr);
+    padding: 16px;
+  }
+
+  .formInner {
+    padding: 1.6rem 1.4rem;
+  }
+
+  .formInner::before {
+    margin-top: -1.6rem;
+  }
+
+  .showcase {
+    display: none;
+  }
+
+  .formInner {
+    width: min(420px, 100%);
+  }
+
+  .formInner.wide {
+    width: min(520px, 100%);
+  }
+
+  .brandRow {
+    display: flex;
+    width: max-content;
+    padding: 10px 14px;
+    margin-bottom: 28px;
+    border-radius: 12px;
+    background: var(--bv-ink);
+  }
+}

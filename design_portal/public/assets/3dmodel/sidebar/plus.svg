@@ -6,7 +6,7 @@
 >
   <path
     d="M12 5v14M5 12h14"
-    stroke="rgba(57, 37, 121, 1)"
+    stroke="#545333"
     stroke-width="2"
     stroke-linecap="round"
   />

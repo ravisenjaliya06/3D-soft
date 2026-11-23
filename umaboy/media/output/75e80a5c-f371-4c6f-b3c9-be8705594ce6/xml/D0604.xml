@@ -1,0 +1,16 @@
+<?xml version="1.0" ?>
+<Root>
+    <Project Name="" Flag="SWJ008">
+        <Panels>
+            <Panel ID="" Name="7257a504-9475-4f9d-9f2f-1eb858d227d9" Width="352.500000" Length="973.000000" Material="3/4 1s Poplar Ply" Thickness="18.000000" IsProduce="true" MachiningPoint="1" Type="1" Face5ID="" Face6ID="" Grain="L" ExitID="0" TrimmingThreeEdges="0" TrimmingBoardHead="0">
+                <Machines/>
+                <EdgeGroup>
+                    <Edge Face="1" Thickness="0.000000" Material="Alder Ven EB"/>
+                    <Edge Face="2" Thickness="0.000000" Material="Alder Ven EB"/>
+                    <Edge Face="3" Thickness="0.000000" Material="Alder Ven EB"/>
+                    <Edge Face="4" Thickness="0.000000" Material="Alder Ven EB"/>
+                </EdgeGroup>
+            </Panel>
+        </Panels>
+    </Project>
+</Root>

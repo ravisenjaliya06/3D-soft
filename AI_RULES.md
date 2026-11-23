@@ -78,3 +78,6 @@ Ensure the correct `type` flags are set to trigger specific physics and collisio
   - Removed PDF download option; only XLSX and G-Codes remain.
   - "View Details" button navigates to `/design/[id]/nesting-details`.
   - Uses `router.query.designid` to get the current design ID.
+
+## 6. UI Redesign
+- Any visual/UI change must follow `design_portal/DESIGN_RULES.md` (style-only changes, `--bv-*` tokens, one page at a time, no functional changes).

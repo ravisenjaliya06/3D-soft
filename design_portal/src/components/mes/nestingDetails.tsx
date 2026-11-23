@@ -3,6 +3,13 @@ import Sidebar from '@/components/sidebar/sidebar';
 import { API_ENDPOINT } from '@/services/ApiEndPoints';
 import CommonService from '@/services/CommonService';
 import React, { useEffect, useState } from 'react';
+import {
+  LuChevronDown,
+  LuLayers,
+  LuPackageOpen,
+  LuSquareDashed,
+  LuTriangleAlert,
+} from 'react-icons/lu';
 import styles from './nestingDetails.module.css';
 
 interface NestingDetailsProps {
@@ -76,20 +83,42 @@ const NestingDetails: React.FC<NestingDetailsProps> = ({ designId, versionId }) 
     <div className={styles.container}>
       <Sidebar />
       <div className={styles.rightside}>
-        <Header isBorderRadius={true} dashboardName="Nesting Details" />
+        <Header isBorderRadius={true} dashboardName="Sheet layout" />
 
         <div className={styles.maincontent}>
           {loading ? (
-            <div className={styles.loader}>Loading layout data...</div>
+            <div className={styles.loader}>
+              <span className={styles.spinner} aria-hidden="true" />
+              Laying out panels on sheets…
+            </div>
           ) : error ? (
-            <div className={styles.error}>{error}</div>
+            <div className={styles.error}>
+              <span className={styles.stateIcon}>
+                <LuTriangleAlert aria-hidden="true" />
+              </span>
+              {error}
+            </div>
           ) : !data || data.length === 0 ? (
-            <div className={styles.error}>No layout data available.</div>
+            <div className={styles.error}>
+              <span className={styles.stateIcon}>
+                <LuPackageOpen aria-hidden="true" />
+              </span>
+              No layout data available.
+            </div>
           ) : (
             <div className={styles.layoutWrapper}>
               {/* Left Sidebar - Sheet Selection */}
               <div className={styles.sheetList}>
-                <h3 className={styles.listTitle}>Sheets</h3>
+                <div className={styles.listHead}>
+                  <h3 className={styles.listTitle}>
+                    <LuLayers aria-hidden="true" />
+                    Sheets
+                  </h3>
+                  <span className={styles.listCount}>
+                    {sheetNames.length} {sheetNames.length === 1 ? 'board' : 'boards'} ·{' '}
+                    {data.length} parts
+                  </span>
+                </div>
                 {sheetNames.map((sheetName) => (
                   <div key={sheetName}>
                     <div
@@ -97,12 +126,16 @@ const NestingDetails: React.FC<NestingDetailsProps> = ({ designId, versionId }) 
                       onClick={() => setActiveSheet(sheetName)}
                     >
                       <div className={styles.sheetHeader}>
+                        <span className={styles.sheetIcon}>
+                          <LuSquareDashed aria-hidden="true" />
+                        </span>
                         <strong>
                           {sheetName.startsWith('SHEET') ? sheetName : `Sheet ${sheetName}`}
                         </strong>
                         <span className={styles.partCount}>
                           {sheetsObj[sheetName].length} parts
                         </span>
+                        <LuChevronDown className={styles.sheetChevron} aria-hidden="true" />
                       </div>
                     </div>
 
@@ -128,8 +161,15 @@ const NestingDetails: React.FC<NestingDetailsProps> = ({ designId, versionId }) 
                                 const uniqueId = part.unique_id || part.ID || part.id || '-';
 
                                 return (
-                                  <tr key={idx}>
-                                    <td>{uniqueId}</td>
+                                  <tr
+                                    key={idx}
+                                    className={
+                                      hoveredPart === part ? styles.detailsRowActive : undefined
+                                    }
+                                  >
+                                    <td className={styles.idCell} title={String(uniqueId)}>
+                                      {uniqueId}
+                                    </td>
                                     <td>{name}</td>
                                     <td style={{ whiteSpace: 'nowrap' }}>
                                       {w} × {h} × {d} mm
@@ -151,34 +191,56 @@ const NestingDetails: React.FC<NestingDetailsProps> = ({ designId, versionId }) 
                 {activeSheet && sheetsObj[activeSheet] && (
                   <div className={styles.canvasContainer} style={{ position: 'relative' }}>
                     <div className={styles.canvasHeader}>
-                      <h3>
-                        Layout: {activeSheet} (Thickness:{' '}
-                        {sheetsObj[activeSheet][0]?.sheet_thickness || 18}mm)
-                      </h3>
+                      <div>
+                        <span className={styles.canvasEyebrow}>Sheet layout</span>
+                        <h3>
+                          {activeSheet}
+                          <span className={styles.thicknessPill}>
+                            {sheetsObj[activeSheet][0]?.sheet_thickness || 18} mm board
+                          </span>
+                        </h3>
+                      </div>
                       <div className={styles.legend}>
-                        <span style={{ color: 'blue' }}>🟦 Plank Outline</span>
-                        <span style={{ color: '#8B4513' }}>🟫 Edge Banding</span>
-                        <span style={{ color: 'orange' }}>🟧 Grooves</span>
-                        <span style={{ color: 'green' }}>🟩 Horizontal Holes</span>
-                        <span style={{ color: 'red' }}>🔴 Vertical Holes</span>
+                        <span>
+                          <i className={`${styles.swatch} ${styles.swatchPlank}`} />
+                          Panel outline
+                        </span>
+                        <span>
+                          <i className={`${styles.swatch} ${styles.swatchEdge}`} />
+                          Edge banding
+                        </span>
+                        <span>
+                          <i className={`${styles.swatch} ${styles.swatchGroove}`} />
+                          Grooves
+                        </span>
+                        <span>
+                          <i className={`${styles.swatch} ${styles.swatchHoleH}`} />
+                          Horizontal holes
+                        </span>
+                        <span>
+                          <i className={`${styles.swatch} ${styles.swatchHoleV}`} />
+                          Vertical holes
+                        </span>
                       </div>
                     </div>
                     <div className={styles.svgWrapper} style={{ position: 'relative' }}>
                       {/* Hover Overlay */}
                       {hoveredPart && (
                         <div className={styles.hoverTooltip}>
-                          <strong>ID:</strong>{' '}
-                          {hoveredPart.unique_id || hoveredPart.ID || hoveredPart.id || '-'}
-                          <br />
-                          <strong>Name:</strong>{' '}
-                          {hoveredPart.name ||
-                            hoveredPart.Name ||
-                            hoveredPart.material_name ||
-                            'Unknown'}
-                          <br />
-                          <strong>Size:</strong> {parseFloat(hoveredPart.width || 0).toFixed(1)} (W)
-                          × {parseFloat(hoveredPart.height || 0).toFixed(1)} (H) ×{' '}
-                          {parseFloat(hoveredPart.depth || 18).toFixed(1)} (D) mm
+                          <span className={styles.tooltipId}>
+                            {hoveredPart.unique_id || hoveredPart.ID || hoveredPart.id || '-'}
+                          </span>
+                          <strong className={styles.tooltipName}>
+                            {hoveredPart.name ||
+                              hoveredPart.Name ||
+                              hoveredPart.material_name ||
+                              'Unknown'}
+                          </strong>
+                          <span className={styles.tooltipSize}>
+                            {parseFloat(hoveredPart.width || 0).toFixed(1)} (W) ×{' '}
+                            {parseFloat(hoveredPart.height || 0).toFixed(1)} (H) ×{' '}
+                            {parseFloat(hoveredPart.depth || 18).toFixed(1)} (D) mm
+                          </span>
                         </div>
                       )}
                       {(() => {
@@ -205,7 +267,7 @@ const NestingDetails: React.FC<NestingDetailsProps> = ({ designId, versionId }) 
                                 markerHeight="6"
                                 orient="auto-start-reverse"
                               >
-                                <path d="M 0 0 L 10 5 L 0 10 z" fill="#666" />
+                                <path d="M 0 0 L 10 5 L 0 10 z" fill="var(--bv-text-subtle)" />
                               </marker>
                             </defs>
                             {/* Using native coordinates without matrix transform since backend now provides horizontal nesting */}
@@ -214,8 +276,8 @@ const NestingDetails: React.FC<NestingDetailsProps> = ({ designId, versionId }) 
                               y={padding}
                               width={sheetW}
                               height={sheetH}
-                              fill="none"
-                              stroke="black"
+                              fill="var(--bv-surface)"
+                              stroke="var(--bv-primary)"
                               strokeWidth="2"
                             />
 
@@ -225,7 +287,7 @@ const NestingDetails: React.FC<NestingDetailsProps> = ({ designId, versionId }) 
                               y1={padding - 15}
                               x2={padding + sheetW}
                               y2={padding - 15}
-                              stroke="#666"
+                              stroke="var(--bv-text-subtle)"
                               strokeWidth="1"
                               markerEnd="url(#arrow)"
                               markerStart="url(#arrow)"
@@ -235,7 +297,7 @@ const NestingDetails: React.FC<NestingDetailsProps> = ({ designId, versionId }) 
                               y={padding - 20}
                               textAnchor="middle"
                               fontSize="14"
-                              fill="#666"
+                              fill="var(--bv-text-subtle)"
                             >
                               {sheetW} mm (W)
                             </text>
@@ -245,7 +307,7 @@ const NestingDetails: React.FC<NestingDetailsProps> = ({ designId, versionId }) 
                               y1={padding}
                               x2={padding - 15}
                               y2={padding + sheetH}
-                              stroke="#666"
+                              stroke="var(--bv-text-subtle)"
                               strokeWidth="1"
                               markerEnd="url(#arrow)"
                               markerStart="url(#arrow)"
@@ -257,7 +319,7 @@ const NestingDetails: React.FC<NestingDetailsProps> = ({ designId, versionId }) 
                               dominantBaseline="central"
                               transform={`rotate(-90, ${padding - 20}, ${padding + sheetH / 2})`}
                               fontSize="14"
-                              fill="#666"
+                              fill="var(--bv-text-subtle)"
                             >
                               {sheetH} mm (H)
                             </text>
@@ -285,8 +347,8 @@ const NestingDetails: React.FC<NestingDetailsProps> = ({ designId, versionId }) 
                                     y={y}
                                     width={w}
                                     height={h}
-                                    fill="#e0e0e0"
-                                    stroke="blue"
+                                    fill="var(--bv-primary-soft)"
+                                    stroke="var(--bv-primary)"
                                     strokeWidth="2"
                                     className={styles.plankOutline}
                                   />
@@ -339,7 +401,7 @@ const NestingDetails: React.FC<NestingDetailsProps> = ({ designId, versionId }) 
                                           y={ey}
                                           width={ew}
                                           height={eh}
-                                          fill="#8B4513"
+                                          fill="var(--bv-accent)"
                                           opacity="0.8"
                                         />
                                       );
@@ -355,7 +417,7 @@ const NestingDetails: React.FC<NestingDetailsProps> = ({ designId, versionId }) 
                                       y1={y + (g.y || 0)}
                                       x2={x + (g.end_x || 0)}
                                       y2={y + (g.end_y || 0)}
-                                      stroke="orange"
+                                      stroke="var(--bv-warning)"
                                       strokeWidth={g.width || 8}
                                       opacity="0.6"
                                     />
@@ -473,7 +535,7 @@ const NestingDetails: React.FC<NestingDetailsProps> = ({ designId, versionId }) 
                                           width={rectW}
                                           height={rectH}
                                           fill="none"
-                                          stroke="green"
+                                          stroke="var(--bv-success)"
                                           strokeWidth="1"
                                         />
                                       );
@@ -493,8 +555,8 @@ const NestingDetails: React.FC<NestingDetailsProps> = ({ designId, versionId }) 
                                           cx={x + cx}
                                           cy={y + cy}
                                           r={dia / 2}
-                                          fill="red"
-                                          stroke="black"
+                                          fill="var(--bv-danger)"
+                                          stroke="var(--bv-text)"
                                           strokeWidth="0.5"
                                         />
                                       );
@@ -517,7 +579,7 @@ const NestingDetails: React.FC<NestingDetailsProps> = ({ designId, versionId }) 
                                     dominantBaseline="central"
                                     fontSize="14"
                                     fontWeight="bold"
-                                    fill="#333"
+                                    fill="var(--bv-text)"
                                   >
                                     {uniqueId}
                                   </text>

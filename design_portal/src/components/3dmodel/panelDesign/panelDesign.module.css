@@ -341,7 +341,7 @@
   font-size: 0.65rem;
   font-weight: 600;
   margin-bottom: 6px;
-  border-left: 2px solid #5a67d8;
+  border-left: 2px solid var(--bv-accent);
   padding-left: 6px;
   text-transform: uppercase;
   letter-spacing: 0.4px;
@@ -625,8 +625,8 @@
 }
 
 .cornerTypeBtnActive {
-  background: #5a67d8;
-  border-color: #5a67d8;
+  background: var(--bv-primary);
+  border-color: var(--bv-primary);
   color: #fff;
 }
 
@@ -667,7 +667,7 @@
 .diagramSvg {
   width: 48px;
   height: 48px;
-  color: #5a67d8;
+  color: var(--bv-accent);
 }
 
 .diagramLabel {
@@ -832,4 +832,567 @@
 .digSubToolButtonActive {
   background: rgba(52, 152, 219, 0.4) !important;
   color: #3498db;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Panel Designer v2 (Phase 2) — matches the 3D editor frame:
+   dark header bar with a tool capsule, floating cards with dark
+   grab handles, rounded inputs and segmented choice buttons.
+   Sizes the canvas depends on (60px header, 280px cards) are kept.
+   ───────────────────────────────────────────────────────────── */
+
+.designerContainer {
+  font-family: var(--bv-font);
+  background-color: var(--bv-ink);
+}
+
+.canvasWrapper {
+  background-color: var(--bv-surface-2);
+}
+
+/* Header */
+.header {
+  gap: 1rem;
+  padding: 0 16px;
+  color: var(--bv-on-ink);
+  background: var(--bv-ink);
+  border-bottom: 2px solid var(--bv-accent);
+}
+
+.headerLeft {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 2px;
+  font-size: 15px;
+  letter-spacing: -0.01em;
+  color: var(--bv-on-ink);
+}
+
+.headerEyebrow {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--bv-accent-light);
+}
+
+.headerCenter {
+  flex: 0 1 auto;
+  gap: 2px;
+  padding: 4px;
+  background: rgba(0, 0, 0, 0.22);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 999px;
+}
+
+.toolButton {
+  flex-direction: row;
+  gap: 6px;
+  min-width: 0;
+  padding: 6px 12px;
+  border-radius: 999px;
+}
+
+.toolButton:hover {
+  background: var(--bv-glass);
+}
+
+.toolButtonActive {
+  background: var(--bv-accent) !important;
+}
+
+.toolButton img {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  filter: brightness(0) invert(1);
+  opacity: 0.85;
+}
+
+.toolButton div {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--bv-on-ink);
+}
+
+.headerRight {
+  gap: 8px;
+}
+
+.actionButton {
+  height: 34px;
+  padding: 0 16px;
+  font-family: var(--bv-font);
+  font-size: 13px;
+  font-weight: 700;
+  border-radius: 999px;
+  transition:
+    background-color var(--bv-ease),
+    border-color var(--bv-ease);
+}
+
+.cancelButton {
+  color: var(--bv-on-ink);
+  background: transparent;
+  border: 1px solid var(--bv-glass-border);
+}
+
+.cancelButton:hover {
+  background: var(--bv-glass);
+}
+
+.completeButton {
+  color: var(--bv-on-accent);
+  background: var(--bv-accent);
+  box-shadow: 0 4px 14px var(--bv-accent-glow);
+}
+
+.completeButton:hover {
+  background: var(--bv-accent-hover);
+}
+
+/* Rulers */
+.rulerHorizontal,
+.rulerVertical {
+  background: var(--bv-surface);
+  border-color: var(--bv-border);
+}
+
+/* Floating cards */
+.sidebar {
+  background: var(--bv-surface);
+  border: 1px solid var(--bv-border);
+  border-radius: 16px;
+  box-shadow: 0 12px 32px rgba(30, 30, 18, 0.18);
+}
+
+.panelHeader {
+  min-height: 36px;
+  padding: 0 12px;
+  box-sizing: border-box;
+  background-color: var(--bv-ink);
+  background-image: radial-gradient(circle at 100% 0%, var(--bv-accent-glow) 0%, transparent 60%);
+  border-bottom: none;
+}
+
+.panelTitle {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--bv-on-ink);
+}
+
+.panelTitle::before {
+  width: 6px;
+  height: 6px;
+  content: '';
+  background: var(--bv-accent-light);
+  border-radius: 2px;
+  transform: rotate(45deg);
+}
+
+.panelHeaderActions {
+  color: var(--bv-on-ink-muted);
+}
+
+.panelTab {
+  font-family: var(--bv-font);
+  font-weight: 600;
+  color: var(--bv-text-muted);
+}
+
+.panelTab:hover {
+  color: var(--bv-text);
+  background: var(--bv-surface-2);
+}
+
+.panelTabActive {
+  color: var(--bv-text);
+  background: var(--bv-surface);
+  border-bottom-color: var(--bv-accent);
+}
+
+.sidebarContent {
+  padding: 12px;
+  color: var(--bv-text-muted);
+  background: var(--bv-surface-2);
+}
+
+.propertiesContainer,
+.sidebarPreview,
+.miniThreeViewer {
+  background: var(--bv-surface-2);
+}
+
+.previewTitle {
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--bv-on-ink);
+  background: var(--bv-ink);
+  border-radius: 999px;
+}
+
+/* Section and group titles */
+.sidebarTitle,
+.propertyGroupTitle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding-left: 0;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--bv-text);
+  border-left: none;
+}
+
+.sidebarTitle::before {
+  width: 6px;
+  height: 6px;
+  content: '';
+  background: var(--bv-accent);
+  border-radius: 2px;
+  transform: rotate(45deg);
+}
+
+.propertyGroup {
+  padding: 10px;
+  margin-bottom: 8px;
+  background: var(--bv-surface);
+  border: 1px solid var(--bv-border);
+  border-radius: 12px;
+}
+
+.coordinateLabel,
+.cornerTypeLabel,
+.radiusLabel,
+.chamferLabel {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--bv-text-muted);
+}
+
+.coordinateSubLabel,
+.chamferSubLabel,
+.radiusUnit,
+.propertySubLabel,
+.propertySubLabelInline,
+.sidebarRow span {
+  font-weight: 600;
+  color: var(--bv-text-subtle);
+}
+
+.sidebarRow,
+.sidebarRowCentered,
+.sidebarRowCentered .sidebarRowLabel {
+  color: var(--bv-text-muted);
+}
+
+/* Inputs */
+.propertyInput,
+.propertyInputSmall,
+.sidebarRow input,
+.sidebarSelect,
+.holeTypeDropdown {
+  font-family: var(--bv-font);
+  font-weight: 600;
+  color: var(--bv-text);
+  background: var(--bv-surface);
+  border: 1px solid var(--bv-border);
+  border-radius: 8px;
+  transition:
+    border-color var(--bv-ease),
+    box-shadow var(--bv-ease);
+}
+
+.propertyInput:focus,
+.propertyInputSmall:focus,
+.sidebarRow input:focus,
+.sidebarSelect:focus {
+  outline: none;
+  border-color: var(--bv-accent);
+  box-shadow: 0 0 0 3px var(--bv-accent-glow);
+}
+
+.propertyInput:read-only {
+  color: var(--bv-text-muted);
+  background: var(--bv-surface-2);
+}
+
+.propertyInfoIcon {
+  color: var(--bv-on-accent);
+  background: var(--bv-accent);
+}
+
+/* Segmented choice buttons (corner type, face) */
+.cornerTypeButtons {
+  gap: 2px;
+  padding: 3px;
+  background: var(--bv-surface);
+  border: 1px solid var(--bv-border);
+  border-radius: 999px;
+}
+
+.cornerTypeBtn {
+  padding: 6px 10px;
+  font-family: var(--bv-font);
+  font-weight: 700;
+  color: var(--bv-text-muted);
+  background: transparent;
+  border: none;
+  border-radius: 999px;
+}
+
+.cornerTypeBtn:hover {
+  color: var(--bv-text);
+  background: var(--bv-surface-2);
+}
+
+.cornerTypeBtnActive,
+.cornerTypeBtnActive:hover {
+  color: var(--bv-on-primary);
+  background: var(--bv-primary);
+}
+
+.radiusSection,
+.chamferSection {
+  border-top: 1px dashed var(--bv-border-strong);
+}
+
+.cornerDiagram {
+  background: var(--bv-surface);
+  border: 1px solid var(--bv-border);
+  border-radius: 10px;
+}
+
+.diagramSvg {
+  color: var(--bv-accent);
+}
+
+.diagramLabel {
+  fill: var(--bv-text-muted);
+}
+
+.sidebarDeleteButton {
+  padding: 8px;
+  font-family: var(--bv-font);
+  font-weight: 700;
+  color: var(--bv-danger, #c0392b);
+  background: transparent;
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  transition:
+    background-color var(--bv-ease),
+    color var(--bv-ease);
+}
+
+.sidebarDeleteButton:hover {
+  color: #fff;
+  background: var(--bv-danger, #c0392b);
+}
+
+/* Dig sub-toolbar */
+.digSubToolbar {
+  padding: 4px;
+  background: var(--bv-ink);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 999px;
+}
+
+.digSubToolButton {
+  color: var(--bv-on-ink);
+  border-radius: 50%;
+}
+
+.digSubToolButton:hover {
+  background: var(--bv-glass);
+}
+
+.digSubToolButtonActive,
+.digSubToolButtonActive:hover {
+  color: var(--bv-on-accent);
+  background: var(--bv-accent);
+}
+
+/* Leave-without-saving dialog */
+.modalOverlay {
+  background: rgba(20, 20, 10, 0.55);
+  backdrop-filter: blur(3px);
+}
+
+.modal {
+  width: 360px;
+  padding: 0 0 18px;
+  overflow: hidden;
+  background: var(--bv-surface);
+  border: none;
+  border-radius: 18px;
+  box-shadow: 0 24px 60px rgba(10, 10, 4, 0.35);
+}
+
+.modal::before {
+  display: block;
+  height: 5px;
+  content: '';
+  background: var(--bv-accent);
+}
+
+.popupHeader {
+  padding: 18px 20px 0;
+}
+
+.popupTitle {
+  font-family: var(--bv-font);
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--bv-text);
+}
+
+.warningIcon {
+  color: var(--bv-accent);
+}
+
+.buttonContainer {
+  padding: 0 20px;
+}
+
+.button {
+  font-family: var(--bv-font);
+  border-radius: 999px;
+}
+
+.popupCancelButton {
+  color: var(--bv-text);
+  background: var(--bv-surface-2);
+  border: 1px solid var(--bv-border);
+}
+
+.popupConfirmButton {
+  color: var(--bv-on-accent);
+  background: var(--bv-accent);
+}
+
+.popupConfirmButton:hover {
+  background: var(--bv-accent-hover);
+}
+
+/* Keep the floating cards off the screen edge (their position is set in code) */
+.sidebar {
+  margin-left: -12px;
+}
+
+.footer {
+  color: var(--bv-on-ink-muted);
+  background: var(--bv-ink);
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+/* 2D floor plan — wall properties card (TwoDSidebar) */
+.wallRow {
+  margin-top: 10px;
+}
+
+.wallLabel {
+  font-weight: 600;
+  color: var(--bv-text-muted);
+}
+
+.wallField {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.sidebarRow .wallInput {
+  width: 116px;
+  height: 30px;
+  padding: 0 32px 0 8px;
+  box-sizing: border-box;
+  font-family: var(--bv-font);
+  font-size: 13px;
+  font-weight: 600;
+  text-align: right;
+  color: var(--bv-text);
+  background: var(--bv-surface);
+  border: 1px solid var(--bv-border);
+  border-radius: 8px;
+}
+
+.sidebarRow .wallInput:focus {
+  outline: none;
+  border-color: var(--bv-accent);
+  box-shadow: 0 0 0 3px var(--bv-accent-glow);
+}
+
+.sidebarRow .wallUnit {
+  position: absolute;
+  right: 9px;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--bv-text-subtle);
+  pointer-events: none;
+}
+
+.wallEmpty {
+  margin-top: 8px;
+  padding: 10px;
+  font-size: 12px;
+  color: var(--bv-text-subtle);
+  text-align: center;
+  background: var(--bv-surface);
+  border: 1px dashed var(--bv-border-strong);
+  border-radius: 10px;
+}
+
+/* Points selection as a segmented pill */
+.pointModes {
+  display: flex;
+  gap: 2px;
+  margin-top: 10px;
+  padding: 3px;
+  background: var(--bv-surface);
+  border: 1px solid var(--bv-border);
+  border-radius: 999px;
+}
+
+.pointMode {
+  position: relative;
+  display: flex;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 4px;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: capitalize;
+  color: var(--bv-text-muted);
+  border-radius: 999px;
+  cursor: pointer;
+  transition:
+    background-color var(--bv-ease),
+    color var(--bv-ease);
+}
+
+.pointMode input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.pointMode:hover {
+  color: var(--bv-text);
+}
+
+.pointModeActive,
+.pointModeActive:hover {
+  color: var(--bv-on-primary);
+  background: var(--bv-primary);
+}
+
+.pointMode:focus-within {
+  box-shadow: 0 0 0 3px var(--bv-accent-glow);
 }

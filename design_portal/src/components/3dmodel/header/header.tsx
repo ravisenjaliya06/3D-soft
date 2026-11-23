@@ -8,6 +8,14 @@ import FullscreenExit from '@mui/icons-material/FullscreenExit';
 import Cookies from 'js-cookie';
 import type React from 'react';
 import { useEffect, useRef, useState } from 'react';
+import {
+  LuArrowLeft,
+  LuChevronDown,
+  LuGitBranch,
+  LuGrid2X2,
+  LuImage,
+  LuUserRound,
+} from 'react-icons/lu';
 import { useDispatch, useSelector } from 'react-redux';
 import { toast } from 'react-toastify';
 import { UnknownAction } from 'redux';
@@ -194,7 +202,7 @@ const Header: React.FC<HeaderProps> = ({ router, design3D }) => {
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [showClearConfirm, setShowClearConfirm] = useState(false);
   const dropdownRef = useRef<HTMLDivElement | null>(null);
-  const dropdownButtonRef = useRef<HTMLImageElement | null>(null);
+  const dropdownButtonRef = useRef<HTMLButtonElement | null>(null);
   const renderDropdownRef = useRef<HTMLDivElement | null>(null);
   const renderDropdownButtonRef = useRef<HTMLDivElement | null>(null);
   const [showSettingsPopup, setShowSettingsPopup] = useState(false);
@@ -720,8 +728,24 @@ const Header: React.FC<HeaderProps> = ({ router, design3D }) => {
         </div>
       )}
       <div className={styles.header}>
-        <div className={styles.headerTitle}>
-          <p>{designDetail ? designDetail.design_name : 'Furniture Design'}</p>
+        {/* Left: back to designs, design name, version */}
+        <div className={styles.headerStart}>
+          <button
+            type="button"
+            className={styles.backButton}
+            onClick={() => handleClick(REDIRECT.DESIGNS)}
+            title="Back to designs"
+            aria-label="Back to designs"
+          >
+            <LuArrowLeft aria-hidden="true" />
+          </button>
+          <span className={styles.headerDivider} aria-hidden="true" />
+          <div className={styles.headerTitle}>
+            <span className={styles.headerEyebrow}>Workshop</span>
+            <p title={designDetail ? designDetail.design_name : 'Furniture Design'}>
+              {designDetail ? designDetail.design_name : 'Furniture Design'}
+            </p>
+          </div>
 
           {designDetail && designDetail.versions && designDetail.versions.length > 0 && (
             <div className={styles.versionWrapper}>
@@ -730,17 +754,21 @@ const Header: React.FC<HeaderProps> = ({ router, design3D }) => {
                 onClick={() => setIsVersionDropdownOpen(!isVersionDropdownOpen)}
                 ref={versionButtonRef}
               >
+                <LuGitBranch aria-hidden="true" />
                 <p>
-                  Version:{' '}
                   {versionIdFromUrl
                     ? getVersionName(versionIdFromUrl)
                     : 'v' + (designDetail?.versions?.length || '')}
                 </p>
-                <span style={{ fontSize: '10px', color: 'var(--primary-color)' }}>▼</span>
+                <LuChevronDown
+                  aria-hidden="true"
+                  className={`${styles.versionChevron} ${isVersionDropdownOpen ? styles.versionChevronOpen : ''}`}
+                />
               </div>
 
               {isVersionDropdownOpen && (
                 <div className={styles.versionDropdown} ref={versionDropdownRef}>
+                  <p className={styles.versionDropdownTitle}>Saved versions</p>
                   {designDetail.versions.map((v, index) => (
                     <div
                       key={v.id}
@@ -770,6 +798,7 @@ const Header: React.FC<HeaderProps> = ({ router, design3D }) => {
           )}
         </div>
 
+        {/* Centre: editing tools in one capsule */}
         <div className={styles.headerTools}>
           {headerTools.map(({ option, name, icon, disabled, onClick }) => (
             <div key={option} className={styles.headerToolList}>
@@ -780,7 +809,7 @@ const Header: React.FC<HeaderProps> = ({ router, design3D }) => {
                 title={name}
               >
                 <img src={icon || '/placeholder.svg'} alt={name} />
-                {name}
+                <span>{name}</span>
               </div>
             </div>
           ))}
@@ -793,137 +822,124 @@ const Header: React.FC<HeaderProps> = ({ router, design3D }) => {
           </div>
         )}
 
+        {/* Right: window controls, then production actions */}
         <div className={styles.header_rightmenu}>
-          {designDetail && (designDetail as any).rendering_project_id ? (
-            <div
-              className={`${styles.nestingbutton} ${!isLatestVersion ? styles.disabled : ''}`}
-              style={{ display: 'flex', alignItems: 'center', padding: '0px' }}
+          <button
+            type="button"
+            className={styles.frameIcon}
+            onClick={toggleFullscreen}
+            title={isFullscreen ? 'Exit full screen' : 'Full screen'}
+            aria-label={isFullscreen ? 'Exit full screen' : 'Full screen'}
+          >
+            {isFullscreen ? <FullscreenExit /> : <Fullscreen />}
+          </button>
+          <div className={styles.menuAnchor}>
+            <button
+              type="button"
+              className={`${styles.frameIcon} ${isDropdownOpen ? styles.frameIconActive : ''}`}
+              onClick={handleProfileClick}
+              ref={dropdownButtonRef}
+              title="Account"
+              aria-label="Account"
             >
-              <p
-                onClick={isLatestVersion ? handleGoToRender : undefined}
-                style={{
-                  padding: '8px 12px',
-                  margin: 0,
-                  borderRight: '1px solid rgba(255,255,255,0.2)',
-                  cursor: isLatestVersion ? 'pointer' : 'not-allowed',
-                }}
-              >
-                View Render
-              </p>
-              <div
-                ref={renderDropdownButtonRef}
-                onClick={
-                  isLatestVersion ? () => setIsRenderDropdownOpen((prev) => !prev) : undefined
-                }
-                style={{
-                  padding: '8px 12px',
-                  margin: 0,
-                  color: 'white',
-                  display: 'flex',
-                  alignItems: 'center',
-                  cursor: isLatestVersion ? 'pointer' : 'not-allowed',
-                }}
-                title={isLatestVersion ? 'Render options' : 'View only mode'}
-              >
-                <span style={{ fontSize: '12px', color: 'white' }}>▼</span>
+              <LuUserRound aria-hidden="true" />
+            </button>
+            {isDropdownOpen && (
+              <div className={styles.dropdownMenuProfile} ref={dropdownRef}>
+                <ul className={styles.ProfiledropdownList}>
+                  <li onClick={profileSetting}>Profile Settings</li>
+                  <img
+                    src={assets.edit_delete_line || '/placeholder.svg'}
+                    alt="edit-delete-line"
+                    className={styles.edit_delete_line}
+                  />
+                  <li onClick={handleLogout}>Logout</li>
+                </ul>
               </div>
-            </div>
-          ) : (
-            <div
-              className={`${styles.nestingbutton} ${!isLatestVersion ? styles.disabled : ''}`}
-              onClick={isLatestVersion ? handleRender : undefined}
-            >
-              <p>Render</p>
-            </div>
-          )}
+            )}
+          </div>
+
+          <span className={styles.headerDivider} aria-hidden="true" />
+
           <div
-            className={`${styles.nestingbutton} ${!isLatestVersion ? styles.disabled : ''}`}
+            className={`${styles.nestingbutton} ${styles.nestingGhost} ${!isLatestVersion ? styles.disabled : ''}`}
             onClick={isLatestVersion ? handleNesting : undefined}
           >
+            <LuGrid2X2 aria-hidden="true" />
             <p>Nesting</p>
           </div>
+
+          <div className={styles.menuAnchor}>
+            {designDetail && (designDetail as any).rendering_project_id ? (
+              <div
+                className={`${styles.nestingbutton} ${styles.renderButton} ${styles.renderSplit} ${!isLatestVersion ? styles.disabled : ''}`}
+              >
+                <p
+                  onClick={isLatestVersion ? handleGoToRender : undefined}
+                  className={styles.renderSplitMain}
+                  style={{ cursor: isLatestVersion ? 'pointer' : 'not-allowed' }}
+                >
+                  <LuImage aria-hidden="true" />
+                  View Render
+                </p>
+                <div
+                  ref={renderDropdownButtonRef}
+                  onClick={
+                    isLatestVersion ? () => setIsRenderDropdownOpen((prev) => !prev) : undefined
+                  }
+                  className={styles.renderSplitToggle}
+                  style={{ cursor: isLatestVersion ? 'pointer' : 'not-allowed' }}
+                  title={isLatestVersion ? 'Render options' : 'View only mode'}
+                >
+                  <LuChevronDown aria-hidden="true" />
+                </div>
+              </div>
+            ) : (
+              <div
+                className={`${styles.nestingbutton} ${styles.renderButton} ${!isLatestVersion ? styles.disabled : ''}`}
+                onClick={isLatestVersion ? handleRender : undefined}
+              >
+                <LuImage aria-hidden="true" />
+                <p>Render</p>
+              </div>
+            )}
+            {isRenderDropdownOpen && (
+              <div className={styles.dropdownMenuRender} ref={renderDropdownRef}>
+                <ul className={styles.ProfiledropdownList}>
+                  <li
+                    onClick={() => {
+                      setIsRenderDropdownOpen(false);
+                      handleGoToRender();
+                    }}
+                  >
+                    View Render
+                  </li>
+                  <img
+                    src={assets.edit_delete_line || '/placeholder.svg'}
+                    alt="edit-delete-line"
+                    className={styles.edit_delete_line}
+                  />
+                  <li
+                    onClick={() => {
+                      setIsRenderDropdownOpen(false);
+                      handleRender();
+                    }}
+                  >
+                    Generate New Render
+                  </li>
+                </ul>
+              </div>
+            )}
+          </div>
+
           {isLoading && (
             <div className={Loading_style.loadingOverlay}>
               <div className={Loading_style.loadingSpinner}></div>
               <p>Loading...</p>
             </div>
           )}
-          <img
-            src={assets.profile || '/placeholder.svg'}
-            alt="profile"
-            onClick={handleProfileClick}
-            ref={dropdownButtonRef}
-            style={{ cursor: 'pointer' }}
-          />
-          {isFullscreen ? (
-            <FullscreenExit
-              onClick={toggleFullscreen}
-              style={{
-                width: '1.5rem',
-                cursor: 'pointer',
-                marginRight: '0rem',
-              }}
-            />
-          ) : (
-            <Fullscreen
-              onClick={toggleFullscreen}
-              style={{
-                width: '1.5rem',
-                cursor: 'pointer',
-                marginRight: '0rem',
-              }}
-            />
-          )}
-          <img
-            src={assets.close || '/placeholder.svg'}
-            alt="close"
-            onClick={() => handleClick(REDIRECT.DESIGNS)}
-            className={styles.close}
-          />
         </div>
       </div>
-
-      {isDropdownOpen && (
-        <div className={styles.dropdownMenuProfile} ref={dropdownRef}>
-          <ul className={styles.ProfiledropdownList}>
-            <li onClick={profileSetting}>Profile Settings</li>
-            <img
-              src={assets.edit_delete_line || '/placeholder.svg'}
-              alt="edit-delete-line"
-              className={styles.edit_delete_line}
-            />
-            <li onClick={handleLogout}>Logout</li>
-          </ul>
-        </div>
-      )}
-
-      {isRenderDropdownOpen && (
-        <div className={styles.dropdownMenuRender} ref={renderDropdownRef}>
-          <ul className={styles.ProfiledropdownList}>
-            <li
-              onClick={() => {
-                setIsRenderDropdownOpen(false);
-                handleGoToRender();
-              }}
-            >
-              View Render
-            </li>
-            <img
-              src={assets.edit_delete_line || '/placeholder.svg'}
-              alt="edit-delete-line"
-              className={styles.edit_delete_line}
-            />
-            <li
-              onClick={() => {
-                setIsRenderDropdownOpen(false);
-                handleRender();
-              }}
-            >
-              Generate New Render
-            </li>
-          </ul>
-        </div>
-      )}
 
       {showClearConfirm && (
         <div className={styles.confirmPopup}>
