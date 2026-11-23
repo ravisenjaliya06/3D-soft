@@ -38,8 +38,19 @@ export default function FreeBanner() {
   if (!visible) return null;
 
   return (
-    <div  role="status" aria-live="polite">
-     
+    <div className={styles.banner} role="status" aria-live="polite">
+      <div className={styles.inner}>
+        <span className={styles.sparkle} aria-hidden="true">
+          ✨
+        </span>
+        <span className={styles.text}>
+          This Software is <span className={styles.highlight}>100% Free</span> till{' '}
+          <span className={styles.date}>{DEADLINE_DISPLAY}</span>
+        </span>
+        <span className={styles.sparkle} aria-hidden="true">
+          ✨
+        </span>
+      </div>
     </div>
   );
 }
