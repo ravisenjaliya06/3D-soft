@@ -138,6 +138,7 @@
   color: var(--bv-on-ink-muted);
 }
 
+/* ─── Sheet Item Card ─── */
 .sheetItem {
   margin-bottom: 0.5rem;
   padding: 0.6rem 0.7rem;
@@ -404,7 +405,7 @@
 
 .plankOutline {
   cursor: pointer;
-  transition: fill 0.2s ease;
+  transition: fill 0.15s ease;
 }
 
 .plankOutline:hover {

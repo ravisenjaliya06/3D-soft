@@ -39,11 +39,9 @@ export const MaterialTable: React.FC<MaterialTableProps> = ({
     setVisibleCount(initVisibleCount);
   }, [activeCategory, activeTab]);
 
-  /** Convert vertical wheel → horizontal scroll */
   const handleWheel = useCallback((e: React.WheelEvent<HTMLDivElement>) => {
     const el = scrollRef.current;
     if (!el) return;
-    // Only convert when content is wider than container
     if (el.scrollWidth > el.clientWidth) {
       e.preventDefault();
       el.scrollLeft += e.deltaY;
@@ -53,7 +51,7 @@ export const MaterialTable: React.FC<MaterialTableProps> = ({
   const visibleMaterials = materials.slice(0, visibleCount);
   const getCellValue = (row: TableRow, columnKey: string): string => {
     const value = row[columnKey as keyof TableRow];
-    if (value === undefined || value === null) return 'N/A';
+    if (value === undefined || value === null) return '—';
     if (typeof value === 'boolean') return value ? 'Yes' : 'No';
     return value.toString();
   };
@@ -63,12 +61,7 @@ export const MaterialTable: React.FC<MaterialTableProps> = ({
   ) => {
     const nameColumn = { key: 'material_name', label: 'Name', sortable: true };
     const hasNameColumn = columns.some((col) => col.key === 'material_name');
-
-    if (hasNameColumn) {
-      return columns;
-    } else {
-      return [nameColumn, ...columns];
-    }
+    return hasNameColumn ? columns : [nameColumn, ...columns];
   };
 
   if (!activeCategory || !CATEGORY_TABS[activeCategory]) {

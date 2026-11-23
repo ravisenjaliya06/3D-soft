@@ -62,6 +62,7 @@ export const MaterialToolbar: React.FC<MaterialToolbarProps> = ({
           />
         </div>
 
+        {/* Action Button from parent */}
         {actionButton}
       </div>
     </div>

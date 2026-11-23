@@ -139,6 +139,8 @@ const InputField = ({
                 fontSize: '0.9rem',
                 color: error ? 'var(--bv-danger)' : 'var(--bv-text-subtle)',
                 transform: 'translate(0.7rem, -0.4rem) scale(0.7)',
+                backgroundColor: 'white',
+                padding: '0 0.25rem',
               },
               '& .MuiInputBase-root': {
                 width: props.fullWidth

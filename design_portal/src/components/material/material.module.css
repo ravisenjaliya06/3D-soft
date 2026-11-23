@@ -65,7 +65,7 @@
 .shelfEyebrow {
   font-size: clamp(10px, 0.62rem, 12px);
   font-weight: 700;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.05em;
   text-transform: uppercase;
   color: var(--bv-text-subtle);
 }
@@ -1573,6 +1573,7 @@
   word-break: break-word;
   color: var(--bv-text-muted);
 }
+
 
 .textureItem.selected .textureLabel {
   color: var(--bv-accent-hover);

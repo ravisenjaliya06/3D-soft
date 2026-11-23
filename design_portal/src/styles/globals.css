@@ -729,3 +729,66 @@ body[data-banner-visible='true'] {
   white-space: nowrap;
   text-overflow: ellipsis;
 }
+
+/* ─────────────────────────────────────────────────────────────
+   Premium Floating Scrollbars (Global)
+   ───────────────────────────────────────────────────────────── */
+/* Main scrollbar */
+::-webkit-scrollbar {
+  width: 14px;
+  height: 14px;
+}
+
+/* Track styling (transparent for floating effect) */
+::-webkit-scrollbar-track {
+  background: transparent;
+  border-radius: 10px;
+}
+
+/* Thumb styling (pill-shaped with padding trick) */
+::-webkit-scrollbar-thumb {
+  background-color: #cbd5e1; /* slate-300 */
+  border: 4px solid transparent; /* Acts as transparent padding */
+  border-radius: 10px;
+  background-clip: padding-box; /* Stops thumb background from bleeding into border */
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: #94a3b8; /* slate-400 */
+  border: 4px solid transparent;
+  background-clip: padding-box;
+}
+
+/* Arrows for top and bottom */
+::-webkit-scrollbar-button:single-button {
+  background-color: transparent;
+  display: block;
+  background-size: 8px;
+  background-repeat: no-repeat;
+  background-position: center 4px;
+}
+
+::-webkit-scrollbar-button:single-button:vertical:decrement {
+  height: 16px;
+  width: 14px;
+  background-position: center bottom 2px;
+  background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="%23cbd5e1"><path d="M12 8l-6 6 1.41 1.41L12 10.83l4.59 4.58L18 14z"/></svg>');
+}
+::-webkit-scrollbar-button:single-button:vertical:decrement:hover {
+  background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="%2394a3b8"><path d="M12 8l-6 6 1.41 1.41L12 10.83l4.59 4.58L18 14z"/></svg>');
+}
+
+::-webkit-scrollbar-button:single-button:vertical:increment {
+  height: 16px;
+  width: 14px;
+  background-position: center top 2px;
+  background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="%23cbd5e1"><path d="M16.59 8.59L12 13.17 7.41 8.59 6 10l6 6 6-6z"/></svg>');
+}
+::-webkit-scrollbar-button:single-button:vertical:increment:hover {
+  background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="%2394a3b8"><path d="M16.59 8.59L12 13.17 7.41 8.59 6 10l6 6 6-6z"/></svg>');
+}
+
+/* Disable horizontal arrows if not wanted */
+::-webkit-scrollbar-button:single-button:horizontal {
+  display: none;
+}
