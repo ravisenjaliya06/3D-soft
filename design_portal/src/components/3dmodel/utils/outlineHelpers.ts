@@ -12,12 +12,14 @@ export const createLineObjects = (obj: THREE.Mesh, color: number): THREE.LineSeg
   const size = new THREE.Vector3();
   box.getSize(size);
 
-  const geo = new THREE.BoxGeometry(size.x, size.y, size.z);
+  const geo = new THREE.BoxGeometry(size.x + 0.001, size.y + 0.001, size.z + 0.001);
   const edges = new THREE.EdgesGeometry(geo);
   const mat = new THREE.LineBasicMaterial({
     color: color,
-    linewidth: 2,
-    depthTest: false,
+    linewidth: 4,
+    depthTest: true,
+    opacity: 1,
+    transparent: true,
   });
   const outline = new THREE.LineSegments(edges, mat);
 
@@ -66,7 +68,7 @@ export const updateOrRefreshOutline = (scene: THREE.Scene, mesh: THREE.Mesh): vo
     solid.geometry.dispose();
     (solid.material as THREE.Material).dispose();
 
-    const tempSolid = createLineObjects(mesh, 0xffff00);
+    const tempSolid = createLineObjects(mesh, 0x1f7aff);
 
     solid.geometry = tempSolid.geometry;
     solid.material = tempSolid.material;

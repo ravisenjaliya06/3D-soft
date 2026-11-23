@@ -7,7 +7,28 @@ import CommonService from '@/services/CommonService';
 import { assets } from '@/svgPaths';
 import { useRouter } from 'next/router';
 import React, { ChangeEvent, useEffect, useRef, useState } from 'react';
-import { resetStoreForNewDesign, store } from '../3dmodel/store';
+import { IconType } from 'react-icons';
+import {
+  LuArrowRight,
+  LuBox,
+  LuCalendar,
+  LuCircleCheck,
+  LuCircleDot,
+  LuEllipsisVertical,
+  LuFolderOpen,
+  LuLayers,
+  LuLayoutGrid,
+  LuList,
+  LuPackageCheck,
+  LuPencil,
+  LuPenLine,
+  LuPlus,
+  LuSearch,
+  LuTrash2,
+  LuTriangleAlert,
+  LuUser,
+  LuX,
+} from 'react-icons/lu';
 import { Design, DesignResponse, User } from './interface';
 
 type StatusStylesType = {
@@ -15,15 +36,26 @@ type StatusStylesType = {
 };
 
 const Designs = () => {
+  const DESIGNS_BATCH_SIZE = 6;
+  const SCROLL_THRESHOLD_PX = 120;
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState('');
   const [designs, setDesigns] = useState<Design[]>([]);
   const [loading, setLoading] = useState(false);
   const [activeView, setActiveView] = useState('list');
-  const [visibleDesigns, setVisibleDesigns] = useState(6);
+  const [visibleDesigns, setVisibleDesigns] = useState(DESIGNS_BATCH_SIZE);
+  const [isAppendingDesigns, setIsAppendingDesigns] = useState(false);
   const [showPopup, setShowPopup] = useState(false);
   const [designName, setDesingName] = useState('');
   const [designStatus, setDesingStatus] = useState('');
+  const [orderNumber, setOrderNumber] = useState('');
+  const [customerName, setCustomerName] = useState('');
+  const [customerCompany, setCustomerCompany] = useState('');
+  const [customerAddress, setCustomerAddress] = useState('');
+  const [customerGstin, setCustomerGstin] = useState('');
+  const [customerContact, setCustomerContact] = useState('');
+  const [customerEmail, setCustomerEmail] = useState('');
+  const [projectType, setProjectType] = useState('');
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [activeFilter, setActiveFilter] = useState<string | null>(null);
   const filterDropdownRef = useRef<HTMLDivElement | null>(null);
@@ -33,9 +65,8 @@ const Designs = () => {
   const [showDeletePopup, setshowDeletePopup] = useState(false);
   const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null);
   const [selectedDesign, setSelectedDesign] = useState<Design | null>(null);
-  const [apiErrorMessage, setApiErrorMessage] = useState('');
-  const [errorPopup, setErrorPopup] = useState(false);
   const [userdetails, setUserDetails] = useState<User | null>(null);
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
   const statusStyles: StatusStylesType = {
     LIST: {
@@ -104,6 +135,13 @@ const Designs = () => {
         { value: 'Completed', label: 'Completed' },
       ],
       value: designStatus,
+    },
+    {
+      label: 'Project Type (Optional)',
+      type: 'text',
+      placeholder: 'e.g. Wardrobe, Kitchen...',
+      onChange: (e: ChangeEvent<HTMLInputElement>) => setProjectType(e.target.value),
+      value: projectType,
     },
   ];
 
@@ -231,8 +269,16 @@ const Designs = () => {
     const design = designs.find((d) => d.id === designId);
     if (design) {
       setSelectedDesign(design);
-      setDesingName(design.design_name);
-      setDesingStatus(design.status);
+      setDesingName(design.design_name || '');
+      setDesingStatus(design.status || '');
+      setOrderNumber(design.order_number || '');
+      setCustomerName(design.customer_name || '');
+      setCustomerCompany(design.customer_company || '');
+      setCustomerAddress(design.customer_address || '');
+      setCustomerGstin(design.customer_gstin || '');
+      setCustomerContact(design.customer_contact || '');
+      setCustomerEmail(design.customer_email || '');
+      setProjectType(design.project_type || '');
       setshowEditPopup(true);
       setActiveDropdownId(null);
     }
@@ -357,8 +403,24 @@ const Designs = () => {
                         />
                       ))}
                     </div>
-                  </form>
-                </div>
+                  </div>
+
+                  <div className={styles.formSection}>
+                    <h3 className={styles.formSectionTitle}>Customer details</h3>
+                    <div className={`${styles.customerGrid} ${styles.scrollArea}`}>
+                      {customerFields.map((field, i) => (
+                        <InputField
+                          key={i}
+                          className={styles.inputField}
+                          mediumField
+                          borderColor="rgba(84, 83, 51, 0.1)"
+                          {...field}
+                          error={errors[(field as any).id] ?? ''}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                </form>
                 <div className={styles.createButtonGrop}>
                   <button className={styles.cancelcreateButton} onClick={() => setShowPopup(false)}>
                     Cancel
@@ -374,6 +436,11 @@ const Designs = () => {
           {/* Design List / Grid Section */}
           <div className={styles.designs}>
             <div className={styles.designfirstpart}>
+              <div className={styles.listHeading}>
+                <span className={styles.listEyebrow}>Library</span>
+                <h2>{activeFilterLabel}</h2>
+              </div>
+
               <div className={styles.searchWrapper}>
                 <img src={assets.search_design} alt="Search" className={styles.searchIcon} />
                 <input
@@ -427,7 +494,11 @@ const Designs = () => {
                   alt="Grid"
                   className={activeView === 'grid' ? styles.activeView : ''}
                   onClick={() => setActiveView('grid')}
-                />
+                  aria-label="Grid view"
+                  title="Grid view"
+                >
+                  <LuLayoutGrid aria-hidden="true" />
+                </button>
               </div>
             </div>
 
@@ -504,6 +575,12 @@ const Designs = () => {
                       className={`${styles.gridItemContainer} ${design.status === 'Deleted' ? styles.cursorNotAllowed : ''} ${activeDropdownId === design.id ? styles.activeDesignRow : ''}`}
                       onClick={() => design.status !== 'Deleted' && handleRedirectDesign(design.id)}
                     >
+                      <div className={styles.gridPreview}>
+                        <LuBox aria-hidden="true" />
+                        <div className={styles.gridAction}>
+                          {renderActionMenu(design, styles.gridthree_dots)}
+                        </div>
+                      </div>
                       <div className={styles.gridItem}>
                         <div className={styles.gridTitle}>
                           <img src={assets.grid_computer} alt="GLB" />

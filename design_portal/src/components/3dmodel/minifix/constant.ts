@@ -17,6 +17,8 @@ export const MINIFIX_STANDARDS: MinifixStandards = {
   dowelLength: 25,
   dowelDistance: 32,
   SPACING: 32,
+  camBoltProtrusion: 25,
+  boltTailDepth: 13,
 };
 
 export const JOINER_THRESHOLD = 5;

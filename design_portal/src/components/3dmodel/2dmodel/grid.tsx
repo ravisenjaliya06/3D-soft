@@ -1,4 +1,4 @@
-import { GridRecordFactory } from './constants';
+import { GRID_STEP, GridRecordFactory } from './constants';
 import GridStreak from './grid-creator';
 import { GridData, GridRecord, GridsProps } from './interface';
 
@@ -6,7 +6,7 @@ export class Grid extends GridRecordFactory implements GridRecord {
   constructor(json: Partial<GridData>) {
     super({
       ...json,
-      properties: json.properties || { step: 20 },
+      properties: json.properties || { step: GRID_STEP },
     });
   }
 }
@@ -16,7 +16,7 @@ function createGrid(id: string, type: string): GridRecord {
     id,
     type,
     properties: {
-      step: 20,
+      step: GRID_STEP,
       colors: ['#808080', '#ddd', '#ddd', '#ddd', '#ddd'],
     },
   });

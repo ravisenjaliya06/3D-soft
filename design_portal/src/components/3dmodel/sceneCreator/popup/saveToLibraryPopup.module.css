@@ -1,96 +1,169 @@
+/* ─────────────────────────────────────────────────────────────
+   Save to Library (Phase 2) — card with a terracotta top edge,
+   dark icon tile, round close button and pill actions.
+   ───────────────────────────────────────────────────────────── */
+
 .createpopupOverlay {
   position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0, 0, 0, 0.3);
-  display: flex;
-  justify-content: center;
-  align-items: center;
+  inset: 0;
   z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(20, 20, 10, 0.5);
+  backdrop-filter: blur(3px);
 }
 
 .createpopup {
-  background: white;
-  width: 20rem;
-  border-radius: 0.4rem;
   position: relative;
-  box-shadow: 0 2px 15px rgba(0, 0, 0, 0.1);
-  height: auto;
-  align-items: start;
-  padding: 0.4rem;
+  width: clamp(320px, 23rem, 440px);
+  overflow: hidden;
+  font-family: var(--bv-font);
+  background: var(--bv-surface);
+  border-radius: 1.2rem;
+  box-shadow: 0 1.5rem 3.5rem rgba(10, 10, 4, 0.35);
+}
+
+.createpopup::before {
+  display: block;
+  height: 5px;
+  content: '';
+  background: var(--bv-accent);
+}
+
+.popupHead {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.8rem;
+  padding: 1.1rem 1.1rem 0.4rem;
 }
 
 .createicon {
-  margin-top: 0.3rem;
-  margin-left: 0.7rem;
-  width: 2.7rem;
-  height: 2.7rem;
+  display: grid;
+  flex-shrink: 0;
+  place-items: center;
+  width: 2.6rem;
+  height: 2.6rem;
+  min-width: 36px;
+  min-height: 36px;
+  background: var(--bv-ink);
+  border-radius: 0.8rem;
+}
+
+.createicon img {
+  width: 55%;
+  height: 55%;
+  filter: brightness(0) invert(1);
+}
+
+.popupHeadText {
+  flex: 1;
+  min-width: 0;
+}
+
+.popupEyebrow {
+  font-size: clamp(10px, 0.62rem, 12px);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--bv-accent);
+}
+
+.popupHeadText h2 {
+  margin: 0.1rem 0 0;
+  font-size: clamp(16px, 1.05rem, 20px);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--bv-text);
+}
+
+.popupHeadText p {
+  margin: 0.2rem 0 0;
+  font-size: clamp(12px, 0.74rem, 14px);
+  color: var(--bv-text-muted);
 }
 
 .createclose {
-  width: 1.1rem;
-  position: absolute;
-  top: 1rem;
-  right: 1.5rem;
+  display: grid;
+  flex-shrink: 0;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  min-width: 28px;
+  min-height: 28px;
+  padding: 0;
+  background: var(--bv-surface-2);
+  border: 1px solid var(--bv-border);
+  border-radius: 50%;
   cursor: pointer;
+  transition: border-color var(--bv-ease);
+}
+
+.createclose:hover {
+  border-color: var(--bv-accent);
+}
+
+.createclose img {
+  width: 40%;
+  height: 40%;
+  filter: brightness(0);
+  opacity: 0.6;
 }
 
 .create_right_side {
   display: flex;
   flex-direction: column;
+  padding: 0.6rem 1.1rem 0;
   text-align: start;
 }
 
-.create_right_side h2 {
-  margin-top: 0.4rem;
-  margin-left: 1rem;
-  font-family: var(--font-family);
-  color: var(--primary-color);
-  font-weight: 545;
-  width: 12rem;
-  height: 1rem;
-  font-size: 1rem;
-  margin-bottom: 1.5rem;
-}
-
-.create_right_side p {
-  margin-left: 1rem;
-
-  color: var(--text-gray);
-  font-size: 0.7rem;
-  font-family: var(--font-family);
-  margin-top: 0.4rem;
-}
-
 .createinputGroup {
-  margin-left: 1rem;
+  margin: 0;
 }
 
 .createButtonGrop {
-  gap: 0.4rem;
-  padding: 0.7rem 1rem;
-  margin-top: 0rem;
   display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  margin-top: 0.4rem;
+  padding: 0.9rem 1.1rem;
+  background: var(--bv-surface-2);
+  border-top: 1px solid var(--bv-border);
+}
+
+.cancelcreateButton,
+.createcontinueButton {
+  height: 2.3rem;
+  min-height: 34px;
+  padding: 0 1.2rem;
+  font-family: var(--bv-font);
+  font-size: clamp(13px, 0.82rem, 15px);
+  font-weight: 700;
+  border-radius: 999px;
+  cursor: pointer;
+  transition:
+    background-color var(--bv-ease),
+    border-color var(--bv-ease);
 }
 
 .cancelcreateButton {
-  width: 23rem;
-  height: 2.2rem;
-  font-family: var(--font-family);
-  font-size: 0.9rem;
-  font-weight: 400;
-  color: var(--primary-color);
-  border: 0.063rem solid var(--primary-color);
-  border-radius: 0.4rem;
-  cursor: pointer;
-  letter-spacing: 0.03rem;
+  color: var(--bv-text);
+  background: var(--bv-surface);
+  border: 1px solid var(--bv-border-strong);
+}
 
-  &:hover {
-    background-color: var(--primary-hover);
-    color: var(--primary-color);
-  }
+.cancelcreateButton:hover {
+  border-color: var(--bv-text-subtle);
+}
+
+.createcontinueButton {
+  color: var(--bv-on-accent);
+  background: var(--bv-accent);
+  border: none;
+}
+
+.createcontinueButton:hover {
+  background: var(--bv-accent-hover);
 }
 
 .successPopup,
@@ -98,49 +171,35 @@
   position: fixed;
   top: 5rem;
   right: 1.2rem;
-  width: auto;
-  height: 2.8rem;
-  background-color: var(--primary-white);
-  color: var(--primary-color);
-  border: var(--common-text-color) solid 0.063rem;
-  border-radius: 0.313rem;
-  box-shadow: 0rem 0.25rem 0.375rem rgba(0, 0, 0, 0.1);
-  font-size: 2rem;
-  animation: fadeInOut 3s ease-in-out;
   display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem 0.5rem 0.6rem;
+  font-family: var(--bv-font);
+  color: var(--bv-text);
+  background: var(--bv-surface);
+  border: 1px solid var(--bv-border);
+  border-left: 4px solid var(--bv-accent);
+  border-radius: 0.8rem;
+  box-shadow: var(--bv-shadow-lg);
+  animation: fadeInOut 3s ease-in-out;
 }
 
 .successPopup img,
 .errorPopup img {
-  width: 2rem;
-  height: 2rem;
-  margin: 0.4rem 0.4rem 0.4rem 0.8rem;
+  width: 1.6rem;
+  height: 1.6rem;
 }
 
 .successPopup p,
 .errorPopup p {
-  font-family: var(--font-family);
-  font-size: 0.8rem;
-  text-align: center;
-  margin-right: 1rem;
+  margin: 0;
+  font-size: clamp(12px, 0.8rem, 14px);
+  font-weight: 600;
 }
 
-.createcontinueButton {
-  width: 23rem;
-  height: 2.2rem;
-  font-family: var(--font-family);
-  font-size: 0.9rem;
-  font-weight: 400;
-  background-color: var(--primary-color);
-  color: var(--primary-white);
-  border: none;
-  border-radius: 0.4rem;
-  cursor: pointer;
-  letter-spacing: 0.03rem;
-
-  &:hover {
-    background-color: var(--primary-hover);
-    border: 0.063rem solid var(--primary-color);
-    color: var(--primary-color);
-  }
+.createinputGroup > *,
+.createinputGroup :global(.MuiFormControl-root),
+.createinputGroup :global(.MuiTextField-root) {
+  width: 100% !important;
 }

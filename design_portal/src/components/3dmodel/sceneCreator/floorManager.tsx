@@ -12,7 +12,7 @@ class FloorBuilder {
   constructor(points: WallPoint[], scene: THREE.Scene, textureUrl?: string) {
     this.points = points;
     this.scene = scene;
-    this.textureUrl = textureUrl || '/textures/wood_7.jpg';
+    this.textureUrl = textureUrl || '/textures/floor_white.jpg';
   }
 
   private createShape(): THREE.Shape {
@@ -33,26 +33,51 @@ class FloorBuilder {
     return shape;
   }
 
-  private async createMaterial(): Promise<THREE.MeshStandardMaterial> {
-    try {
-      const texture = await textureLoader(this.textureUrl, 5, 5); // Repeat texture
-      return new THREE.MeshStandardMaterial({
-        map: texture,
-        side: THREE.DoubleSide,
-        roughness: 0.8,
-      });
-    } catch (e) {
-      console.error(
-        'FloorBuilder: Failed to load floor texture from',
-        this.textureUrl,
-        'Error:',
-        e
-      );
-      return new THREE.MeshStandardMaterial({ color: 0xcccccc, side: THREE.DoubleSide });
-    }
-  }
+  private createMaterial(): THREE.MeshStandardMaterial {
+    const material = new THREE.MeshStandardMaterial({
+      side: THREE.DoubleSide,
+      transparent: true,
+      opacity: 0,
+    });
 
-  public async createMesh(): Promise<THREE.Mesh | null> {
+    textureLoader(this.textureUrl, 1, 1)
+      .then((texture) => {
+        //  FIX: proper wrapping
+        texture.wrapS = THREE.RepeatWrapping;
+        texture.wrapT = THREE.RepeatWrapping;
+
+        // control tiling (adjust if needed)
+        texture.repeat.set(1, 1);
+
+        // make texture horizontal
+        texture.center.set(0.5, 0.5);
+        texture.rotation = Math.PI / 2;
+
+        // quality improvement
+        texture.anisotropy = 16;
+        texture.colorSpace = THREE.SRGBColorSpace;
+
+        // apply texture
+        material.map = texture;
+        material.transparent = false;
+        material.opacity = 1;
+        material.roughness = 0.85;
+        material.metalness = 0;
+
+        material.needsUpdate = true;
+      })
+      .catch((e) => {
+        console.error(
+          'FloorBuilder: Failed to load floor texture from',
+          this.textureUrl,
+          'Error:',
+          e
+        );
+      });
+
+    return material;
+  }
+  public createMesh(): THREE.Mesh | null {
     if (this.points.length < 3) return null;
 
     const shape = this.createShape();
@@ -62,7 +87,7 @@ class FloorBuilder {
     // Shape is created in XY plane, so we rotate -90 deg around X
     geometry.rotateX(Math.PI / 2);
 
-    const material = await this.createMaterial();
+    const material = this.createMaterial();
 
     const mesh = new THREE.Mesh(geometry, material);
     mesh.name = 'GeneratedFloor';
@@ -70,7 +95,7 @@ class FloorBuilder {
     mesh.receiveShadow = true;
 
     // Position slightly below walls to avoid z-fighting
-    mesh.position.y = 0.01;
+    mesh.position.y = -0.01;
 
     this.floorMesh = mesh;
     return mesh;
@@ -115,22 +140,27 @@ export class FloorManager {
 
   public async syncData() {
     if (!this.scene) return;
-
-    this.removeExistingFloors();
-
+    // Create the new meshes (async operation)
+    const newMeshes: THREE.Mesh[] = [];
     for (const floor of this.floorData) {
       // Get texture URL from floor data if available
-      const textureUrl = (floor as any).textureUrl || '/textures/wood_7.jpg';
+      const textureUrl = (floor as any).textureUrl || '/textures/floor_white.jpg';
 
       // Use the internal FloorBuilder class
       const builder = new FloorBuilder(floor.points, this.scene, textureUrl);
-      const mesh = await builder.createMesh();
+      const mesh = builder.createMesh();
       if (mesh) {
         // Set objectId to link mesh to Redux object
         mesh.userData.objectId = floor.id;
-        this.scene.add(mesh);
-        this.floorMeshes.push(mesh);
+        newMeshes.push(mesh);
       }
+    }
+    //if there is any floor in the scene remove it just for helper function
+    this.removeExistingFloors();
+
+    for (const mesh of newMeshes) {
+      this.scene.add(mesh);
+      this.floorMeshes.push(mesh);
     }
   }
 }

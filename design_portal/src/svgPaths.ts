@@ -37,6 +37,7 @@ export const _3DMODEL = {
   sink: '/assets/3dmodel/toolbar/sink.svg',
   vertical: '/assets/3dmodel/toolbar/vertical.svg',
   lshape: '/assets/3dmodel/toolbar/lshape.svg',
+  ushape: '/assets/3dmodel/toolbar/ushape.svg',
   downarrow: '/assets/3dmodel/toolbar/downarrow.svg',
   uparrow: '/assets/3dmodel/toolbar/uparrow.svg',
   rightarrow: '/assets/3dmodel/toolbar/rightarrow.svg',
@@ -47,6 +48,8 @@ export const _3DMODEL = {
   vrLine: '/assets/3dmodel/sidebar/line 129.svg',
   icon_2d: '/assets/3dmodel/footer/2d.svg',
   icon_3d: '/assets/3dmodel/footer/3d.svg',
+  active_2d: '/assets/3dmodel/footer/active2d.svg',
+  active_3d: '/assets/3dmodel/footer/active3d.svg',
   close_white: '/assets/3dmodel/toolbar/close.svg',
   delete_helper: '/assets/3dmodel/deletehelper.svg',
   copy_helper: '/assets/3dmodel/copyhelper.svg',
@@ -70,7 +73,6 @@ export const BREVENTO_BACKGROUND_LOGO_SVG = {
 
 export const CATALOG = {
   close: '/assets/catalog/close.svg',
-  img2: '/assets/catalog/toolbaricon/img2.svg',
   logo: '/assets/catalog/logo.svg',
   profile: '/assets/catalog/profile.svg',
   img1: '/assets/catalog/toolbaricon/img1.svg',
@@ -301,6 +303,8 @@ export const PROFILE = {
   team_not_selected: '/assets/profile/team-not-selected.svg',
   team_svg: '/assets/profile/team-svg.svg',
   user: '/assets/profile/user.png',
+  money: '/assets/money.svg',
+  activemoney: '/assets/activemoney.svg',
 };
 
 export const SEARCH_SVG = {
@@ -363,7 +367,6 @@ export const TOOLBAR = {
   door: '/assets/toolbar/door.svg',
   double_door: '/assets/toolbar/double_door.svg',
   drawer: '/assets/toolbar/drawer.svg',
-  exlight: '/assets/toolbar/exlight.svg',
   grid: '/assets/toolbar/grid.svg',
   hide: '/assets/toolbar/hide.svg',
   images: '/assets/toolbar/images.jpg',
@@ -479,6 +482,10 @@ export const FEATURED_ICON = {
   alert: '/assets/alert.svg',
 };
 
+export const FOOTER_ICON = {
+  circle_footer_icon: '/assets/footer/dropdown_footer.svg',
+};
+
 export const assets = {
   ...PROPERTY_IMG,
   ..._3DMODEL,
@@ -523,4 +530,5 @@ export const assets = {
   ...LOAD_MORE,
   ...UP_DOWN_ARROW,
   ...FEATURED_ICON,
+  ...FOOTER_ICON,
 };

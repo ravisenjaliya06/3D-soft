@@ -12,10 +12,12 @@ import {
 import { API_ENDPOINT } from '@/services/ApiEndPoints';
 import commonService from '@/services/CommonService';
 import { assets } from '@/svgPaths';
-import React, { useEffect, useState } from 'react';
+import { OrbitControls, Stage, useGLTF } from '@react-three/drei';
+import { Canvas } from '@react-three/fiber';
+import React, { Suspense, useEffect, useRef, useState } from 'react';
+import { LuPackagePlus } from 'react-icons/lu';
 import { useSelector } from 'react-redux';
 import { toast } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
 import * as THREE from 'three';
 import { removeExistingLines } from '../design/index';
 import {
@@ -28,7 +30,7 @@ import {
   addVerticalPlanksToBox,
 } from '../design/scene';
 import { hideFullScreenLoader, showFullScreenLoader } from '../handler/items';
-import { GLBLoader, prefetchGLB } from '../helper/glbLoader';
+import { GLBLoader, prefetchModel } from '../helper/glbLoader';
 import { useAppDispatch } from '../hooks';
 import { ToolbarProps } from '../interface';
 import {
@@ -43,6 +45,7 @@ import {
 import { SyncManager } from '../sceneCreator/syncState';
 import { formatEnumLabel } from '../sceneCreator/utils';
 import { store } from '../store';
+import { setCatalogItems } from '../store/catalogSlice';
 import {
   addObjects,
   setHoverdMesh,
@@ -51,9 +54,142 @@ import {
   toggleQuickHide,
   toggleWallDrawing,
 } from '../store/dataSlice';
+import { selectIsLatestVersion } from '../store/selectors';
 import { CustomToast } from '../utils/CustomToast';
+import { gettingDesignID } from '../utils/routeIds';
 import { Datastate, IconMap } from './interface';
 import styles from './toolbar.module.css';
+
+const MODEL_CATEGORY_TO_ITEMS: Record<string, any[]> = {
+  Sofa: SOFA,
+  Fridge: FRIDGE,
+  Stove: STOVE,
+  TV: TV,
+  'Dinner Table': DINNER_TABLE,
+  Flower: FLOWER,
+  Microwave: MICROWAVE,
+  'Study Table': CENTER_STUDY_TABLE,
+};
+
+const resolveAssetUrl = (path: string | null | undefined): string => {
+  if (!path) return '';
+  if (path.startsWith('http') || path.startsWith('data:')) {
+    return path;
+  }
+  if (path.startsWith('/assets/') || path.startsWith('/glb/')) {
+    return path;
+  }
+  const apiBase = process.env.NEXT_PUBLIC_PUBLIC_API || '';
+  const cleanBase = apiBase.endsWith('/') ? apiBase.slice(0, -1) : apiBase;
+  const cleanPath = path.startsWith('/') ? path : `/${path}`;
+
+  return `${cleanBase}${cleanPath}`;
+};
+
+const shouldUseStandaloneModelFlow = (item: MeshObjectData | any): boolean => {
+  if (!item?.path) return false;
+  if (item?.type === OBJECT_TYPES.MODEL) return true;
+
+  // Parts and non-model object types should continue with SyncManager/invisible-box flow
+  // even if backend payload includes a model file path for attached hardware.
+  if (item?.type && Object.values(PART_TYPES).includes(item.type)) return false;
+  if (item?.type && Object.values(OBJECT_TYPES).includes(item.type)) return false;
+
+  // Keep static toolbar GLB assets (e.g. Sofa/Fridge) on model flow.
+  return true;
+};
+
+const GltfModel = ({
+  url,
+  onLoad,
+}: {
+  url: string;
+  onLoad?: (dims: { width: number; height: number; depth: number }) => void;
+}) => {
+  const { scene } = useGLTF(url);
+  const hasLoadedRef = useRef(false);
+
+  useEffect(() => {
+    if (!scene || !onLoad || hasLoadedRef.current) return;
+
+    const timer = setTimeout(() => {
+      const size = new THREE.Vector3();
+      new THREE.Box3().setFromObject(scene).getSize(size);
+
+      const isLikelyMM = size.x > 10 || size.z > 10;
+      const multiplier = isLikelyMM ? 0.1 : 100;
+
+      onLoad({
+        width: Math.round(size.x * multiplier),
+        height: Math.round(size.y * multiplier),
+        depth: Math.round(size.z * multiplier),
+      });
+      hasLoadedRef.current = true;
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [scene, onLoad]);
+
+  useEffect(() => {
+    hasLoadedRef.current = false;
+  }, [url]);
+
+  return <primitive object={scene} />;
+};
+
+const ModelViewerComponent = ({
+  file,
+  onCanvasReady,
+  onModelLoad,
+}: {
+  file: File | null;
+  onCanvasReady: (gl: THREE.WebGLRenderer) => void;
+  onModelLoad: (dims: { width: number; height: number; depth: number }) => void;
+}) => {
+  const [url, setUrl] = useState<string | null>(null);
+  useEffect(() => {
+    if (!file) {
+      setUrl(null);
+      return;
+    }
+    const objectUrl = URL.createObjectURL(file);
+    setUrl(objectUrl);
+    return () => URL.revokeObjectURL(objectUrl);
+  }, [file]);
+
+  return (
+    <div className={styles.modelViewerPreview}>
+      {url ? (
+        <Suspense
+          fallback={
+            <div className="flex h-full w-full items-center justify-center text-slate-400">
+              <span className="animate-pulse">Loading model...</span>
+            </div>
+          }
+        >
+          <Canvas
+            key={url}
+            shadows
+            camera={{ position: [5, 5, 5], fov: 25 }}
+            gl={{ preserveDrawingBuffer: true, antialias: true }}
+            onCreated={({ gl }) => {
+              if (onCanvasReady) onCanvasReady(gl);
+            }}
+          >
+            <Stage intensity={0.7} environment="city" adjustCamera={0.8}>
+              <GltfModel url={url} onLoad={onModelLoad} />
+            </Stage>
+            <OrbitControls makeDefault minDistance={0.1} maxDistance={50} />
+          </Canvas>
+        </Suspense>
+      ) : (
+        <div className={styles.noModelPlaceholder}>
+          <p>Model preview will appear here.</p>
+        </div>
+      )}
+    </div>
+  );
+};
 
 const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMode }) => {
   const dispatch = useAppDispatch();
@@ -61,9 +197,18 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
   const isQuickHideActive = state.isQuickHideActive;
   const isMeasurementActive = state.isMeasurementActive;
   const isWallDrawingActive = state.isWallDrawingActive;
+  const isLatestVersion = useSelector(selectIsLatestVersion);
   const [activeOption, setActiveOption] = useState('Home');
   const [isToolOpen, setIsToolOpen] = useState(true);
   const [activeOptionName, setActiveOptionName] = useState('Home');
+  const prefetchTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Clear prefetch timer on unmount
+  useEffect(() => {
+    return () => {
+      if (prefetchTimerRef.current) clearTimeout(prefetchTimerRef.current);
+    };
+  }, []);
 
   // When parent switches to 2d view, ensure toolbar shows Home and close any secondary panels
   useEffect(() => {
@@ -83,33 +228,25 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
     }
   }, [viewMode]);
 
-  useEffect(() => {
-    const allModels = [
-      ...SOFA,
-      ...FRIDGE,
-      ...STOVE,
-      ...TV,
-      ...DINNER_TABLE,
-      ...FLOWER,
-      ...MICROWAVE,
-      ...CENTER_STUDY_TABLE,
-    ];
-
-    allModels.forEach((item) => {
-      if (item.path) {
-        prefetchGLB(item.path);
-      }
-    });
-  }, []);
   const [catalogMenu, setcatalogMenu] = useState(false);
-  const [isExlightActive, setIsExlightActive] = useState(false);
   const [cabinetItems, setCabinetItems] = useState<MeshObjectData[][]>([]);
   const [addPartPopup, setAddPartPopup] = useState(false);
   const [selectedCabinetItem, setSelectedCabinetItem] = useState<MeshObjectData | null>(null);
   const [quantityValue, setQuantityValue] = useState(1);
   const [selectedFurnitureCategory, setSelectedFurnitureCategory] = useState<string | null>(null);
   const [popupPosition, setPopupPosition] = useState({ x: 0, y: 0 });
+  const [showUploadPopup, setShowUploadPopup] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadData, setUploadData] = useState({
+    name: '',
+    width: 0,
+    height: 0,
+    depth: 0,
+    file: null as File | null,
+  });
   const [isModelOpen, setIsModelOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const previewRendererRef = useRef<THREE.WebGLRenderer | null>(null);
 
   /** Change the active toolbar option and open its tools */
   const handleOptionClick = (option: string, name: string) => {
@@ -129,14 +266,132 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
     setAddPartPopup(false);
     setSelectedCabinetItem(null);
     setQuantityValue(1);
+    setShowUploadPopup(false);
+    setUploadData({ name: '', width: 0, height: 0, depth: 0, file: null });
   };
 
-  const options = [
-    { option: 'Home', name: 'Home', icon: assets.img1 },
-    { option: 'View', name: 'View', icon: assets.img2 },
-  ];
+  const handleModelLoad = React.useCallback(
+    (dims: { width: number; height: number; depth: number }) => {
+      setUploadData((prev) => {
+        // Only update if values have actually changed to prevent render loops
+        if (prev.width === dims.width && prev.height === dims.height && prev.depth === dims.depth) {
+          return prev;
+        }
+        return {
+          ...prev,
+          width: dims.width,
+          height: dims.height,
+          depth: dims.depth,
+        };
+      });
+    },
+    []
+  );
 
-  /** Fetch cabinet items from API and update setCabinetItems state */
+  const handleUpload = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!uploadData.name) {
+      toast.error('Please enter a model name before saving.');
+      return;
+    }
+
+    if (!uploadData.file) {
+      toast.error('Please upload a GLB file before saving.');
+      return;
+    }
+
+    const designId = gettingDesignID();
+    if (!designId) {
+      toast.error('Design ID not found. Please ensure you are in a design session.');
+      return;
+    }
+
+    setIsUploading(true);
+
+    try {
+      const formData = new FormData();
+      const metadata = {
+        name: uploadData.name,
+        type: 'model',
+        is_main: true,
+        dimensions: {
+          width: Number(uploadData.width) / 1000,
+          height: Number(uploadData.height) / 1000,
+          depth: Number(uploadData.depth) / 1000,
+        },
+        position: { x: 0, y: 1, z: 0 },
+        rotation: { x: 0, y: 0, z: 0 },
+        scale: { x: 1, y: 1, z: 1 },
+        data: {
+          category: selectedFurnitureCategory,
+        },
+        material: [
+          {
+            name: `${uploadData.name} Material`,
+            type: 'Miscellaneous',
+            properties: {
+              model_file: null,
+            },
+          },
+        ],
+      };
+
+      const payload: Record<string, any> = {
+        design_id: designId,
+        metadata: JSON.stringify(metadata),
+        model_file: uploadData.file,
+      };
+
+      if (previewRendererRef.current) {
+        const thumbnailBase64 = previewRendererRef.current.domElement.toDataURL('image/png');
+        payload.image = await (await fetch(thumbnailBase64)).blob();
+      }
+
+      Object.entries(payload).forEach(([key, value]) => {
+        if (value) {
+          if (key === 'image') {
+            formData.append(key, value, `${uploadData.name}_thumbnail.png`);
+          } else {
+            formData.append(key, value);
+          }
+        }
+      });
+
+      const response = await commonService.post(
+        API_ENDPOINT.CREATE_LIBRARY_CATALOGS(true),
+        formData
+      );
+
+      if (response.status === 201) {
+        toast.success('Model uploaded successfully');
+        closePopup();
+        fetchCabinetItem();
+      } else {
+        toast.error('Failed to upload model');
+      }
+    } catch (error) {
+      console.error(error);
+      toast.error('An error occurred during upload');
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const handleUploadFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+
+    if (file && file.size > 20 * 1024 * 1024) {
+      toast.error('File size exceeds 20MB limit');
+      e.target.value = '';
+      return;
+    }
+
+    setUploadData((prev) => ({ ...prev, file: file || null }));
+  };
+
+  const options = [{ option: 'Home', name: 'Home', icon: assets.img1 }];
+
   const fetchCabinetItem = async () => {
     const cabinetResponse: { status: number; data: MeshObjectData[][] } = await commonService.get(
       API_ENDPOINT.GET_CATALOG_ITEMS
@@ -146,28 +401,37 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
         console.log(cabinetResponse.data, 'cabinetResponse.data');
       }
       setCabinetItems(cabinetResponse.data);
-      // Preload any GLB models found in the fetched cabinet items
-      cabinetResponse.data.flat().forEach((item: any) => {
-        if (item.path) {
-          prefetchGLB(item.path);
-        }
-      });
+      // Store in Redux so other components (e.g. L-shape tool) can access catalog material data
+      store.dispatch(setCatalogItems(cabinetResponse.data));
     }
   };
+
+  useEffect(() => {
+    const handleCatalogUpdate = () => {
+      fetchCabinetItem();
+    };
+
+    window.addEventListener('catalog-updated', handleCatalogUpdate);
+    return () => {
+      window.removeEventListener('catalog-updated', handleCatalogUpdate);
+    };
+  }, []);
 
   const regenerateGroupIds = (group: MeshObjectData[]): MeshObjectData[] => {
     const idMap = new Map<string, string>();
 
+    group.forEach((item) => {
+      idMap.set(item.id, crypto.randomUUID());
+    });
     return group.map((item) => {
-      const newId = crypto.randomUUID();
-      idMap.set(item.id, newId);
+      const newId = idMap.get(item.id)!;
 
       return {
         ...item,
         id: newId,
         parent:
-          item.parent !== null
-            ? (idMap.get(item.parent ? item.parent : '') ?? item.parent)
+          item.parent !== null && item.parent !== undefined
+            ? (idMap.get(item.parent) ?? item.parent)
             : undefined,
       };
     });
@@ -175,12 +439,10 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
 
   /** Handle selection of a cabinet item from toolbar submenu */
   const handleCabinetItemSelect = async (event: React.MouseEvent, item: MeshObjectData | any) => {
-    console.log('handleCabinetItemSelect', item);
-    // Check if it's a GLB model (has path property)
-    if (item.path) {
+    if (shouldUseStandaloneModelFlow(item)) {
       if (!threeDView || !threeDView.scene) return;
 
-      showFullScreenLoader(`Loading ${item.name}...`);
+      await showFullScreenLoader(`Loading ${item.name}...`);
       try {
         // Set realistic target dimensions (in meters) based on category
         let targetSize = { width: 0.12, height: 0.12, depth: 0.12 };
@@ -210,9 +472,68 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
         } else if (item.path.includes('/table/')) {
           // Study/center tables: typically 1.2m wide, 0.75m tall, 0.6m deep
           targetSize = { width: 1.2, height: 0.75, depth: 0.6 };
+        } else {
+          // Check for dynamic models with dimensions in data
+          try {
+            const itemData = item.data
+              ? typeof item.data === 'string'
+                ? JSON.parse(item.data)
+                : item.data
+              : null;
+            if (itemData?.dimensions) {
+              targetSize = itemData.dimensions;
+            }
+          } catch (_err) {
+            console.error('Error parsing item data', _err);
+          }
         }
 
-        const model = await GLBLoader(item.path, item.name, targetSize);
+        // Configuration for realistic dimensions based on item keywords
+        const REALISTIC_DIMENSIONS: Record<
+          string,
+          { width: number; height: number; depth: number }
+        > = {
+          sofa: { width: 2.0, height: 0.8, depth: 0.9 },
+          fridge: { width: 0.8, height: 1.7, depth: 0.7 },
+          stove: { width: 0.6, height: 0.9, depth: 0.6 },
+          tv: { width: 1.2, height: 0.7, depth: 0.1 },
+          'dinner table': { width: 1.5, height: 0.75, depth: 0.9 },
+          flower: { width: 0.3, height: 0.4, depth: 0.3 },
+          microwave: { width: 0.5, height: 0.3, depth: 0.4 },
+          'study table': { width: 1.2, height: 0.75, depth: 0.6 },
+          table: { width: 1.2, height: 0.75, depth: 0.6 },
+        };
+
+        const itemPath = item.path.toLowerCase();
+        const itemDataStr = (
+          item.data ? (typeof item.data === 'string' ? item.data : JSON.stringify(item.data)) : ''
+        ).toLowerCase();
+
+        // Find matching category
+        const categoryKey = Object.keys(REALISTIC_DIMENSIONS).find(
+          (key) => itemPath.includes(key.replace(' ', '')) || itemDataStr.includes(key)
+        );
+
+        if (categoryKey) {
+          targetSize = REALISTIC_DIMENSIONS[categoryKey];
+        } else {
+          // Check for dynamic models with dimensions in data
+          try {
+            const itemData = item.data
+              ? typeof item.data === 'string'
+                ? JSON.parse(item.data)
+                : item.data
+              : null;
+            if (itemData?.dimensions) {
+              targetSize = itemData.dimensions;
+            }
+          } catch (_err) {
+            console.error('Error parsing item data', _err);
+          }
+        }
+
+        const activePath = resolveAssetUrl(item.path);
+        const model = await GLBLoader(activePath, item.name, targetSize);
         let position: THREE.Vector3 | null = null;
 
         if (model) {
@@ -220,9 +541,9 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
           model.userData.isGLB = true;
 
           model.traverse((child) => {
+            child.userData.objectId = item.id;
+            child.userData.isGLB = true;
             if (child instanceof THREE.Mesh) {
-              child.userData.objectId = item.id;
-              child.userData.isGLB = true;
               child.userData.type = OBJECT_TYPES.MODEL;
               child.name = `Model_Child_${child.id}`;
             }
@@ -250,25 +571,15 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
 
           const finalPos = position || { x: 0, y: model.position.y, z: 0 };
 
-          // CRITICAL FIX FOR REFRESH OFFSET:
-          // GLBLoader may have shifted its internal geometry center or scaled non-uniformly,
-          // meaning `model.position.y` or actual BBox center might NOT equal `targetSize.height / 2`.
-          // However, on refresh, SyncManager creates a BoxGeometry EXACTLY sized `targetSize`,
-          // whose strict mathematical center is what determines floor placement.
-          // To ensure perfect identical alignment on refresh, we MUST save `Y` as strictly
-          // the center of that future BoxGeometry (which is `targetSize.height / 2` + floor height 0.01).
-          const syncCenterY = 0.01 + targetSize.height / 2;
-
           const itemData = {
             ...item,
-            id: crypto.randomUUID(),
+            id: item.id,
             type: OBJECT_TYPES.MODEL,
             name: item.name,
             dimensions: targetSize,
             position: {
               x: finalPos.x,
-              // Strictly lock to SyncManager's expected Box center!
-              y: syncCenterY,
+              y: finalPos.y,
               z: finalPos.z,
             },
             material: [],
@@ -320,7 +631,6 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
       }
     } else {
       if (['door', 'Sliding Door', PART_TYPES.DOUBLE_DOOR].includes(item.type)) {
-        console.log('item', item);
         setSelectedCabinetItem(item);
         onAddItems(item, 1);
       } else {
@@ -546,13 +856,16 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
         }
       },
       isActive: catalogMenu,
-      disabled: false,
+      disabled: !isLatestVersion,
     },
     {
       option: 'Quick Hide',
       icon: assets.quickhide,
       onClick: () => {
         dispatch(toggleQuickHide(!isQuickHideActive));
+        if (onViewModeChange && !isQuickHideActive) {
+          onViewModeChange('3d');
+        }
         setcatalogMenu(false);
       },
       isActive: isQuickHideActive,
@@ -563,6 +876,9 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
       icon: assets.mesurment,
       onClick: () => {
         dispatch(toggleMeasurement(!isMeasurementActive));
+        if (onViewModeChange && !isMeasurementActive) {
+          onViewModeChange('3d');
+        }
         setcatalogMenu(false);
       },
       isActive: isMeasurementActive,
@@ -579,24 +895,10 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
         setcatalogMenu(false);
       },
       isActive: isWallDrawingActive,
-      disabled: false,
+      disabled: !isLatestVersion,
     },
   ];
 
-  const viewTools = [
-    {
-      option: 'Exlight',
-      icon: assets.exlight,
-      onClick: () => {
-        if (threeDView) {
-          threeDView.toggleSky();
-          setIsExlightActive((prev) => !prev);
-        }
-      },
-      disabled: false,
-      isActive: isExlightActive,
-    },
-  ];
   const furnitureTools = [
     { option: 'Kitchen', icon: assets.kitchen },
     { option: 'Cabinet', icon: assets.cabinet_svg },
@@ -624,17 +926,35 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
       'Kitchen Cabinet Parts': [...Object.values(PART_TYPES), ...Object.values(OBJECT_TYPES)],
     };
 
-    // Explicit return for GLB categories
-    if (category === 'Sofa') return SOFA;
-    if (category === 'Fridge') return FRIDGE;
-    if (category === 'Stove') return STOVE;
-    if (category === 'TV') return TV;
-    if (category === 'Dinner Table') return DINNER_TABLE;
-    if (category === 'Flower') return FLOWER;
-    if (category === 'Microwave') return MICROWAVE;
-    if (category === 'Study Table') return CENTER_STUDY_TABLE;
-
     const allowedTypes = categoryFilters[category] || [];
+
+    // Find dynamic models from database
+    const dynamicModels = cabinetItems
+      .map((item: any) => (item && item.length > 0 ? item[0] : null))
+      .filter((item: any) => {
+        if (!item || item.type !== OBJECT_TYPES.MODEL) return false;
+        try {
+          const itemData = typeof item.data === 'string' ? JSON.parse(item.data) : item.data;
+
+          // Set path from various possible locations in the response
+          const modelFile =
+            item.model_file ||
+            item.material?.[0]?.properties?.model_file ||
+            item.material?.[0]?.model_file ||
+            item.properties?.model_file;
+
+          if (modelFile && !item.path) {
+            item.path = resolveAssetUrl(modelFile);
+          }
+
+          return itemData?.category === category;
+        } catch {
+          return false;
+        }
+      });
+
+    let finalResult = [];
+
     if (category === 'Kitchen') {
       const baseItems = [
         {
@@ -699,17 +1019,31 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
         },
       ];
 
-      if (category === 'Kitchen') return baseItems;
-
       const otherItems = cabinetItems
         .map((item: any) => item[0])
         .filter((item: any) => allowedTypes.includes(item.type));
+      finalResult = [...baseItems, ...otherItems, ...dynamicModels];
+    } else {
+      const staticItems: any[] = MODEL_CATEGORY_TO_ITEMS[category] ?? [];
 
-      return [...baseItems, ...otherItems];
+      if (staticItems.length > 0) {
+        finalResult = [...staticItems, ...dynamicModels];
+      } else {
+        const otherItems = cabinetItems
+          .map((item: any) => item[0])
+          .filter(
+            (item: any) =>
+              item && allowedTypes.includes(item.type) && item.type !== OBJECT_TYPES.MODEL
+          );
+        finalResult = [...otherItems, ...dynamicModels];
+      }
     }
-    return cabinetItems
-      .map((item: any) => item[0])
-      .filter((item: any) => allowedTypes.includes(item.type));
+
+    if (!searchQuery) return finalResult;
+
+    return finalResult.filter((item: any) =>
+      item.name.toLowerCase().includes(searchQuery.toLowerCase())
+    );
   };
 
   /** Open the Second Popup for selected furniture category */
@@ -736,6 +1070,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
     }
 
     setSelectedFurnitureCategory(category === selectedFurnitureCategory ? null : category);
+    setSearchQuery(''); // Reset search when switching categories
     setAddPartPopup(false);
     setSelectedCabinetItem(null);
     setQuantityValue(1);
@@ -765,7 +1100,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
     platform: assets.platform_icon,
     sink: assets.sink_icon,
     lShapeObject: assets.lshape,
-    uShapeObject: assets.lshape,
+    uShapeObject: assets.ushape,
   };
 
   return (
@@ -804,6 +1139,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
                 className={activeOption === option ? styles.icon_active : styles.icon}
               >
                 <img src={icon} alt={`${option} Icon`} />
+                <span>{name}</span>
               </div>
             ))}
           </div>
@@ -821,7 +1157,14 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
                   {!options.some((item) => item.option === activeOption) && (
                     <img src={assets.back} onClick={handleback} alt="Back" />
                   )}
-                  <p>{activeOptionName}</p>
+                  <div className={styles.drawerTitle}>
+                    <span className={styles.drawerEyebrow}>
+                      {options.some((item) => item.option === activeOption)
+                        ? 'Workbench'
+                        : 'Add to room'}
+                    </span>
+                    <p>{activeOptionName}</p>
+                  </div>
                 </div>
               )}
               <img
@@ -846,29 +1189,13 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
                         <img src={icon} alt={`${option} Icon`} />
                       </div>
                       <span>{option}</span>
-                      <div className={styles.left_toolbarlist_arrow}>
+                      <div
+                        className={`${styles.left_toolbarlist_arrow} ${
+                          option === 'Furniture' ? styles.arrowAlways : styles.arrowHidden
+                        }`}
+                      >
                         <img src={assets.left_arrow} alt="arrow" />
                       </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              {activeOption === 'View' && (
-                <div className={styles.activegroup_tools_group}>
-                  {viewTools.map(({ option, icon, onClick, disabled }) => (
-                    <div
-                      key={option}
-                      className={styles.toollistbox}
-                      style={{
-                        cursor: disabled ? 'not-allowed' : 'pointer',
-                        opacity: disabled ? 0.3 : 1,
-                      }}
-                      onClick={onClick}
-                      title={disabled ? 'Coming Soon' : option}
-                    >
-                      <img src={icon} alt={`${option} Icon`} />
-                      <span>{option}</span>
                     </div>
                   ))}
                 </div>
@@ -965,7 +1292,15 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
           >
             <div className={styles.submenuHeader}>
               <div className={styles.submenuHeaderTitle}>
-                <h3 className={styles.headerTitle}>{selectedFurnitureCategory}</h3>
+                <div className={styles.drawerTitle}>
+                  <span className={styles.drawerEyebrow}>Catalogue</span>
+                  <h3 className={styles.headerTitle}>
+                    {selectedFurnitureCategory}
+                    <span className={styles.submenuCount}>
+                      {getFilteredCabinetItems(selectedFurnitureCategory).length}
+                    </span>
+                  </h3>
+                </div>
                 <img
                   src={assets.close}
                   alt="close"
@@ -979,10 +1314,19 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
                   type="text"
                   className={styles.searchInput}
                   placeholder="search items..."
-                  onChange={(e) => {
-                    console.log(e.target.value);
-                  }}
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
                 />
+                {modelSubmenuItems.some((m) => m.option === selectedFurnitureCategory) && (
+                  <button
+                    className={styles.searchAddBtn}
+                    onClick={() => setShowUploadPopup(true)}
+                    title="Add new model"
+                    type="button"
+                  >
+                    <img src={assets.plusIcon} alt="add" />
+                  </button>
+                )}
               </div>
               <img
                 src={assets.tool_part_line}
@@ -995,21 +1339,38 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
                 <div
                   key={item.id}
                   className={styles.submenuItem}
+                  onMouseEnter={() => {
+                    if (item.path) {
+                      // Debounce prefetch: only fetch if hovered for 50ms
+                      if (prefetchTimerRef.current) clearTimeout(prefetchTimerRef.current);
+                      prefetchTimerRef.current = setTimeout(() => {
+                        prefetchModel(item.path);
+                      }, 50);
+                    }
+                  }}
+                  onMouseLeave={() => {
+                    if (prefetchTimerRef.current) clearTimeout(prefetchTimerRef.current);
+                  }}
                   onClick={(e) => {
                     e.stopPropagation();
                     handleCabinetItemSelect(e, item);
                   }}
                   title={item.description || item.name}
                 >
+                  <span className={styles.submenuPlace} aria-hidden="true">
+                    + Add
+                  </span>
                   <img
                     src={
-                      item.image ||
-                      (item.type === OBJECT_TYPES.CUPBOARD || item.type === 'Cabinet'
-                        ? `/assets/3dmodel/sidebar/${formatEnumLabel(item.name)}.png`
-                        : iconMap[
-                            item.type === PART_TYPES.PLANK ? formatEnumLabel(item.name) : item.type
-                          ]) ||
-                      assets.cabinet
+                      item.image
+                        ? resolveAssetUrl(item.image)
+                        : (item.type === OBJECT_TYPES.CUPBOARD || item.type === 'Cabinet'
+                            ? `/assets/3dmodel/sidebar/${formatEnumLabel(item.name)}.png`
+                            : iconMap[
+                                item.type === PART_TYPES.PLANK
+                                  ? formatEnumLabel(item.name)
+                                  : item.type
+                              ]) || assets.cabinet
                     }
                     onError={(e) => {
                       const fallback =
@@ -1033,7 +1394,6 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
           </div>
         )}
       </aside>
-
       {addPartPopup && selectedCabinetItem && (
         <div
           className={styles.createpopupOverlay}
@@ -1059,48 +1419,56 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
                 : styles.createpopup
             }
           >
-            <img
-              src={assets.createicon || '/placeholder.svg'}
-              className={styles.createicon}
-              alt="createicon"
-            />
-            <h2>Add {formatEnumLabel(selectedCabinetItem.name)}</h2>
-            <img
-              src={assets.close || '/placeholder.svg'}
-              className={styles.createclose}
-              alt="close"
-              onClick={closePopup}
-            />
+            <div className={styles.addHead}>
+              <span className={styles.createicon}>
+                <LuPackagePlus aria-hidden="true" />
+              </span>
+              <div className={styles.addHeadText}>
+                <span className={styles.addEyebrow}>Add to room</span>
+                <h2>Add {formatEnumLabel(selectedCabinetItem.name)}</h2>
+              </div>
+              <button
+                type="button"
+                className={styles.createclose}
+                onClick={closePopup}
+                aria-label="Close"
+              >
+                <img src={assets.close || '/placeholder.svg'} alt="" />
+              </button>
+            </div>
             {selectedCabinetItem.type === PART_TYPES.L_SHAPE_OBJECT ||
             selectedCabinetItem.type === PART_TYPES.U_SHAPE_OBJECT ? (
               <div className={styles.arrowContainer}>
-                <div className={styles.arrowButtonsContainer}>
+                <p className={styles.arrowHint}>Which side should it extend to?</p>
+                <div className={styles.compass}>
                   <button
-                    className={styles.arrowButtons}
+                    className={`${styles.arrowButtons} ${styles.compassUp}`}
                     onClick={() => handleSideObjectAdd(DIRECTION_TYPES.TOP)}
                   >
                     <img src={assets.uparrow} alt="uparrow" />
                     Up
                   </button>
-                  <button className={styles.disableArrowButton} disabled={true}>
-                    <img src={assets.downarrow} alt="downarrow" />
-                    Down
-                  </button>
-                </div>
-                <div className={styles.arrowButtonsContainer}>
                   <button
-                    className={styles.arrowButtons}
+                    className={`${styles.arrowButtons} ${styles.compassLeft}`}
                     onClick={() => handleSideObjectAdd(DIRECTION_TYPES.LEFT)}
                   >
                     <img src={assets.leftarrow} alt="leftarrow" />
                     Left
                   </button>
+                  <span className={styles.compassCenter} aria-hidden="true" />
                   <button
-                    className={styles.arrowButtons}
+                    className={`${styles.arrowButtons} ${styles.compassRight}`}
                     onClick={() => handleSideObjectAdd(DIRECTION_TYPES.RIGHT)}
                   >
                     <img src={assets.rightarrow} alt="rightarrow" />
                     Right
+                  </button>
+                  <button
+                    className={`${styles.disableArrowButton} ${styles.compassDown}`}
+                    disabled={true}
+                  >
+                    <img src={assets.downarrow} alt="downarrow" />
+                    Down
                   </button>
                 </div>
               </div>
@@ -1141,6 +1509,216 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
           </div>
         </div>
       )}
+      {showUploadPopup && (
+        <div className={styles.uploadPopupOverlay} onClick={() => closePopup()}>
+          <div className={styles.premiumUploadPopup} onClick={(e) => e.stopPropagation()}>
+            <div className={styles.uploadHeader}>
+              <div className={styles.headerTitleGroup}>
+                <div className={styles.uploadHeaderIcon}>
+                  <LuPackagePlus aria-hidden="true" />
+                </div>
+                <h2>Upload {selectedFurnitureCategory || 'Model'}</h2>
+              </div>
+              <img
+                src={assets.close}
+                alt="close"
+                className={styles.uploadCloseBtn}
+                onClick={() => closePopup()}
+              />
+            </div>
+
+            <div className={styles.uploadBody}>
+              <div className={styles.detailsContainer}>
+                <form className={styles.uploadForm} onSubmit={handleUpload}>
+                  <div className={styles.formGrid}>
+                    <div className={styles.formRowFull}>
+                      <label className={styles.uploadLabel}>Model File (.glb)</label>
+                      <label htmlFor="glb-upload" className={styles.fileUploadBox}>
+                        <input
+                          type="file"
+                          id="glb-upload"
+                          accept=".glb"
+                          required
+                          onChange={handleUploadFileChange}
+                          className={styles.hiddenInput}
+                        />
+                        <img
+                          src={assets.progress_upload}
+                          alt="upload"
+                          style={{ width: '1.5rem', opacity: 0.8 }}
+                        />
+                        <div className={styles.fileBoxLabel}>
+                          {uploadData.file ? uploadData.file.name : 'Click to browse GLB file'}
+                        </div>
+                        {!uploadData.file && (
+                          <p className={styles.fileBoxHint}>Max file size: 20MB</p>
+                        )}
+                      </label>
+                    </div>
+
+                    <div className={styles.formRowFull}>
+                      <InputField
+                        label="Model Display Name*"
+                        value={uploadData.name}
+                        onChange={(e: any) =>
+                          setUploadData({ ...uploadData, name: e.target.value })
+                        }
+                        placeholder="e.g. Modern Sofa"
+                        borderColor="var(--primary-color-grey-2)"
+                        fullWidth
+                        error={null}
+                        sx={{
+                          '& .MuiInputBase-root': {
+                            width: '100% !important',
+                          },
+                          '& .MuiOutlinedInput-root': {
+                            width: '100% !important',
+                            '&:hover .MuiOutlinedInput-notchedOutline': {
+                              borderColor: 'var(--primary-color) !important',
+                            },
+                            '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                              borderColor: 'var(--primary-color) !important',
+                            },
+                          },
+                          '& .MuiInputLabel-root.Mui-focused': {
+                            color: 'var(--primary-color) !important',
+                          },
+                        }}
+                      />
+                    </div>
+
+                    <div className={styles.formRowThird}>
+                      <InputField
+                        label="Width (mm)"
+                        type="number"
+                        value={uploadData.width === 0 ? '' : uploadData.width}
+                        onChange={(e: any) =>
+                          setUploadData({ ...uploadData, width: Number(e.target.value) })
+                        }
+                        placeholder="0"
+                        borderColor="var(--primary-color-grey-2)"
+                        fullWidth
+                        error={null}
+                        sx={{
+                          '& .MuiInputBase-root': {
+                            width: '100% !important',
+                            minWidth: 'unset !important',
+                          },
+                          '& .MuiOutlinedInput-root': {
+                            width: '100% !important',
+                            '&:hover .MuiOutlinedInput-notchedOutline': {
+                              borderColor: 'var(--primary-color) !important',
+                            },
+                            '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                              borderColor: 'var(--primary-color) !important',
+                            },
+                          },
+                          '& .MuiInputLabel-root.Mui-focused': {
+                            color: 'var(--primary-color) !important',
+                          },
+                        }}
+                      />
+                    </div>
+
+                    <div className={styles.formRowThird}>
+                      <InputField
+                        label="Height (mm)"
+                        type="number"
+                        value={uploadData.height === 0 ? '' : uploadData.height}
+                        onChange={(e: any) =>
+                          setUploadData({ ...uploadData, height: Number(e.target.value) })
+                        }
+                        placeholder="0"
+                        borderColor="var(--primary-color-grey-2)"
+                        fullWidth
+                        error={null}
+                        sx={{
+                          '& .MuiInputBase-root': {
+                            width: '100% !important',
+                            minWidth: 'unset !important',
+                          },
+                          '& .MuiOutlinedInput-root': {
+                            width: '100% !important',
+                            '&:hover .MuiOutlinedInput-notchedOutline': {
+                              borderColor: 'var(--primary-color) !important',
+                            },
+                            '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                              borderColor: 'var(--primary-color) !important',
+                            },
+                          },
+                          '& .MuiInputLabel-root.Mui-focused': {
+                            color: 'var(--primary-color) !important',
+                          },
+                        }}
+                      />
+                    </div>
+
+                    <div className={styles.formRowThird}>
+                      <InputField
+                        label="Depth (mm)"
+                        type="number"
+                        value={uploadData.depth === 0 ? '' : uploadData.depth}
+                        onChange={(e: any) =>
+                          setUploadData({ ...uploadData, depth: Number(e.target.value) })
+                        }
+                        placeholder="0"
+                        borderColor="var(--primary-color-grey-2)"
+                        fullWidth
+                        error={null}
+                        sx={{
+                          '& .MuiInputBase-root': {
+                            width: '100% !important',
+                            minWidth: 'unset !important',
+                          },
+                          '& .MuiOutlinedInput-root': {
+                            width: '100% !important',
+                            '&:hover .MuiOutlinedInput-notchedOutline': {
+                              borderColor: 'var(--primary-color) !important',
+                            },
+                            '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                              borderColor: 'var(--primary-color) !important',
+                            },
+                          },
+                          '& .MuiInputLabel-root.Mui-focused': {
+                            color: 'var(--primary-color) !important',
+                          },
+                        }}
+                      />
+                    </div>
+                  </div>
+
+                  <div className={styles.popupFooter}>
+                    <button
+                      type="button"
+                      className={styles.btnSecondary}
+                      onClick={() => closePopup()}
+                      disabled={isUploading}
+                    >
+                      Cancel
+                    </button>
+                    <button type="submit" className={styles.btnPrimary} disabled={isUploading}>
+                      {isUploading ? 'Uploading...' : 'Save to Library'}
+                    </button>
+                  </div>
+                </form>
+              </div>
+
+              <div className={styles.previewContainer}>
+                <label className={styles.uploadLabel}>3D View Preview</label>
+                <div className={styles.modelViewerContainer}>
+                  <ModelViewerComponent
+                    file={uploadData.file}
+                    onCanvasReady={(gl) => {
+                      previewRendererRef.current = gl;
+                    }}
+                    onModelLoad={handleModelLoad}
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}{' '}
     </>
   );
 };

@@ -1,10 +1,15 @@
-import { useGLBPreloader } from '@/components/3dmodel/helper/glbLoader/useGLBPreloader';
 import { store } from '@/components/3dmodel/store';
+import FreeBanner from '@/components/common/FreeBanner';
+import BackendStatusGate from '@/components/maintenance/BackendStatusGate';
+import MaintenanceGate from '@/components/maintenance/MaintenanceGate';
+import { REDIRECT } from '@/services/CommonStatus';
 import { assets } from '@/svgPaths';
 import { AppProps } from 'next/app';
 import localFont from 'next/font/local';
 import { useRouter } from 'next/router';
 import { Provider } from 'react-redux';
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 import '../styles/globals.css';
 
 const geistSans = localFont({
@@ -34,8 +39,9 @@ const poppinsSemiBold = localFont({
 });
 
 export default function MyApp({ Component, pageProps }: AppProps) {
-  useGLBPreloader(); // Start preloading 3D assets in background
   const router = useRouter();
+  const showMaintenanceBanner =
+    router.pathname === REDIRECT.LOGIN || router.pathname === REDIRECT.DASHBOARD;
   const isDesignPage = router.pathname.startsWith('/design/');
   const isCatalogPage = router.pathname.startsWith('/catalogmanager');
   const isMaterialPage = router.pathname.startsWith('/material');
@@ -43,17 +49,39 @@ export default function MyApp({ Component, pageProps }: AppProps) {
 
   return (
     <>
+      {/* Global "100% Free until 31-03-2027" announcement bar. Mounted
+          OUTSIDE the Provider / Maintenance / Backend gates so it's
+          visible during loading, error, and maintenance states too. */}
+      <FreeBanner />
       <Provider store={store}>
-        <main
-          className={`${geistSans?.variable || ''} ${geistMono?.variable || ''} ${poppins?.variable || ''} ${poppinsBold?.variable || ''} ${poppinsSemiBold?.variable || ''} antialiased`}
-        >
-          <Component {...pageProps} />
-          {!isDesignPage && !isMaterialPage && !isCatalogPage && is2dPage && (
-            <div className="fixed-image">
-              <img src={assets.brevento_background_logo} alt="Background" />
-            </div>
-          )}
-        </main>
+        <BackendStatusGate>
+          <MaintenanceGate showBannerOnPages={showMaintenanceBanner}>
+            <main
+              className={`${geistSans?.variable || ''} ${geistMono?.variable || ''} ${poppins?.variable || ''} ${poppinsBold?.variable || ''} ${poppinsSemiBold?.variable || ''} antialiased`}
+            >
+              <Component {...pageProps} />
+              <ToastContainer
+                containerId="global"
+                position="top-right"
+                autoClose={3500}
+                closeOnClick
+                pauseOnHover
+                draggable
+                newestOnTop
+                theme="dark"
+                className="bravento-toast-container"
+                toastClassName="bravento-toast"
+                progressClassName="bravento-toast-progress"
+                style={{ zIndex: 2147483647 }}
+              />
+              {!isDesignPage && !isMaterialPage && !isCatalogPage && is2dPage && (
+                <div className="fixed-image">
+                  <img src={assets.brevento_background_logo} alt="Background" />
+                </div>
+              )}
+            </main>
+          </MaintenanceGate>
+        </BackendStatusGate>
       </Provider>
     </>
   );

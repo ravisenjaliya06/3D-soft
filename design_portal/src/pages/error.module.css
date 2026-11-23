@@ -1,0 +1,118 @@
+/* Error page — Olive & Terracotta (see DESIGN_RULES.md) */
+
+.page {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 16px;
+  box-sizing: border-box;
+  font-family: var(--bv-font);
+  color: var(--bv-text);
+  background-color: var(--bv-surface-2);
+  background-image:
+    linear-gradient(var(--bv-border) 1px, transparent 1px),
+    linear-gradient(90deg, var(--bv-border) 1px, transparent 1px);
+  background-size: 28px 28px;
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: min(460px, 100%);
+  padding: 2.2rem 2rem;
+  box-sizing: border-box;
+  text-align: center;
+  background: var(--bv-surface);
+  border: 1px solid var(--bv-border);
+  border-top: 4px solid var(--bv-accent);
+  border-radius: var(--bv-radius-lg);
+  box-shadow: var(--bv-shadow-lg);
+}
+
+.icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  font-size: 26px;
+  color: var(--bv-danger);
+  background: var(--bv-danger-soft);
+  border-radius: 50%;
+}
+
+.eyebrow {
+  margin-top: 1rem;
+  font-size: clamp(11px, 0.68rem, 13px);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--bv-accent);
+}
+
+.card h1 {
+  margin: 0.25rem 0 0;
+  font-size: clamp(24px, 1.8rem, 34px);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.card p {
+  margin: 0.5rem 0 0;
+  font-size: clamp(14px, 0.9rem, 16px);
+  line-height: 1.55;
+  color: var(--bv-text-muted);
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.6rem;
+  margin-top: 1.6rem;
+}
+
+.primary,
+.secondary {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.7rem 1.2rem;
+  font-family: var(--bv-font);
+  font-size: clamp(13px, 0.85rem, 15px);
+  font-weight: 700;
+  border-radius: var(--bv-radius-pill);
+  cursor: pointer;
+  transition:
+    background-color var(--bv-ease),
+    transform var(--bv-ease);
+}
+
+.primary {
+  color: var(--bv-on-accent);
+  background: var(--bv-accent);
+  border: none;
+}
+
+.primary:hover {
+  background: var(--bv-accent-hover);
+  transform: translateY(-1px);
+}
+
+.secondary {
+  color: var(--bv-text);
+  background: var(--bv-surface);
+  border: 1px solid var(--bv-border-strong);
+}
+
+.secondary:hover {
+  background: var(--bv-surface-2);
+}
+
+.primary:focus-visible,
+.secondary:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px var(--bv-accent-glow);
+}

@@ -7,9 +7,14 @@ import sys
 
 def main():
     """Run administrative tasks."""
+    try:
+        from dotenv import load_dotenv
+        load_dotenv(os.path.join(os.path.dirname(__file__), ".env"))
+    except ImportError:
+        pass
     os.environ.setdefault(
         "DJANGO_SETTINGS_MODULE",
-        os.getenv("DJANGO_SETTINGS_MODULE", "umaboy.settings.production"),
+        os.getenv("DJANGO_SETTINGS_MODULE", "umaboy.settings.development"),
     )
     try:
         # Django imports

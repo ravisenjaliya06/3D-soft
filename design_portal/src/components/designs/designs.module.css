@@ -1,16 +1,21 @@
+/* ─────────────────────────────────────────────────────────────
+   Designs (Design Studio) — Olive & Terracotta (see DESIGN_RULES.md)
+   ───────────────────────────────────────────────────────────── */
+
 .container {
   display: flex;
-  flex-direction: row;
+  flex-direction: column;
   height: 100vh;
   overflow: hidden;
   background-color: var(--designpage-background-color);
 }
 
 .rightside {
-  flex: 1;
   position: relative;
+  flex: 1;
   display: flex;
   flex-direction: column;
+  min-width: 0;
   overflow: hidden;
 }
 
@@ -158,8 +163,10 @@
   gap: 1.5rem;
 }
 
+/* ─── Search & View Toggles ─── */
 .designfirstpart {
   display: flex;
+  align-items: center;
   justify-content: space-between;
   align-items: center;
   padding: 0 0.5rem;
@@ -321,8 +328,9 @@
   font-weight: 500;
 }
 
-.status {
-  display: flex;
+.status,
+.gridStatus {
+  display: inline-flex;
   align-items: center;
   gap: 0.5rem;
   padding: 0.4rem 0.8rem;

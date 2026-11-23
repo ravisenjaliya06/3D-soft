@@ -6,6 +6,7 @@ import {
   PLATFORM_THICKNESS,
 } from '../handler/constant';
 import { FLOOR_PLAN_TYPES, OBJECT_TYPES } from '../sceneCreator/interface';
+import { updateEdges } from '../sceneCreator/utils';
 
 export class SnapManager {
   private walls: THREE.Mesh[] = [];
@@ -22,12 +23,12 @@ export class SnapManager {
     this.platforms = [];
     this.cupboards = [];
 
-    for (const o of scene.children) {
-      if (!(o instanceof THREE.Mesh)) continue;
-      o.userData.type === FLOOR_PLAN_TYPES.WALL && this.walls.push(o);
-      o.userData.type === OBJECT_TYPES.PLATFORM && this.platforms.push(o);
-      o.userData.type === OBJECT_TYPES.CUPBOARD && this.cupboards.push(o);
-    }
+    scene.traverse((o) => {
+      if (!(o instanceof THREE.Mesh)) return;
+      if (o.userData.type === FLOOR_PLAN_TYPES.WALL) this.walls.push(o);
+      if (o.userData.type === OBJECT_TYPES.PLATFORM) this.platforms.push(o);
+      if (o.userData.type === OBJECT_TYPES.CUPBOARD) this.cupboards.push(o);
+    });
   }
 
   public snapObject(object: THREE.Object3D, raycaster: THREE.Raycaster) {
@@ -95,7 +96,16 @@ export class SnapManager {
   private getBoxData(mesh: THREE.Mesh) {
     mesh.updateMatrixWorld(true);
 
-    const box = new THREE.Box3().setFromObject(mesh);
+    // Use geometry-only bounding box so that child objects (hinges, handles, etc.)
+    // not snap to child of glbs
+    let box: THREE.Box3;
+    if (mesh.geometry) {
+      mesh.geometry.computeBoundingBox();
+      box = mesh.geometry.boundingBox!.clone().applyMatrix4(mesh.matrixWorld);
+    } else {
+      box = new THREE.Box3().setFromObject(mesh);
+    }
+
     const center = new THREE.Vector3();
     const size = new THREE.Vector3();
 
@@ -123,6 +133,27 @@ export class SnapManager {
     }
   }
 
+  private getStableWallOutwardNormal(wall: THREE.Mesh, hit: THREE.Intersection): THREE.Vector3 {
+    const wallForward = this.getWallWorldForward(wall);
+
+    // Transform hit point to wall's local space to determine which side of the wall was hit.
+    // BoxGeometry is centered at local Z=0. The front face is at +depth/2, back face at -depth/2.
+    const localHitPoint = wall.worldToLocal(hit.point.clone());
+
+    // The wall's outward normal matches wallForward if we hit the positive local Z side.
+    if (localHitPoint.z > 0) {
+      return wallForward;
+    } else {
+      return wallForward.clone().negate();
+    }
+  }
+
+  private getWallWorldForward(wall: THREE.Mesh): THREE.Vector3 {
+    const q = new THREE.Quaternion();
+    wall.getWorldQuaternion(q);
+    return new THREE.Vector3(0, 0, 1).applyQuaternion(q).normalize();
+  }
+
   //object snapping to wall
   private applyWallSnapping(object: THREE.Mesh, raycaster: THREE.Raycaster) {
     if (!this.walls.length) return;
@@ -131,9 +162,7 @@ export class SnapManager {
     if (!hit) return;
 
     const wall = hit.object as THREE.Mesh;
-    const wallNormal =
-      hit.face?.normal.clone().transformDirection(wall.matrixWorld).normalize() ??
-      new THREE.Vector3(0, 0, 1);
+    const wallNormal = this.getStableWallOutwardNormal(wall, hit);
 
     // PLATFORM
     if (object.userData.type === OBJECT_TYPES.PLATFORM) {
@@ -169,26 +198,50 @@ export class SnapManager {
     let widthCM = m.widthM * 100 - (startHit ? PLATFORM_DEPTH : 0) - (endHit ? PLATFORM_DEPTH : 0);
     const offset = (endHit ? -1 : startHit ? 1 : 0) * (PLATFORM_DEPTH * 0.005);
 
-    if (object.geometry instanceof THREE.BoxGeometry) {
-      const g = object.geometry.parameters;
-      if (Math.abs(g.width - widthCM) > 0.1) {
-        object.geometry.dispose();
-        object.geometry = new THREE.BoxGeometry(widthCM, PLATFORM_THICKNESS, PLATFORM_DEPTH);
+    if (!object.userData.isEdited) {
+      if (object.geometry instanceof THREE.BoxGeometry) {
+        const g = object.geometry.parameters;
+        if (Math.abs(g.width - widthCM) > 0.1) {
+          object.geometry.dispose();
+          object.geometry = new THREE.BoxGeometry(widthCM, PLATFORM_THICKNESS, PLATFORM_DEPTH);
+          updateEdges(object, object.geometry);
+        }
       }
     }
 
     const wallDepthM =
       wall.geometry instanceof THREE.BoxGeometry ? wall.geometry.parameters.depth * 0.01 : 0.1;
 
-    const finalPos = m.position
-      .clone()
-      .addScaledVector(m.direction, offset)
-      .addScaledVector(wallNormal, wallDepthM / 2 + PLATFORM_DEPTH * 0.005);
+    let finalPos: THREE.Vector3;
+
+    if (object.userData.isEdited) {
+      // Edited platform: preserve the user's drag position along the wall direction
+      // and only snap the perpendicular (depth) axis and Y
+      const toObject = object.position.clone().sub(m.position);
+      let alongWall = toObject.dot(m.direction);
+
+      // Clamp so the platform stays within wall bounds
+      const platWidthM =
+        object.geometry instanceof THREE.BoxGeometry ? object.geometry.parameters.width * 0.01 : 0;
+      const maxOffset = wallHalf - platWidthM / 2;
+      alongWall = Math.max(-maxOffset, Math.min(maxOffset, alongWall));
+
+      finalPos = m.position
+        .clone()
+        .addScaledVector(m.direction, alongWall)
+        .addScaledVector(wallNormal, wallDepthM / 2 + PLATFORM_DEPTH * 0.005);
+    } else {
+      // Non-edited platform: center on wall (existing behaviour)
+      finalPos = m.position
+        .clone()
+        .addScaledVector(m.direction, offset)
+        .addScaledVector(wallNormal, wallDepthM / 2 + PLATFORM_DEPTH * 0.005);
+    }
 
     finalPos.y = PLATFORM_HEIGHT;
     object.position.copy(finalPos);
 
-    const wallForward = new THREE.Vector3(0, 0, 1).applyQuaternion(wall.quaternion);
+    const wallForward = this.getWallWorldForward(wall);
     if (wallNormal.dot(wallForward) < 0) object.rotation.y += Math.PI;
   }
 
@@ -209,26 +262,18 @@ export class SnapManager {
     object.quaternion.copy(originalQuaternion);
     object.updateMatrixWorld(true);
 
-    // Keep the object's current world Y to prevent it from sinking or floating unexpectedly
-    const worldTarget = hit.point.clone().addScaledVector(wallNormal, size.z / 2);
-    const objectWorldPos = new THREE.Vector3();
-    object.getWorldPosition(objectWorldPos);
-    worldTarget.y = objectWorldPos.y;
+    object.position.copy(hit.point.clone().addScaledVector(wallNormal, size.z / 2));
 
     if (object.userData.type === OBJECT_TYPES.CUPBOARD) {
-      worldTarget.y = Math.max(worldTarget.y, size.y / 2);
-    }
-
-    if (object.parent) {
-      object.parent.worldToLocal(worldTarget);
-    }
-    object.position.copy(worldTarget);
-
-    if (object.userData.type === OBJECT_TYPES.CUPBOARD) {
+      object.position.y = Math.max(object.position.y, size.y / 2);
       this.snapCupboardToWallEdges(object, wall, size);
     }
 
     object.rotation.y = wall.rotation.y;
+    const wallForward = this.getWallWorldForward(wall);
+    if (wallNormal.dot(wallForward) < 0) {
+      object.rotation.y += Math.PI;
+    }
   }
 
   private snapCupboardToWallEdges(object: THREE.Mesh, wall: THREE.Mesh, size: THREE.Vector3) {
@@ -313,7 +358,7 @@ export class SnapManager {
 
     // 3. Snap Y to platform surface
     // Position sink center exactly at platform top surface + offset
-    finalPos.y = metrics.topY + 0.2;
+    finalPos.y = metrics.topY + 0.03;
 
     object.position.copy(finalPos);
   }

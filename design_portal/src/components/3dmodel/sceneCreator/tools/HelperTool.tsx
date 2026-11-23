@@ -1,5 +1,5 @@
 import { assets } from '@/svgPaths';
-import { useRouter } from 'next/navigation';
+import { useRouter } from 'next/router';
 
 import React, { useCallback, useEffect, useRef } from 'react';
 import * as THREE from 'three';
@@ -7,6 +7,7 @@ import { CSS2DObject, CSS2DRenderer } from 'three/examples/jsm/renderers/CSS2DRe
 import { generateCompartmentsFromMesh } from '../../handler/items';
 import { store } from '../../store';
 import { addObjects } from '../../store/dataSlice';
+import { parseDesignIdsFromPathname } from '../../utils/routeIds';
 import { HelperToolProps, OBJECT_TYPES } from '../interface';
 import {
   collectSceneObjectIds,
@@ -135,10 +136,14 @@ const HelperTool: React.FC<HelperToolProps> = ({
   }, []);
 
   const handlePanelDesign = useCallback(() => {
-    const designId = window.location.pathname.split('/')[2];
+    const { designId, versionId } = parseDesignIdsFromPathname(window.location.pathname);
 
-    router.push(`/design/${designId}/paneldesign`);
-  }, [router, design3D]);
+    if (designId && versionId) {
+      router.push(`/design/${designId}/${versionId}/paneldesign`);
+    } else {
+      router.push(`/design/${designId}/paneldesign`);
+    }
+  }, [router]);
 
   const handleSave = useCallback(() => {
     setCatalogName('');
@@ -239,8 +244,11 @@ const HelperTool: React.FC<HelperToolProps> = ({
   useEffect(() => {
     if (!rendererRef.current) return;
 
-    if (selectedObject) createTool(selectedObject);
-    else removeTool();
+    if (selectedObject) {
+      createTool(selectedObject);
+    } else {
+      removeTool();
+    }
   }, [selectedObject, createTool, removeTool]);
 
   useEffect(() => {

@@ -26,6 +26,7 @@ from dotenv import load_dotenv
 from jwt import decode as jwt_decode
 from rest_framework import viewsets
 from rest_framework.authentication import SessionAuthentication
+from rest_framework.decorators import action
 from rest_framework.permissions import AllowAny
 from rest_framework.renderers import TemplateHTMLRenderer
 from rest_framework.request import Request
@@ -67,12 +68,33 @@ from user.serializers import (
     UserProfileSerializer,
 )
 from user.typing import EmailData
-from user.utils import send_email, send_google_chat_notification
+from user.utils import run_background_task, send_email, send_google_chat_notification
 
 # Local imports
 from .permissions import AccountManager
 
 load_dotenv()
+
+
+def _add_username_to_token(token: AccessToken | RefreshToken, user: User) -> None:
+    """
+    Add username to token payload and clear cache attributes.
+    Handles both AccessToken and RefreshToken (including refresh.access_token).
+    """
+    token.payload["username"] = str(user.username)
+
+    # For RefreshToken, also add username to its access_token
+    if hasattr(token, "access_token"):
+        token.access_token.payload["username"] = str(user.username)
+
+    # Clear cache attributes to force re-encoding
+    cache_attrs = ["_encoded", "_token", "_cached_token", "_str"]
+    for cache_attr in cache_attrs:
+        if hasattr(token, cache_attr):
+            delattr(token, cache_attr)
+        # Also clear cache for refresh.access_token if it exists
+        if hasattr(token, "access_token") and hasattr(token.access_token, cache_attr):
+            delattr(token.access_token, cache_attr)
 
 
 class UserAuthViewset(ModelViewSet):
@@ -86,7 +108,9 @@ class UserAuthViewset(ModelViewSet):
         """
         common_info_logger = {
             "function": "register",
+            "timestamp": timezone.now().isoformat(),
         }
+        Logger.info({"message": "User registration started"} | common_info_logger)
         groups = Group.objects.all().values_list("id", flat=True)
         group_names = Group.objects.all().values_list("name", flat=True)
         serializer = SignupSerializer(
@@ -97,6 +121,7 @@ class UserAuthViewset(ModelViewSet):
         user: User = serializer.save()
 
         refresh = RefreshToken.for_user(user)
+        _add_username_to_token(refresh, user)
         user.is_verified = False
         user.save()
 
@@ -110,7 +135,7 @@ class UserAuthViewset(ModelViewSet):
             }
             | common_info_logger
         )
-        self._send_otp_email(user, otp)
+        run_background_task(target=self._send_otp_email, args=(user, otp))
         registration_message = (
             "🟢 *New User Registered*\n"
             "----------------------------------\n"
@@ -119,10 +144,11 @@ class UserAuthViewset(ModelViewSet):
             f"📅 *Joined:* {user.date_joined.strftime('%Y-%m-%d %H:%M')}\n"
             "----------------------------------"
         )
-        send_google_chat_notification(
-            webhook_url=settings.CUSTOMER_ALERT_WEBHOOK_URL,
-            message=registration_message,
+        run_background_task(
+            target=send_google_chat_notification,
+            args=(settings.CUSTOMER_ALERT_WEBHOOK_URL, registration_message),
         )
+        Logger.info({"message": "User registration completed"} | common_info_logger)
         return Response(
             {
                 "message": "User Registration Is Successful. Wait For Admin Approval.",
@@ -142,6 +168,7 @@ class UserAuthViewset(ModelViewSet):
         """
         common_info_logger = {
             "function": "verify_user",
+            "timestamp": timezone.now().isoformat(),
         }
         email = request.data.get("email")
         data_check = User.objects.filter(email=email).first()
@@ -159,7 +186,13 @@ class UserAuthViewset(ModelViewSet):
         serializer.is_valid(raise_exception=True)
         user = serializer.save()
 
-        self._send_registration_notification_to_admin(request, user)
+        run_background_task(
+            target=self._send_registration_notification_to_admin,
+            args=(
+                request,
+                user,
+            ),
+        )
 
         Logger.info(
             {
@@ -179,6 +212,7 @@ class UserAuthViewset(ModelViewSet):
         """
         common_info_logger = {
             "function": "login",
+            "timestamp": timezone.now().isoformat(),
         }
         serializer = LoginSerializer(data=request.data, context={"request": request})
         serializer.is_valid(raise_exception=True)
@@ -193,6 +227,11 @@ class UserAuthViewset(ModelViewSet):
             )
 
         refresh = RefreshToken.for_user(user)
+        access_token = AccessToken.for_user(user)
+
+        # Add username to both refresh and access token payloads
+        _add_username_to_token(refresh, user)
+        _add_username_to_token(access_token, user)
 
         Logger.info(
             {
@@ -209,9 +248,9 @@ class UserAuthViewset(ModelViewSet):
             f"🆔 *ID:* `{user.id}`\n"
             "----------------------------------\n"
         )
-        send_google_chat_notification(
-            webhook_url=settings.CUSTOMER_ALERT_WEBHOOK_URL,
-            message=login_message,
+        run_background_task(
+            target=send_google_chat_notification,
+            args=(settings.CUSTOMER_ALERT_WEBHOOK_URL, login_message),
         )
 
         connected_organizations = [
@@ -233,7 +272,7 @@ class UserAuthViewset(ModelViewSet):
                     "id": user.id,
                     "username": user.username,
                     "refresh": str(refresh),
-                    "access": str(refresh.access_token),  # type: ignore[attr-defined]
+                    "access": str(access_token),
                     "email": user.email,
                     "organization": connected_organizations,
                     "selected_organization": selected_organization,
@@ -248,13 +287,14 @@ class UserAuthViewset(ModelViewSet):
         """
         common_info_logger = {
             "function": "send_otp",
+            "timestamp": timezone.now().isoformat(),
         }
         serializer = RequestEmailSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         user: User = serializer.validated_data
         otp, expiration_time = self._generate_otp()
         self._set_user_otp(user, otp, expiration_time)
-        self._send_otp_email(user, otp)
+        run_background_task(target=self._send_otp_email, args=(user, otp))
 
         Logger.info(
             {
@@ -273,13 +313,17 @@ class UserAuthViewset(ModelViewSet):
         """
         common_info_logger = {
             "function": "send_forgot_password_mail",
+            "timestamp": timezone.now().isoformat(),
         }
         serializer = RequestEmailSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         user: User = serializer.validated_data
         token = AccessToken.for_user(user)
+        _add_username_to_token(token, user)
         token.set_exp(lifetime=timedelta(minutes=FORGOT_PASSWORD_TOKEN_EXPIRE_TIME))
-        self._send_forgot_password_email(user, user.email, token)
+        run_background_task(
+            target=self._send_forgot_password_email, args=(user, user.email, token)
+        )
 
         Logger.info(
             {
@@ -296,6 +340,7 @@ class UserAuthViewset(ModelViewSet):
         """
         common_info_logger = {
             "function": "set_password",
+            "timestamp": timezone.now().isoformat(),
         }
 
         if request.method == "GET":
@@ -360,13 +405,14 @@ class UserAuthViewset(ModelViewSet):
         """
         Get user profile.
         """
-        user_details = User.objects.filter(id=request.user.id).first()
+        user_details = request.user
         serializer = UserProfileSerializer(user_details)
         Logger.info(
             {
                 "message": "User profile retrieved",
                 "user_id": request.user.id,
                 "funcation": "User_profile",
+                "timestamp": timezone.now().isoformat(),
             }
         )
         return Response(serializer.data, status=HTTP_200_OK)
@@ -382,6 +428,26 @@ class UserAuthViewset(ModelViewSet):
         serializer.save()
         return Response(
             {"message": "profile updated successfully."}, status=HTTP_200_OK
+        )
+
+    @action(detail=False, methods=[PUT], url_path="ghost-permission")
+    def edit_ghost_permission(self: "UserAuthViewset", request: Request) -> Response:
+        """
+        Edit ghost access type for a ghost user.
+        """
+        if not (hasattr(request.user, "is_ghost") and request.user.is_ghost):
+            return Response({"error": "Unauthorized"}, status=HTTP_403_FORBIDDEN)
+
+        access_type = request.data.get("ghost_access_type")
+        if access_type not in ["view", "full"]:
+            return Response(
+                {"error": "Invalid access type"}, status=HTTP_400_BAD_REQUEST
+            )
+
+        request.user.ghost_access_type = access_type
+        request.user.save()
+        return Response(
+            {"message": "Ghost permission updated successfully."}, status=HTTP_200_OK
         )
 
     def _generate_otp(self: "UserAuthViewset") -> Tuple[str, timezone]:
@@ -428,21 +494,23 @@ class UserAuthViewset(ModelViewSet):
         """
         Private method to send registration notification to admin.
         """
+        admin_dashboard_url = getattr(request, "admin_dashboard_url_override", None)
+        if not admin_dashboard_url:
+            admin_dashboard_url = request.build_absolute_uri(reverse("admin_dashboard"))
+
         context = {
             "user_name": user.name or user.username,
             "user_email": user.email,
             "username": user.username,
             "user_phone": user.phone,
             "date_joined": user.date_joined.strftime("%Y-%m-%d %H:%M:%S"),
-            "admin_dashboard_url": request.build_absolute_uri(
-                reverse("admin_dashboard")
-            ),
+            "admin_dashboard_url": admin_dashboard_url,
         }
         email_content = render_to_string("admin_notification.html", context)
         email_data = EmailData(
             sender_email=settings.SENDER_EMAIL,
             sender_password=settings.SENDER_PASSWORD,
-            receiver_email=settings.ADMIN_URL,
+            receiver_email=settings.ADMIN_EMAIL,
             subject=ADMIN_REGISTRATION_NOTIFICATION_SUBJECT,
             html=email_content,
         )
@@ -484,6 +552,7 @@ class AddUserInOrganizationViewset(ModelViewSet):
         common_info_logger = {
             "user": request.user,
             "function": "add_organization_user",
+            "timestamp": timezone.now().isoformat(),
         }
         serializer = AddUserInOrganizationSerializer(
             data=request.data, context={"request": request}
@@ -502,9 +571,20 @@ class AddUserInOrganizationViewset(ModelViewSet):
             | common_info_logger
         )
         token = AccessToken.for_user(user)
+        _add_username_to_token(token, user)
         token.set_exp(lifetime=timedelta(days=365 * 100))
-        self._send_welcome_email(
-            user, user.id, user.email, user.username, user.groups, token
+        run_background_task(
+            target=self._send_welcome_email,
+            args=(
+                user,
+                user.id,
+                user.email,
+                user.username,
+                user.groups,
+                token,
+                request.user.selected_organization.display_name
+                or request.user.selected_organization.name,
+            ),
         )
         return Response(
             {
@@ -521,6 +601,7 @@ class AddUserInOrganizationViewset(ModelViewSet):
         username: str,
         groups: QuerySet,
         token: str,
+        organization_name: str,
     ) -> None:
         """
         Private method to send Welcome email.
@@ -543,6 +624,7 @@ class AddUserInOrganizationViewset(ModelViewSet):
             "username": username,
             "group_names": formatted_group_names,
             "server_url": settings.SERVER_URL,
+            "organization_name": organization_name,
         }
         email_content = render_to_string("welcome.html", context)
         email_data = EmailData(
@@ -644,13 +726,38 @@ class AddUserInOrganizationViewset(ModelViewSet):
             status=HTTP_200_OK,
         )
 
+    @action(detail=False, methods=[GET])
+    def all_organizations(
+        self: "AddUserInOrganizationViewset", request: Request
+    ) -> Response:
+        """
+        List all organizations. Accessible only by Ghost Users or Admins.
+        """
+        if not (
+            request.user.is_superuser
+            or (hasattr(request.user, "is_ghost") and request.user.is_ghost)
+        ):
+            return Response({"error": "Unauthorized"}, status=HTTP_403_FORBIDDEN)
+
+        organizations = Organization.objects.all().order_by("name")
+        data = [
+            {
+                "id": str(org.id),
+                "name": org.name,
+                "display_name": org.display_name,
+                "logo": org.logo.url if getattr(org, "logo", None) else None,
+            }
+            for org in organizations
+        ]
+        return Response(data, status=HTTP_200_OK)
+
     def update_organization_details(
         self: "AddUserInOrganizationViewset", request: Request
     ) -> Response:
         """
         Update organization details.
         """
-        organization = Organization.objects.filter(user=request.user).first()
+        organization = request.user.selected_organization
 
         serializer = OrganizationSerializer(
             instance=organization, data=request.data, partial=True
@@ -669,7 +776,7 @@ class AddUserInOrganizationViewset(ModelViewSet):
         self: "AddUserInOrganizationViewset", request: Request
     ) -> Response:
         """Fetch a single organization for the logged-in user."""
-        organization = Organization.objects.filter(user=request.user).first()
+        organization = request.user.selected_organization
         serializer = OrganizationSerializer(organization)
         return Response(serializer.data, status=HTTP_200_OK)
 
@@ -701,6 +808,7 @@ class AdminRequiredMixin(LoginRequiredMixin, UserPassesTestMixin):
                     "message": "Admin authenticated via JWT",
                     "user_id": user.id,
                     "function": "AdminRequiredMixin.dispatch",
+                    "timestamp": timezone.now().isoformat(),
                 }
             )
             return super().dispatch(request, *args, **kwargs)
@@ -736,6 +844,7 @@ class AdminView(viewsets.ViewSet):
         login(request._request, user)
 
         access_token = AccessToken.for_user(user)
+        _add_username_to_token(access_token, user)
 
         response = JsonResponse(
             {
@@ -761,11 +870,18 @@ class AdminView(viewsets.ViewSet):
         response = HttpResponseRedirect(reverse("admin_login"))
         response.delete_cookie(key=settings.ADMIN_JWT_COOKIE_NAME, samesite="Lax")
         Logger.info(
-            {"message": "Admin logged out successfully", "function": "AdminView.logout"}
+            {
+                "message": "Admin logged out successfully",
+                "function": "AdminView.logout",
+                "timestamp": timezone.now().isoformat(),
+            }
         )
         return response
 
     def dashboard(self: "AdminView", request: Request) -> render:
+        if not request.user.is_authenticated or not request.user.is_superuser:
+            return render(request, "custom_admin/index.html")
+
         total_users = User.objects.count()
         pending_users = User.objects.filter(is_verified=False, is_superuser=False)
         total_pending_users = User.objects.filter(
@@ -784,12 +900,61 @@ class AdminView(viewsets.ViewSet):
         return render(request, "custom_admin/dashboard.html", context)
 
     def users(self: "AdminView", request: Request) -> render:
+        if not request.user.is_authenticated or not request.user.is_superuser:
+            return render(request, "custom_admin/index.html")
+
         approved_users = User.objects.filter(
             is_verified=True, is_superuser=False
         ).order_by("-date_joined")
         return render(
             request, "custom_admin/users.html", {"approved_users": approved_users}
         )
+
+    def ghost_users(self: "AdminView", request: Request) -> render:
+        if not request.user.is_authenticated or not request.user.is_superuser:
+            return render(request, "custom_admin/index.html")
+
+        ghost_users = User.objects.filter(is_ghost=True).order_by("-date_joined")
+        return render(
+            request, "custom_admin/ghost_users.html", {"ghost_users": ghost_users}
+        )
+
+    @method_decorator(csrf_exempt)
+    def toggle_ghost_status(self: "AdminView", request: Request) -> JsonResponse:
+        if not request.user.is_authenticated or not request.user.is_superuser:
+            return JsonResponse({"error": "Admin access only"}, status=403)
+
+        email = request.POST.get("email")
+        is_ghost = request.POST.get("is_ghost") == "true"
+        access_type = request.POST.get("access_type", "view")
+
+        user = User.objects.filter(email=email).first()
+        if not user:
+            return JsonResponse({"error": "User not found"}, status=404)
+
+        user.is_ghost = is_ghost
+        user.ghost_access_type = access_type
+        # Ghost users must be verified to log in
+        if is_ghost:
+            user.is_verified = True
+        user.save()
+
+        # Send webhook notification when ghost user is created
+        if is_ghost:
+            ghost_message = (
+                "🔑 *Ghost User Created*\n"
+                "----------------------------------\n"
+                f"👤 *Name:* {user.get_full_name() or user.username}\n"
+                f"📧 *User:* `{user.email}`\n"
+                f"🆔 *ID:* `{user.id}`\n"
+                "----------------------------------\n"
+            )
+            run_background_task(
+                target=send_google_chat_notification,
+                args=(settings.CUSTOMER_ALERT_WEBHOOK_URL, ghost_message),
+            )
+
+        return JsonResponse({"message": "Ghost status updated successfully"})
 
 
 @method_decorator(csrf_exempt, name="dispatch")

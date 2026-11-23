@@ -22,14 +22,20 @@ jobs:
 
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
-          fetch-depth: 0
+          fetch-depth: 1
+          sparse-checkout: |
+            backend
+            !backend/umaboy/media
+          sparse-checkout-cone-mode: false
 
       - name: Setup Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: '3.11'
+          cache: 'pipenv'
+          cache-dependency-path: './backend/Pipfile.lock'
 
       - name: Install Pipenv & Dependencies
         run: |
@@ -60,21 +66,21 @@ jobs:
         env:
           SECRET_KEY: 'testing-secret-key'
         run: |
-          pipenv run coverage run -m pytest
+          pipenv run pytest -n auto --no-migrations --cov=./ --cov-report=term
 
       - name: Check Code Coverage
         id: coverage
         run: |
-          pipenv run coverage report
+          pipenv run coverage report -m
           
           # Extract percentage number
           coverage_percentage=$(pipenv run coverage report | grep TOTAL | awk '{print $NF}' | sed 's/%//')
           
           echo "Current Coverage: $coverage_percentage%"
           
-          # Logic: Fail if coverage is below 75%
-          if (( $(echo "$coverage_percentage < 75" | bc -l) )); then
-            echo "❌ Coverage is too low: $coverage_percentage% (Threshold: 75%)"
+          # Logic: Fail if coverage is below 90%
+          if (( $(echo "$coverage_percentage < 90" | bc -l) )); then
+            echo "❌ Coverage is too low: $coverage_percentage% (Threshold: 90%)"
             echo "Please add more tests."
             exit 1
           else

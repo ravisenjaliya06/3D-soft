@@ -12,7 +12,7 @@ import { store } from '../store';
 import { updateObject } from '../store/dataSlice';
 import { selectMinifixStandards } from '../store/selectors';
 
-export function showFullScreenLoader(message = 'Loading...') {
+export async function showFullScreenLoader(message = 'Loading...') {
   /**
    * Shows a full screen loader with a message
    */
@@ -49,6 +49,8 @@ export function showFullScreenLoader(message = 'Loading...') {
     </style>
   `;
   document.body.appendChild(loader);
+
+  await new Promise((resolve) => setTimeout(resolve, 100));
 }
 
 export function hideFullScreenLoader() {
@@ -57,6 +59,38 @@ export function hideFullScreenLoader() {
   */
   const loader = document.getElementById('global-loader');
   if (loader) loader.remove();
+}
+
+/**
+ * Robustly get dimensions of a mesh's geometry
+ */
+export function getMeshDimensions(mesh: THREE.Mesh) {
+  if (mesh.userData.dimensions) {
+    return {
+      width: mesh.userData.dimensions.width,
+      height: mesh.userData.dimensions.height,
+      depth: mesh.userData.dimensions.depth,
+    };
+  }
+
+  const geom = mesh.geometry as THREE.BoxGeometry;
+  if (geom.parameters) {
+    return {
+      width: geom.parameters.width,
+      height: geom.parameters.height,
+      depth: geom.parameters.depth,
+    };
+  }
+
+  // Fallback for BufferGeometry/ExtrudeGeometry
+  if (!geom.boundingBox) geom.computeBoundingBox();
+  const bSize = new THREE.Vector3();
+  geom.boundingBox?.getSize(bSize);
+  return {
+    width: bSize.x,
+    height: bSize.y,
+    depth: bSize.z,
+  };
 }
 
 export function generateCompartmentsFromMesh(boxMesh: THREE.Mesh) {
@@ -70,9 +104,15 @@ export function generateCompartmentsFromMesh(boxMesh: THREE.Mesh) {
       toRemove.push(child);
     }
   });
-  toRemove.forEach((c) => boxMesh.remove(c));
+
+  toRemove.forEach((boxMeshChild) => {
+    if (boxMeshChild.parent) {
+      boxMeshChild.parent.remove(boxMeshChild);
+    }
+  });
 
   // --- Compute local bounding box ---
+  boxMesh.updateMatrixWorld(true);
   const containerGeom = boxMesh.geometry as THREE.BufferGeometry;
   containerGeom.computeBoundingBox();
   const bb = containerGeom.boundingBox;
@@ -109,8 +149,7 @@ export function generateCompartmentsFromMesh(boxMesh: THREE.Mesh) {
     if (!(child instanceof THREE.Mesh)) return;
     if (child.userData.type !== PART_TYPES.PLANK) return;
 
-    const geom = child.geometry as THREE.BoxGeometry;
-    const { width: pWidth, height: pHeight, depth: pDepth } = geom.parameters;
+    const { width: pWidth, height: pHeight, depth: pDepth } = getMeshDimensions(child);
 
     const dims = [
       { axis: 'x', value: pWidth },
@@ -183,10 +222,24 @@ export function generateCompartmentsFromMesh(boxMesh: THREE.Mesh) {
     return [mesh];
   }
 
-  const minW = bb.min.x;
-  const maxW = bb.max.x;
-  const minH = bb.min.y;
-  const maxH = bb.max.y;
+  let localMinW = Infinity;
+  let localMaxW = -Infinity;
+  let localMinH = Infinity;
+  let localMaxH = -Infinity;
+
+  planks.forEach((p) => {
+    if (p.wMin < localMinW) localMinW = p.wMin;
+    if (p.wMax > localMaxW) localMaxW = p.wMax;
+    if (p.hMin < localMinH) localMinH = p.hMin;
+    if (p.hMax > localMaxH) localMaxH = p.hMax;
+  });
+
+  const minW = Math.max(bb.min.x, localMinW);
+  const maxW = Math.min(bb.max.x, localMaxW);
+  const minH = Math.max(bb.min.y, localMinH);
+  const maxH = Math.min(bb.max.y, localMaxH);
+
+  if (minW >= maxW || minH >= maxH) return [];
 
   const TARGET_GRID_CELLS = 2000;
   const stepW = (maxW - minW) / TARGET_GRID_CELLS;
@@ -308,23 +361,23 @@ export function updateMinifixesForCupboard(cupboardMesh: THREE.Mesh) {
         return;
       }
 
-      const geom = child.geometry as THREE.BoxGeometry;
-      const { width, height, depth } = geom.parameters
-        ? geom.parameters
-        : {
-            width: (child.geometry as THREE.BufferGeometry).boundingBox?.max.x || 0,
-            height: (child.geometry as THREE.BufferGeometry).boundingBox?.max.y || 0,
-            depth: (child.geometry as THREE.BufferGeometry).boundingBox?.max.z || 0,
-          };
-
-      const worldPosition = new THREE.Vector3();
-      child.getWorldPosition(worldPosition);
-      const localPosition = cupboardMesh.worldToLocal(worldPosition);
+      const { width, height, depth } = getMeshDimensions(child);
+      // Always resolve plank position in the current assembly reference frame.
+      // This keeps drawer minifix calculations relative to the drawer group
+      // (when `cupboardMesh` is a drawer) instead of accidentally using a
+      // higher-level cupboard/local frame.
+      const childWorldPosition = new THREE.Vector3();
+      child.getWorldPosition(childWorldPosition);
+      const positionInReference = cupboardMesh.worldToLocal(childWorldPosition.clone());
 
       planks.push({
         id: child.userData.objectId || child.uuid,
         name: child.name,
-        position: { x: localPosition.x, y: localPosition.y, z: localPosition.z },
+        position: {
+          x: positionInReference.x,
+          y: positionInReference.y,
+          z: positionInReference.z,
+        },
         width: width,
         height: height,
         depth: depth,

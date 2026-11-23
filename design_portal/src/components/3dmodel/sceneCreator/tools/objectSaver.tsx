@@ -3,7 +3,9 @@ import { API_ENDPOINT } from '@/services/ApiEndPoints';
 import CommonService from '@/services/CommonService';
 import { toast } from 'react-toastify';
 import * as THREE from 'three';
-import { MeshObjectData } from '../interface';
+import { getThreeDViewOnly } from '../../design/sceneSingleton';
+import { parseDesignIdsFromPathname } from '../../utils/routeIds';
+import { FLOOR_PLAN_TYPES, MeshObjectData } from '../interface';
 import { convertKeysToSnake, CustomToast } from '../utils';
 
 /**
@@ -68,7 +70,11 @@ export class ObjectsSaver {
 
     // Process each root object and its children
     rootObjects.forEach((rootObject) => {
-      this.payloadData.push({ ...rootObject, isMain: true });
+      // Only treat it as isMain if it's not a wall or floor (to allow wireframes on those)
+      const isActuallyMain =
+        rootObject.type !== FLOOR_PLAN_TYPES.WALL && rootObject.type !== FLOOR_PLAN_TYPES.FLOOR;
+
+      this.payloadData.push({ ...rootObject, isMain: isActuallyMain });
       this._findAllChildObjects(rootObject.id, objects);
     });
 
@@ -84,13 +90,148 @@ export class ObjectsSaver {
       return false;
     }
 
+    const isActuallyMain =
+      selectedObjectData.type !== FLOOR_PLAN_TYPES.WALL &&
+      selectedObjectData.type !== FLOOR_PLAN_TYPES.FLOOR;
+
     this.payloadData.push({
       ...selectedObjectData,
       name: name || selectedObjectData.name,
-      isMain: true,
+      isMain: isActuallyMain,
+      image: this._takeScreenshot(),
     });
     this._findAllChildObjects(this.selectedObjectId, objects);
     return true;
+  }
+
+  private _takeScreenshot(): string | undefined {
+    const { designId, versionId } = parseDesignIdsFromPathname(window.location.pathname);
+    if (!designId) return undefined;
+
+    // Use a safe accessor to avoid moving the renderer to a dummy mount
+    const threeDView = getThreeDViewOnly(designId, versionId);
+
+    if (!threeDView || !threeDView.renderer) {
+      console.error('ThreeDView not found for screenshot');
+      return undefined;
+    }
+
+    const scene = threeDView.scene;
+    const camera = threeDView.camera as THREE.PerspectiveCamera;
+    const renderer = threeDView.renderer;
+
+    // 1. Find the selected root mesh
+    let selectedMesh: THREE.Object3D | undefined;
+    const originalVisibilities: Map<THREE.Object3D, boolean> = new Map();
+
+    scene.traverse((child: THREE.Object3D) => {
+      // Store original visibility and hide everything except lights/cameras
+      originalVisibilities.set(child, child.visible);
+
+      // Match based on objectId which is standard across the codebase
+      const childId = child.userData?.objectId || child.userData?.id || child.name;
+      if (childId === this.selectedObjectId) {
+        selectedMesh = child;
+      }
+
+      if (!(child instanceof THREE.Light) && !(child instanceof THREE.Camera) && child !== scene) {
+        child.visible = false;
+      }
+    });
+
+    if (!selectedMesh) {
+      console.warn('selectedMesh not found for ID:', this.selectedObjectId);
+      originalVisibilities.forEach((visible, child) => {
+        child.visible = visible;
+      });
+      return undefined;
+    }
+
+    // Only make the selected object and children visible
+    selectedMesh.visible = true;
+    selectedMesh.traverse((child) => {
+      child.visible = true;
+    });
+
+    // 2. Prepare for Zoom to Fit (Front View, Perfect Square)
+    const box = new THREE.Box3().setFromObject(selectedMesh);
+    const size = box.getSize(new THREE.Vector3());
+    const center = box.getCenter(new THREE.Vector3());
+
+    // Save original camera & renderer state
+    const originalPosition = camera.position.clone();
+    const originalRotation = camera.rotation.clone();
+    const originalAspect = camera.aspect;
+    const originalTarget = threeDView.controls?.target.clone() || new THREE.Vector3();
+
+    const originalSize = new THREE.Vector2();
+    renderer.getSize(originalSize);
+
+    const originalBackground = scene.background;
+    const originalClearColor = new THREE.Color();
+    renderer.getClearColor(originalClearColor);
+    const originalClearAlpha = renderer.getClearAlpha();
+
+    // Calculate camera distance for framing a square view
+    const maxSize = Math.max(size.x, size.y, size.z);
+
+    // TEMPORARILY RESIZE RENDERER BUFFER FOR SQUARE SHOT
+    const snapshotSize = 512;
+    renderer.setSize(snapshotSize, snapshotSize, false); // false = don't resize the actual canvas element in UI
+    camera.aspect = 1;
+
+    const fitHeightDistance = maxSize / (2 * Math.atan((Math.PI * camera.fov) / 360));
+    const fitWidthDistance = fitHeightDistance / camera.aspect;
+    const distance = 1.05 * Math.max(fitHeightDistance, fitWidthDistance);
+
+    // Setup temporary camera view for screenshot (directly from front: Z-axis)
+    const offset = new THREE.Vector3(0, 0, 1).multiplyScalar(distance);
+    camera.position.copy(center).add(offset);
+    camera.lookAt(center);
+    camera.updateProjectionMatrix();
+
+    // Set transparency for screenshot
+    scene.background = null;
+    renderer.setClearColor(0x000000, 0);
+
+    // 3. Render and Capture
+    renderer.render(scene, camera);
+    const dataUrl = renderer.domElement.toDataURL('image/png');
+
+    if (process.env.NEXT_PUBLIC_DEBUG === 'true') {
+      console.log(
+        'Distortion-free screenshot captured for:',
+        this.selectedObjectId,
+        dataUrl?.substring(0, 50) + '...'
+      );
+    }
+
+    // 4. Restore original state
+    scene.traverse((child: THREE.Object3D) => {
+      const orig = originalVisibilities.get(child);
+      if (orig !== undefined) {
+        child.visible = orig;
+      }
+    });
+
+    // Restore renderer & camera
+    scene.background = originalBackground;
+    renderer.setClearColor(originalClearColor, originalClearAlpha);
+    renderer.setSize(originalSize.x, originalSize.y, false);
+
+    camera.aspect = originalAspect;
+    camera.position.copy(originalPosition);
+    camera.rotation.copy(originalRotation);
+    if (threeDView.controls) {
+      threeDView.controls.target.copy(originalTarget);
+      threeDView.controls.update();
+    }
+    camera.updateProjectionMatrix();
+
+    // Re-render to restore view
+    renderer.render(scene, camera);
+
+    return dataUrl;
   }
 
   private _clearPayloadData() {
@@ -98,9 +239,14 @@ export class ObjectsSaver {
   }
 
   private async _createAPICall() {
+    const snakedItems = convertKeysToSnake(this.payloadData);
+    if (process.env.NEXT_PUBLIC_DEBUG === 'true') {
+      console.log('Sending payload items:', snakedItems);
+    }
+    const { designId } = parseDesignIdsFromPathname(window.location.pathname);
     const payload = {
-      design_id: window.location.pathname.split('/')[2],
-      items: convertKeysToSnake(this.payloadData),
+      design_id: designId,
+      items: snakedItems,
     };
     const response = await CommonService.post(
       API_ENDPOINT.CREATE_LIBRARY_CATALOGS(true, true),
@@ -110,13 +256,17 @@ export class ObjectsSaver {
       this._showError(response.data.detail || 'Catalog creation failed');
     } else {
       this._showSuccess('Catalogs created successfully');
+      //create own event for fetch cabinet items from API and update setCabinetItems state on catalog update event
+      window.dispatchEvent(new CustomEvent('catalog-updated'));
     }
   }
 
   private async _createAPICallForDesign() {
+    const snakedItems = convertKeysToSnake(this.payloadData);
+    const { designId } = parseDesignIdsFromPathname(window.location.pathname);
     const payload = {
-      design_id: window.location.pathname.split('/')[2],
-      items: convertKeysToSnake(this.payloadData),
+      design_id: designId,
+      items: snakedItems,
     };
     const response = await CommonService.post(
       API_ENDPOINT.CREATE_LIBRARY_CATALOGS(false, true),
@@ -124,19 +274,23 @@ export class ObjectsSaver {
     );
     if (response.status !== 201) {
       this._showError(response.data.detail || 'Catalog creation failed');
+      return null;
     } else {
-      this._showSuccess('Catalogs created successfully');
+      // Intentionally suppress success toast here for design save to avoid duplicates.
+      window.dispatchEvent(new CustomEvent('catalog-updated'));
+      return response.data?.version_id;
     }
   }
 
   /**
    * Saves all objects in the scene
    */
-  public saveAllObjects() {
+  public async saveAllObjects() {
     this._clearPayloadData();
     if (this._getAllObjectsData()) {
-      this._createAPICallForDesign();
+      return await this._createAPICallForDesign();
     }
+    return null;
   }
 
   /**

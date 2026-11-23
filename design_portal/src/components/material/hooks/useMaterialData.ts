@@ -102,6 +102,33 @@ export const useMaterialData = () => {
     [fetchCompanies]
   );
 
+  /** Delete a material and refresh the list */
+  const deleteMaterial = useCallback(
+    async (materialId: string, companyId?: string, type?: string) => {
+      try {
+        const endpoint = companyId
+          ? API_ENDPOINT.DELETE_COMPANY_MATERIAL_DETAIL(companyId, materialId)
+          : API_ENDPOINT.DELETE_MATERIAL(materialId);
+        const response = await commonService.delete(endpoint);
+        if (response.status === 204 || response.status === 200) {
+          if (companyId) {
+            await fetchCompanyMaterials(companyId);
+          } else if (type) {
+            await fetchMaterialsByType(type);
+          }
+          return true;
+        }
+        setError('Failed to delete material.');
+        return false;
+      } catch (err) {
+        console.error('Error deleting material:', err);
+        setError('Something went wrong during deletion.');
+        return false;
+      }
+    },
+    [fetchCompanyMaterials, fetchMaterialsByType]
+  );
+
   return {
     companyMaterials,
     materialCategories,
@@ -111,5 +138,6 @@ export const useMaterialData = () => {
     fetchMaterialsByType,
     fetchCompanyMaterials,
     createCompany,
+    deleteMaterial,
   };
 };

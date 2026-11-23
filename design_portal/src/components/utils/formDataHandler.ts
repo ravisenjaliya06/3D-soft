@@ -1,6 +1,11 @@
+export interface FormDataOptions {
+  isRegister?: boolean;
+}
+
 export const handleFormData = <T extends Record<string, string>>(
   formData: T,
-  setError: (error: string | null) => void
+  setError: (error: string | null) => void,
+  options?: FormDataOptions
 ): { formData: FormData | false; errors: Record<string, string | null> } => {
   const formDataObject = new FormData();
   const errors: Record<string, string | null> = {};
@@ -13,23 +18,49 @@ export const handleFormData = <T extends Record<string, string>>(
         .join(' ');
 
       errors[key] = `${formattedKey} is required.`;
-      setError(errors[key]);
     } else {
       formDataObject.append(key, String(value));
       errors[key] = null;
     }
   }
 
-  if ('password' in formData && 'confirm_password' in formData) {
-    if (formData.password !== formData.confirm_password) {
-      errors['confirm_password'] = "Passwords dosn't match.";
-      setError(errors['confirm_password']);
+  if ('password' in formData && !errors['password'] && options?.isRegister) {
+    const password = String(formData.password);
+
+    if (password.length < 8) {
+      errors['password'] = 'Password must be at least 8 characters long.';
+    } else if (!/[a-z]/.test(password)) {
+      errors['password'] = 'Password must contain at least one lowercase letter.';
+    } else if (!/[A-Z]/.test(password)) {
+      errors['password'] = 'Password must contain at least one uppercase letter.';
+    } else if (!/\d/.test(password)) {
+      errors['password'] = 'Password must contain at least one numeric character.';
+    } else if (!/[!@#$%^&*(),.?":{}|<>]/.test(password)) {
+      errors['password'] = 'Password must contain at least one special character.';
     }
   }
 
-  setError(null);
+  if ('password' in formData && 'confirm_password' in formData) {
+    if (formData.password !== formData.confirm_password) {
+      errors['confirm_password'] = "Passwords don't match.";
+    }
+  }
+
+  if ('phone' in formData && !errors['phone']) {
+    const phone = String(formData.phone);
+    if (phone.length !== 10) {
+      errors['phone'] = 'Phone number must be exactly 10 digits.';
+    }
+  }
+
+  const hasErrors = Object.values(errors).some((error) => error !== null);
+
+  if (!hasErrors) {
+    setError(null);
+  }
+
   return {
-    formData: Object.keys(errors).some((key) => errors[key]) ? false : formDataObject,
+    formData: hasErrors ? false : formDataObject,
     errors,
   };
 };

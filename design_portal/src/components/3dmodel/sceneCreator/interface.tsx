@@ -3,6 +3,7 @@ import { ThreeDView } from '../design/interface';
 import { MoveHandler } from '../handler/moveHandler';
 import { Dimensions } from '../interface';
 import { MinifixConnection, MinifixHole } from '../minifix/types';
+import { PanelDesignData } from '../panelDesign/types';
 import { Position, Rotation } from '../store/interface';
 
 // type const
@@ -37,6 +38,11 @@ export const INVISIBLE_BOXES = {
 };
 
 export const DRAWER_TYPES = {
+  INSET: 'inset',
+  OVERLAY: 'overlay',
+};
+
+export const DOOR_TYPES = {
   INSET: 'inset',
   OVERLAY: 'overlay',
 };
@@ -169,6 +175,8 @@ export interface MeshObjectData {
   position: Position;
   rotation: Rotation;
   path?: string;
+  unique_id?: string;
+  textureGrain?: TextureGrain;
 
   //optional properties
   description?: string;
@@ -178,12 +186,18 @@ export interface MeshObjectData {
   isMain?: boolean;
   openDirection?: DirectionType;
   connectedTo?: string[];
+  /** +1 / -1: which side of the wall centerline the drawn reference edge lies on (undefined = legacy centerline drawing). */
+  wallOffsetSign?: number;
+  /** Location-line mode used when this wall was drawn (Coohom-style: internal/center/external). */
+  wallLocationLine?: 'internal' | 'center' | 'external';
   thickness?: number;
   selected?: boolean;
   drawerType?: string;
+  doorType?: string;
   minifixHoles?: MinifixHole[];
   minifixConnections?: MinifixConnection[];
   edgeBanding?: EdgeBandingState;
+  compartmentDimensions?: Dimensions;
 
   // Per-cupboard minifix settings (stored when cupboard is created)
   minifixDistance?: number;
@@ -195,6 +209,10 @@ export interface MeshObjectData {
   grooves?: GrooveData[];
   nailerEnabled?: boolean;
   nailerModel?: string;
+  noBaseEnabled?: boolean;
+  skirtingEnabled?: boolean;
+  skirtingHeight?: number;
+  skirtingOffset?: number;
 
   // Floor-specific data (when type === OBJECT_TYPES.FLOOR)
   floorData?: {
@@ -203,6 +221,8 @@ export interface MeshObjectData {
   };
   direction?: string;
   holes?: HoleData[];
+  image?: string;
+  panelDesign?: PanelDesignData;
 }
 
 export interface HoleData {
@@ -260,6 +280,7 @@ export interface SceneBuilderConfig {
     enableZoom?: boolean;
     enablePan?: boolean;
   };
+  dispatch?: any;
 }
 
 export interface HelperToolProps {
@@ -281,4 +302,13 @@ export type MeshObjectPatch = Omit<
   rotation?: Partial<Rotation>;
   edgeBanding?: EdgeBandingState;
   material?: Material[];
+  panelDesign?: PanelDesignData;
 };
+
+export const TEXTURE_GRAIN = {
+  NONE: 'None',
+  HORIZONTAL: 'Horizontal',
+  VERTICAL: 'Vertical',
+} as const;
+
+export type TextureGrain = (typeof TEXTURE_GRAIN)[keyof typeof TEXTURE_GRAIN];

@@ -1,7 +1,7 @@
 /* ─── Base Layout ─── */
 .container {
   display: flex;
-  flex-direction: row;
+  flex-direction: column;
   height: 100vh;
   overflow: hidden;
   background-color: #f8faff;

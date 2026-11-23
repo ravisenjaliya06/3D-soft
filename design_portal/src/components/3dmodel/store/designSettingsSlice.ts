@@ -35,6 +35,9 @@ const designSettingsSlice = createSlice({
   name: 'designSettings',
   initialState,
   reducers: {
+    restoreDesignSettingsState: (state, action: PayloadAction<DesignSettingsState>) => {
+      return { ...state, ...action.payload };
+    },
     updateDesignSettings: (state, action: PayloadAction<Partial<DesignSettingsState>>) => {
       return { ...state, ...action.payload };
     },
@@ -76,6 +79,7 @@ const designSettingsSlice = createSlice({
 });
 
 export const {
+  restoreDesignSettingsState,
   updateDesignSettings,
   updateMinifixDistance,
   updateMinifixDiameterHole,

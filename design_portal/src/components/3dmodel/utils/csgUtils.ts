@@ -1,23 +1,28 @@
 import * as THREE from 'three';
-import { Brush, Evaluator, SUBTRACTION } from 'three-bvh-csg';
 import { HoleData } from '../sceneCreator/interface';
 
-export const applyCSGHoles = (baseMesh: THREE.Mesh, holes: HoleData[]): THREE.BufferGeometry => {
+export const applyCSGHoles = async (
+  baseGeometry: THREE.BufferGeometry,
+  holes: HoleData[]
+): Promise<THREE.BufferGeometry> => {
   if (!holes || holes.length === 0) {
-    return baseMesh.geometry.clone();
+    return baseGeometry.clone();
   }
+
+  // Dynamically import three-bvh-csg to avoid SSR issues
+  const { Brush, Evaluator, SUBTRACTION } = await import('three-bvh-csg');
 
   const evaluator = new Evaluator();
 
-  //its csg parts of the base mesh
-  let resultBrush = new Brush(baseMesh.geometry.clone());
+  // Initialize result brush from the clean base geometry
+  let resultBrush = new Brush(baseGeometry.clone());
 
   // Brush uses the object's matrix.
   resultBrush.updateMatrixWorld();
-  console.log(holes, 'holes');
+
   holes.forEach((hole) => {
+    // Create hole geometry based on sink dimensions
     const holeGeometry = new THREE.BoxGeometry(40, 60, 40);
-    console.log(holeGeometry, 'holeGeometry');
     const holeBrush = new Brush(holeGeometry);
 
     // Set hole position and rotation relative to base mesh
@@ -27,7 +32,7 @@ export const applyCSGHoles = (baseMesh: THREE.Mesh, holes: HoleData[]): THREE.Bu
 
     // Perform subtraction
     const tempBrush = evaluator.evaluate(resultBrush, holeBrush, SUBTRACTION);
-    resultBrush = tempBrush as Brush;
+    resultBrush = tempBrush as any; // Cast as any if typing is tricky with dynamic import
   });
 
   return resultBrush.geometry;

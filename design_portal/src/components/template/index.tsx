@@ -2,13 +2,24 @@ import Header from '@/components/header/header';
 import Loading_style from '@/components/loading.module.css';
 import Sidebar from '@/components/sidebar/sidebar';
 import styles from '@/components/template/template.module.css';
-import { assets } from '@/svgPaths';
 import { useRouter } from 'next/router';
 import React, { useState } from 'react';
+import {
+  LuArrowRight,
+  LuRuler,
+  LuSearch,
+  LuSearchX,
+  LuSquareDashed,
+  LuWandSparkles,
+} from 'react-icons/lu';
+import { useDispatch } from 'react-redux';
+import { resetStoreForNewDesign } from '../3dmodel/store';
 
 const Template = () => {
   const [loading, setLoading] = useState(false);
   const router = useRouter();
+  const dispatch = useDispatch();
+
   const [searchQuery, setSearchQuery] = useState('');
   const { designid } = router.query || {};
 
@@ -123,6 +134,16 @@ const Template = () => {
                   </div>
                 </div>
               ))}
+
+              {filteredTemplates.length === 0 && (
+                <div className={styles.emptyState}>
+                  <span className={styles.emptyIcon}>
+                    <LuSearchX aria-hidden="true" />
+                  </span>
+                  <strong>No templates match &ldquo;{searchQuery}&rdquo;</strong>
+                  <p>Try another name, or start with the blank workspace.</p>
+                </div>
+              )}
             </div>
           </div>
         </div>

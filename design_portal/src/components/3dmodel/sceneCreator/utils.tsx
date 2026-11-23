@@ -2,22 +2,36 @@ import { API_ENDPOINT } from '@/services/ApiEndPoints';
 import commonService from '@/services/CommonService';
 
 import * as THREE from 'three';
+import * as BufferGeometryUtils from 'three/addons/utils/BufferGeometryUtils.js';
+import { detectPlankByBoundingBox } from '../../utils/plankUtils';
 import { WallPoint } from '../2dmodel/interface';
-import { gettingDesignID } from '../design';
+import { TEXTURE_CACHE_NAME } from '../constants';
+import { ThreeDView } from '../design/interface';
 import { UpdateDimensionsParams } from '../handler/interface';
-import { prefetchGLB } from '../helper/glbLoader';
+import { prefetchTexture } from '../helper/glbLoader';
 import { Dimensions } from '../interface';
+import { CornerType, CurveControls, Hole, Point } from '../panelDesign/types';
+import { buildThreeShape, createHolePath } from '../panelDesign/utils/geometryUtils';
 import { store } from '../store';
 import { addPoint, setWalls } from '../store/dataSlice';
-import { EDGES, MeshObjectData, PART_TYPES } from './interface';
+import { gettingDesignID } from '../utils/routeIds';
+import { WALL_POINT_MATCH_TOLERANCE } from './constants';
+import { EDGES, FLOOR_PLAN_TYPES, MeshObjectData, OBJECT_TYPES, PART_TYPES } from './interface';
 import { SyncManager } from './syncState';
 import { ObjectsRemoverFromScene } from './tools/deleteOrClearTool';
 import { ObjectsSaver } from './tools/objectSaver';
 
-export const getDesignCatalogs = async () => {
+export const getDesignCatalogs = async (versionId?: string, threeDView?: ThreeDView) => {
   console.time('Total_Catalog_Loading_Time');
+  // Prevent calls with non-UUID versionIds (like 'paneldesign' from old URLs)
+  if (versionId && versionId.length < 10) {
+    return;
+  }
+  const designId = gettingDesignID();
+  if (!designId) return;
+
   const response: { status: number; data: { catalogs: MeshObjectData[] } } =
-    await commonService.get(API_ENDPOINT.GET_DESIGN_CATALOG_ITEMS(gettingDesignID()));
+    await commonService.get(API_ENDPOINT.GET_DESIGN_CATALOG_ITEMS(designId, versionId));
 
   if (response.status !== 200) {
     console.error('Error fetching catalogs');
@@ -29,17 +43,13 @@ export const getDesignCatalogs = async () => {
 
   if (!catalogs || catalogs.length === 0) {
     console.timeEnd('Total_Catalog_Loading_Time');
+
     return;
   }
 
-  // 1. Early Prefetch: Trigger downloads immediately
-  const uniqueUrls = new Set<string>();
+  // 1. Early Prefetch: Trigger texture downloads immediately
+  const uniqueTextureUrls = new Set<string>();
   catalogs.forEach((item) => {
-    // GLB Paths
-    if (item.path) {
-      uniqueUrls.add(item.path);
-    }
-
     // Material Textures
     if (item.material) {
       const mats = Array.isArray(item.material) ? item.material : [item.material];
@@ -47,15 +57,15 @@ export const getDesignCatalogs = async () => {
         m?.textures?.forEach((t) => {
           if (t.textureDetail?.image) {
             // Match MeshBuilder URL construction for cache hit
-            uniqueUrls.add(`${process.env.NEXT_PUBLIC_PUBLIC_API}` + t.textureDetail.image);
+            uniqueTextureUrls.add(`${process.env.NEXT_PUBLIC_PUBLIC_API}` + t.textureDetail.image);
           }
         });
       });
     }
   });
 
-  // Fire and forget prefetch
-  uniqueUrls.forEach((url) => prefetchGLB(url));
+  // Fire and forget prefetch for textures ONLY
+  uniqueTextureUrls.forEach((url) => prefetchTexture(url));
 
   // 2. Batch Processing: Yield to main thread to stop UI freezing
   const BATCH_SIZE = 50;
@@ -64,7 +74,7 @@ export const getDesignCatalogs = async () => {
   const processBatch = async () => {
     const batch = catalogs.slice(currentIndex, currentIndex + BATCH_SIZE);
 
-    const builder = new SyncManager(batch);
+    const builder = new SyncManager(batch, threeDView, true);
     await builder.syncGroupedBatch(batch);
 
     currentIndex += BATCH_SIZE;
@@ -101,17 +111,41 @@ export const textureLoader = (
   repeatX: number = 1,
   repeatY: number = 1
 ): Promise<THREE.Texture> => {
-  return new Promise((resolve, reject) => {
+  return new Promise(async (resolve, reject) => {
+    let objectUrl = url;
+    let isFromCache = false;
+
+    // 1. Try to get Blob from Browser Cache (prefetched by getDesignCatalogs)
+    if ('caches' in window) {
+      try {
+        const cache = await caches.open(TEXTURE_CACHE_NAME);
+        const response = await cache.match(url);
+        if (response) {
+          const blob = await response.blob();
+          objectUrl = URL.createObjectURL(blob);
+          isFromCache = true;
+        }
+      } catch (e) {
+        console.warn('Cache check failed for texture', e);
+      }
+    }
+
     globalTextureLoader.load(
-      url,
+      objectUrl,
       (texture) => {
+        if (isFromCache) URL.revokeObjectURL(objectUrl);
         texture.wrapS = THREE.RepeatWrapping;
         texture.wrapT = THREE.RepeatWrapping;
         texture.repeat.set(repeatX, repeatY);
+        texture.anisotropy = 8;
+        texture.colorSpace = THREE.SRGBColorSpace;
+        texture.minFilter = THREE.LinearMipmapLinearFilter;
+        texture.magFilter = THREE.LinearFilter;
         resolve(texture);
       },
       undefined,
       (error) => {
+        if (isFromCache) URL.revokeObjectURL(objectUrl);
         console.warn('Failed to load texture:', error);
         reject(error);
       }
@@ -152,6 +186,192 @@ export const getWall2DPoints = (wall: MeshObjectData) => {
   );
 };
 
+/** Default wall thickness in 2D units (matches dimensions.depth for new walls). */
+export const WALL_THICKNESS_2D_UNITS = 20;
+
+/** Unit perpendicular to (ux, uy) pointing to the "left" of the forward direction (SVG / y-down space). */
+export function perpLeft2D(ux: number, uy: number) {
+  return { x: -uy, y: ux };
+}
+
+/**
+ * Reference edge = user-drawn polyline (one face of the wall). Centerline is offset from it by (sign * t/2) along perpLeft(direction).
+ */
+export function getWallReferenceEdgePoints(wall: MeshObjectData): {
+  startPoint: WallPoint;
+  endPoint: WallPoint;
+} {
+  const { startPoint: cs, endPoint: ce } = getWall2DPoints(wall);
+  if (wall.wallOffsetSign == null) {
+    return { startPoint: { ...cs }, endPoint: { ...ce } };
+  }
+  const t = wall.dimensions?.depth ?? wall.thickness ?? WALL_THICKNESS_2D_UNITS;
+  const sign = wall.wallOffsetSign;
+  const dx = ce.x - cs.x;
+  const dy = ce.y - cs.y;
+  const len = Math.hypot(dx, dy);
+  if (len < 1e-6) {
+    return { startPoint: { ...cs }, endPoint: { ...ce } };
+  }
+  const ux = dx / len;
+  const uy = dy / len;
+  const pl = perpLeft2D(ux, uy);
+  const half = (sign * t) / 2;
+  return {
+    startPoint: { x: cs.x - pl.x * half, y: cs.y - pl.y * half },
+    endPoint: { x: ce.x - pl.x * half, y: ce.y - pl.y * half },
+  };
+}
+
+/** Build centerline endpoints from reference edge for 3D placement. */
+export function referenceEdgeToCenterline(
+  refStart: WallPoint,
+  refEnd: WallPoint,
+  wallOffsetSign: number | undefined,
+  thickness: number
+): { startPoint: WallPoint; endPoint: WallPoint } {
+  if (wallOffsetSign == null) {
+    return { startPoint: { ...refStart }, endPoint: { ...refEnd } };
+  }
+  const sign = wallOffsetSign;
+  const dx = refEnd.x - refStart.x;
+  const dy = refEnd.y - refStart.y;
+  const len = Math.hypot(dx, dy);
+  if (len < 1e-6) {
+    return { startPoint: { ...refStart }, endPoint: { ...refEnd } };
+  }
+  const ux = dx / len;
+  const uy = dy / len;
+  const pl = perpLeft2D(ux, uy);
+  const half = (sign * thickness) / 2;
+  return {
+    startPoint: {
+      x: refStart.x + pl.x * half,
+      y: refStart.y + pl.y * half,
+    },
+    endPoint: {
+      x: refEnd.x + pl.x * half,
+      y: refEnd.y + pl.y * half,
+    },
+  };
+}
+
+/**
+ * When starting a new segment at refStart, choose offset sign so the strip stays on the same side as an existing wall
+ * when continuing forward from its end, or the opposite side when attaching from its start (reverse direction).
+ */
+export function computeWallOffsetSignForNewWall(
+  refStart: WallPoint,
+  refEnd: WallPoint,
+  existingWalls: MeshObjectData[]
+): number {
+  const tol = WALL_POINT_MATCH_TOLERANCE;
+  const near = (a: WallPoint, b: WallPoint) =>
+    Math.abs(a.x - b.x) < tol && Math.abs(a.y - b.y) < tol;
+
+  for (const w of existingWalls) {
+    const { startPoint: rs, endPoint: re } = getWallReferenceEdgePoints(w);
+    const sw = w.wallOffsetSign ?? 1;
+    if (near(refStart, re)) {
+      return sw;
+    }
+    if (near(refStart, rs)) {
+      return -sw;
+    }
+  }
+  return 1;
+}
+
+/**
+ * Resolve effective wall side from a Coohom-style location line.
+ *
+ * - `center`: thickness is symmetric around the drawn reference edge
+ * - `external`: uses attachment-first baseline side
+ * - `internal`: mirrored side of external
+ *
+ * Baseline side comes from `computeWallOffsetSignForNewWall` so when a segment starts
+ * from an existing wall endpoint, continuity is preserved for chained drawing.
+ */
+export function resolveWallOffsetSign(
+  refStart: WallPoint,
+  refEnd: WallPoint,
+  mode: 'internal' | 'center' | 'external',
+  existingWalls: MeshObjectData[]
+): number | undefined {
+  if (mode === 'center') {
+    return undefined;
+  }
+  const baselineSign = computeWallOffsetSignForNewWall(refStart, refEnd, existingWalls);
+
+  // For connected chains, keep location-line continuity with the attached segment.
+  // For a brand-new segment (no attachment), keep internal/external mirrored around center.
+  const tol = WALL_POINT_MATCH_TOLERANCE;
+  const near = (a: WallPoint, b: WallPoint) =>
+    Math.abs(a.x - b.x) < tol && Math.abs(a.y - b.y) < tol;
+
+  const attachedWall = existingWalls.find((w) => {
+    const { startPoint: rs, endPoint: re } = getWallReferenceEdgePoints(w);
+    return near(refStart, rs) || near(refStart, re);
+  });
+
+  if (attachedWall && attachedWall.wallLocationLine && attachedWall.wallLocationLine !== 'center') {
+    return attachedWall.wallLocationLine === mode ? baselineSign : -baselineSign;
+  }
+
+  return mode === 'internal' ? -baselineSign : baselineSign;
+}
+
+/** Footprint from reference edge endpoints (shared by preview and placed walls). */
+export function getFootprintQuadFromReferenceEdge(
+  rs: WallPoint,
+  re: WallPoint,
+  sign: number,
+  t: number
+): [WallPoint, WallPoint, WallPoint, WallPoint] {
+  const dx = re.x - rs.x;
+  const dy = re.y - rs.y;
+  const len = Math.hypot(dx, dy);
+  if (len < 1e-6) {
+    return [rs, re, re, rs];
+  }
+  const ux = dx / len;
+  const uy = dy / len;
+  const pl = perpLeft2D(ux, uy);
+  const oppRs = { x: rs.x + pl.x * sign * t, y: rs.y + pl.y * sign * t };
+  const oppRe = { x: re.x + pl.x * sign * t, y: re.y + pl.y * sign * t };
+  return [rs, re, oppRe, oppRs];
+}
+
+/** Four corners of the wall footprint in order: ref start → ref end → opposite end → opposite start (closed quad). */
+export function getWallFootprintQuad(
+  wall: MeshObjectData
+): [WallPoint, WallPoint, WallPoint, WallPoint] {
+  const t = wall.dimensions?.depth ?? wall.thickness ?? WALL_THICKNESS_2D_UNITS;
+  const sign = wall.wallOffsetSign ?? 1;
+
+  if (wall.wallOffsetSign == null) {
+    const { startPoint: cs, endPoint: ce } = getWall2DPoints(wall);
+    const dx = ce.x - cs.x;
+    const dy = ce.y - cs.y;
+    const len = Math.hypot(dx, dy);
+    if (len < 1e-6) {
+      return [cs, ce, ce, cs];
+    }
+    const ux = dx / len;
+    const uy = dy / len;
+    const pl = perpLeft2D(ux, uy);
+    const h = t / 2;
+    const a = { x: cs.x - pl.x * h, y: cs.y - pl.y * h };
+    const b = { x: ce.x - pl.x * h, y: ce.y - pl.y * h };
+    const c = { x: ce.x + pl.x * h, y: ce.y + pl.y * h };
+    const d = { x: cs.x + pl.x * h, y: cs.y + pl.y * h };
+    return [a, b, c, d];
+  }
+
+  const { startPoint: rs, endPoint: re } = getWallReferenceEdgePoints(wall);
+  return getFootprintQuadFromReferenceEdge(rs, re, sign, t);
+}
+
 export const convertPosition3DTo2D = (
   position: THREE.Vector3,
   dimensions: Dimensions,
@@ -179,7 +399,8 @@ export const convertPosition3DTo2D = (
 
 export function create2DWallFromMeshData(data: MeshObjectData) {
   const state = store.getState();
-  const walls = state.data.walls;
+  const objects = state.data.objects;
+  const walls = objects.filter((obj) => obj.type === FLOOR_PLAN_TYPES.WALL);
 
   const width = data.dimensions.width;
   const angle = data.rotation?.y ?? 0;
@@ -285,6 +506,7 @@ export function convertKeysToCamel<T>(obj: Object): T {
 }
 
 function camelToSnake(key: string): string {
+  if (key === 'edgeBanding') return 'edgeband';
   return key.replace(/([A-Z])/g, '_$1').toLowerCase();
 }
 
@@ -451,7 +673,7 @@ export function getNew(
   return { newGeometry, newPosition };
 }
 
-export function findMeshById(
+export function findMesh(
   scene: THREE.Scene,
   objectId: string,
   isHandle?: boolean
@@ -558,3 +780,372 @@ export const createCopiedStoreObjects = (
 
 // Re-export specific components from other files for backward compatibility
 export { CustomToast } from '../utils/CustomToast';
+
+// normalize UVs for a Extrude geometry because not directly apply texture just like box geometry type
+export const normalizeUVs = (geometry: THREE.BufferGeometry) => {
+  geometry.computeBoundingBox();
+  geometry.computeVertexNormals();
+
+  const boundingBox = geometry.boundingBox;
+  if (!boundingBox) return;
+
+  const uvAttribute = geometry.attributes.uv;
+  const positionAttribute = geometry.attributes.position;
+  const normalAttribute = geometry.attributes.normal;
+
+  const boundingBoxSize = new THREE.Vector3();
+  boundingBox.getSize(boundingBoxSize);
+
+  for (let i = 0; i < uvAttribute.count; i++) {
+    const posX = positionAttribute.getX(i);
+    const posY = positionAttribute.getY(i);
+    const posZ = positionAttribute.getZ(i);
+
+    const normalX = normalAttribute.getX(i);
+    const normalY = normalAttribute.getY(i);
+    const normalZ = normalAttribute.getZ(i);
+
+    const absNormalX = Math.abs(normalX);
+    const absNormalY = Math.abs(normalY);
+    const absNormalZ = Math.abs(normalZ);
+
+    let u = 0;
+    let v = 0;
+
+    // Project UV based on dominant normal axis
+    if (absNormalZ >= absNormalX && absNormalZ >= absNormalY) {
+      u = boundingBoxSize.x > 0 ? (posX - boundingBox.min.x) / boundingBoxSize.x : 0;
+      v = boundingBoxSize.y > 0 ? (posY - boundingBox.min.y) / boundingBoxSize.y : 0;
+    } else if (absNormalY >= absNormalX && absNormalY >= absNormalZ) {
+      u = boundingBoxSize.x > 0 ? (posX - boundingBox.min.x) / boundingBoxSize.x : 0;
+      v = boundingBoxSize.z > 0 ? (posZ - boundingBox.min.z) / boundingBoxSize.z : 0;
+    } else {
+      u = boundingBoxSize.z > 0 ? (posZ - boundingBox.min.z) / boundingBoxSize.z : 0;
+      v = boundingBoxSize.y > 0 ? (posY - boundingBox.min.y) / boundingBoxSize.y : 0;
+    }
+
+    uvAttribute.setXY(i, u, v);
+  }
+
+  uvAttribute.needsUpdate = true;
+};
+
+// map axis for sync state (this is actually IMP function for child objects)
+// Generic mapping function for robust 1D scaling
+// Preserves distance to edges if <= 150mm ("pinned"), otherwise scales proportionally.
+export function mapAxis(
+  baseCenter: number,
+  baseSize: number,
+  oldContainerSize: number,
+  newContainerSize: number,
+  isFixedSize: boolean
+) {
+  const MIN_DIM = 0.01;
+
+  const oldHalf = oldContainerSize / 2;
+  const newHalf = newContainerSize / 2;
+
+  const minEdge = baseCenter - baseSize / 2;
+  const maxEdge = baseCenter + baseSize / 2;
+
+  const dLeft = minEdge - -oldHalf;
+  const dRight = oldHalf - maxEdge;
+
+  let nextSize = baseSize;
+  let nextCenter = baseCenter;
+
+  if (isFixedSize) {
+    if (dLeft <= 150 && dLeft <= dRight) {
+      nextCenter = -newHalf + dLeft + baseSize / 2;
+    } else if (dRight <= 150) {
+      nextCenter = newHalf - dRight - baseSize / 2;
+    } else if (Math.abs(dLeft - dRight) < 1) {
+      nextCenter = 0;
+    } else {
+      nextCenter = baseCenter * (newContainerSize / (oldContainerSize || MIN_DIM));
+    }
+  } else {
+    let newMin, newMax;
+
+    if (dLeft <= 150) {
+      newMin = -newHalf + dLeft;
+    } else {
+      newMin = minEdge * (newContainerSize / (oldContainerSize || MIN_DIM));
+    }
+
+    if (dRight <= 150) {
+      newMax = newHalf - dRight;
+    } else {
+      newMax = maxEdge * (newContainerSize / (oldContainerSize || MIN_DIM));
+    }
+
+    nextSize = Math.max(newMax - newMin, MIN_DIM);
+    nextCenter = (newMin + newMax) / 2;
+  }
+
+  return { nextSize, nextCenter };
+}
+
+// update edges of the mesh
+interface EdgeGenerationOptions {
+  panelHoles?: Hole[];
+  curveControls?: CurveControls;
+  panelOutline?: Point[];
+  panelCornerRadius?: number[];
+  panelCornerTypes?: CornerType[];
+}
+
+const BASE_EDGE_THRESHOLD_ANGLE = 45;
+const CUT_EDGE_THRESHOLD_ANGLE = 45;
+
+function shapeFromPath(path: THREE.Path): THREE.Shape {
+  const shape = new THREE.Shape();
+  shape.curves = path.curves.slice();
+  shape.autoClose = true;
+  return shape;
+}
+
+function buildBoundingOutlineEdgesGeometry(geometry: THREE.BufferGeometry) {
+  const source = geometry.clone();
+  source.computeBoundingBox();
+  const bbox = source.boundingBox;
+  source.dispose();
+
+  if (!bbox) return null;
+
+  const size = new THREE.Vector3();
+  const center = new THREE.Vector3();
+  bbox.getSize(size);
+  bbox.getCenter(center);
+
+  const outlineBox = new THREE.BoxGeometry(size.x, size.y, size.z);
+  outlineBox.translate(center.x, center.y, center.z);
+  const edges = new THREE.EdgesGeometry(outlineBox, 1);
+  outlineBox.dispose();
+  return edges;
+}
+
+function buildPanelOutlineEdgesGeometry(
+  mesh: THREE.Mesh,
+  panelOutline: Point[],
+  panelCornerRadius: number[],
+  panelCornerTypes: CornerType[],
+  curveControls: CurveControls
+) {
+  if (!panelOutline || panelOutline.length < 3) return null;
+
+  const { thicknessAxis, size } = detectPlankByBoundingBox(mesh);
+  const thickness = size[thicknessAxis];
+  if (!Number.isFinite(thickness) || thickness <= 0) return null;
+
+  let w = 0;
+  let h = 0;
+  if (thicknessAxis === 'y') {
+    w = size.x;
+    h = size.z;
+  } else if (thicknessAxis === 'x') {
+    w = size.z;
+    h = size.y;
+  } else {
+    w = size.x;
+    h = size.y;
+  }
+
+  const isRotated2D = h > w;
+  const mappedOutline = isRotated2D ? panelOutline.map((p) => ({ x: -p.y, y: p.x })) : panelOutline;
+  const panelShape = buildThreeShape(
+    mappedOutline,
+    panelCornerRadius,
+    curveControls,
+    'shape',
+    panelCornerTypes
+  );
+
+  const extruded = new THREE.ExtrudeGeometry(panelShape, {
+    depth: thickness,
+    bevelEnabled: false,
+    curveSegments: 32,
+  });
+  extruded.translate(0, 0, -thickness / 2);
+
+  if (thicknessAxis === 'x') {
+    extruded.rotateY(Math.PI / 2);
+  } else if (thicknessAxis === 'y') {
+    extruded.rotateX(Math.PI / 2);
+  }
+
+  const welded = BufferGeometryUtils.mergeVertices(extruded.clone(), 1e-4);
+  const outlineEdges = new THREE.EdgesGeometry(welded, BASE_EDGE_THRESHOLD_ANGLE);
+  welded.dispose();
+  extruded.dispose();
+  return outlineEdges;
+}
+
+function buildPanelCutOnlyEdgesGeometry(
+  mesh: THREE.Mesh,
+  holes: Hole[],
+  curveControls: CurveControls
+): THREE.BufferGeometry | null {
+  if (!holes || holes.length === 0) return null;
+
+  const { thicknessAxis, size } = detectPlankByBoundingBox(mesh);
+  const thickness = size[thicknessAxis];
+  if (!Number.isFinite(thickness) || thickness <= 0) return null;
+
+  let w = 0;
+  let h = 0;
+  if (thicknessAxis === 'y') {
+    w = size.x;
+    h = size.z;
+  } else if (thicknessAxis === 'x') {
+    w = size.z;
+    h = size.y;
+  } else {
+    w = size.x;
+    h = size.y;
+  }
+  const isRotated2D = h > w;
+  const getMappedPoint = (p: { x: number; y: number }) => (isRotated2D ? { x: -p.y, y: p.x } : p);
+
+  const edgeGeometries: THREE.BufferGeometry[] = [];
+
+  holes.forEach((hole, holeIndex) => {
+    const holePath = createHolePath(hole, holeIndex, curveControls, getMappedPoint, isRotated2D);
+    const holeShape = shapeFromPath(holePath);
+
+    let cutGeom: THREE.ExtrudeGeometry;
+    if (hole.type === 'slotting') {
+      const pocketDepth = Math.max(0.01, Math.min(hole.depth ?? 10, thickness));
+      cutGeom = new THREE.ExtrudeGeometry(holeShape, {
+        depth: pocketDepth,
+        bevelEnabled: false,
+        curveSegments: 32,
+      });
+      const face = hole.face ?? 'front';
+      if (face === 'back') {
+        cutGeom.translate(0, 0, -thickness / 2);
+      } else {
+        cutGeom.translate(0, 0, thickness / 2 - pocketDepth);
+      }
+    } else {
+      cutGeom = new THREE.ExtrudeGeometry(holeShape, {
+        depth: thickness,
+        bevelEnabled: false,
+        curveSegments: 32,
+      });
+      cutGeom.translate(0, 0, -thickness / 2);
+    }
+
+    if (thicknessAxis === 'x') {
+      cutGeom.rotateY(Math.PI / 2);
+    } else if (thicknessAxis === 'y') {
+      cutGeom.rotateX(Math.PI / 2);
+    }
+
+    cutGeom.computeVertexNormals();
+
+    const welded = BufferGeometryUtils.mergeVertices(cutGeom.clone(), 1e-4);
+    const holeEdges = new THREE.EdgesGeometry(welded, CUT_EDGE_THRESHOLD_ANGLE);
+    welded.dispose();
+    cutGeom.dispose();
+    edgeGeometries.push(holeEdges);
+  });
+
+  if (edgeGeometries.length === 0) return null;
+
+  const mergedEdges = BufferGeometryUtils.mergeGeometries(edgeGeometries, false);
+  edgeGeometries.forEach((g) => g.dispose());
+  return mergedEdges;
+}
+
+export function updateEdges(
+  mesh: THREE.Mesh,
+  geometry: THREE.BufferGeometry,
+  options?: EdgeGenerationOptions
+) {
+  const type = mesh.userData.type;
+  if (
+    type === OBJECT_TYPES.SINK ||
+    type === OBJECT_TYPES.MODEL ||
+    type === FLOOR_PLAN_TYPES.FLOOR ||
+    mesh.userData.isInvisibleBox ||
+    mesh.userData.isMain
+  ) {
+    return;
+  }
+
+  const existingEdges = mesh.children.find((child) => child.userData.isWireframeEdge);
+  if (existingEdges) {
+    mesh.remove(existingEdges);
+    if ((existingEdges as THREE.LineSegments).geometry) {
+      (existingEdges as THREE.LineSegments).geometry.dispose();
+    }
+    if ((existingEdges as THREE.LineSegments).material) {
+      ((existingEdges as THREE.LineSegments).material as THREE.Material).dispose();
+    }
+  }
+
+  const wireframeColor = store.getState().data.wireframeColor;
+  const panelHoles = options?.panelHoles;
+  const curveControls = options?.curveControls || {};
+  const panelOutline = options?.panelOutline || [];
+  const panelCornerRadius = options?.panelCornerRadius || [];
+  const panelCornerTypes = options?.panelCornerTypes || [];
+
+  let edges: THREE.BufferGeometry | null = null;
+  let baseEdges: THREE.BufferGeometry | null = null;
+
+  if (panelHoles && panelHoles.length > 0) {
+    baseEdges =
+      buildPanelOutlineEdgesGeometry(
+        mesh,
+        panelOutline,
+        panelCornerRadius,
+        panelCornerTypes,
+        curveControls
+      ) || buildBoundingOutlineEdgesGeometry(geometry);
+    const cutOnlyEdges = buildPanelCutOnlyEdgesGeometry(mesh, panelHoles, curveControls);
+
+    if (baseEdges && cutOnlyEdges) {
+      const merged = BufferGeometryUtils.mergeGeometries([baseEdges, cutOnlyEdges], false);
+      baseEdges.dispose();
+      cutOnlyEdges.dispose();
+      edges = merged;
+    } else if (baseEdges) {
+      edges = baseEdges;
+    } else if (cutOnlyEdges) {
+      edges = cutOnlyEdges;
+    }
+  } else {
+    const baseEdgeSource = BufferGeometryUtils.mergeVertices(geometry.clone(), 1e-4);
+    baseEdgeSource.computeVertexNormals();
+    baseEdges = new THREE.EdgesGeometry(baseEdgeSource, BASE_EDGE_THRESHOLD_ANGLE);
+    baseEdgeSource.dispose();
+    edges = baseEdges;
+  }
+
+  if (!edges) {
+    const baseEdgeSource = BufferGeometryUtils.mergeVertices(geometry.clone(), 1e-4);
+    baseEdgeSource.computeVertexNormals();
+    edges = new THREE.EdgesGeometry(baseEdgeSource, BASE_EDGE_THRESHOLD_ANGLE);
+    baseEdgeSource.dispose();
+  }
+
+  const edgesMaterial = new THREE.LineBasicMaterial({
+    color: wireframeColor,
+    polygonOffset: true,
+    polygonOffsetFactor: -5,
+    polygonOffsetUnits: -5,
+    depthTest: true,
+    depthWrite: true,
+  });
+  const edgeLines = new THREE.LineSegments(edges, edgesMaterial);
+  edgeLines.userData.isWireframeEdge = true;
+  edgeLines.renderOrder = 1;
+
+  // Respect the wireframe visibility setting from Redux
+  const isWireframeVisible = store.getState().data.isWireframeVisible;
+  edgeLines.visible = isWireframeVisible;
+
+  mesh.add(edgeLines);
+}

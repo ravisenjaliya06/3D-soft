@@ -4,30 +4,315 @@
   height: 100vh;
   overflow: hidden;
   font-family: var(--font-family);
+  background-color: #1e1e1e; /* Dark background */
 }
 
-.canvasWrapper {
+.canvasAndSidebar {
   display: flex;
   flex: 1;
-  background-color: var(--primary-white);
   overflow: hidden;
   position: relative;
 }
 
-.rulerHorizontal {
-  height: 1.875rem;
-  background: #f5f5f5;
-  border-bottom: 0.063rem solid #ccc;
+.canvasWrapper {
+  flex: 1;
+  background-color: #fff;
+  overflow: hidden;
   position: relative;
+  display: flex;
+}
+
+/* Floating Panel Styles */
+.sidebar {
+  position: absolute;
+  width: 280px;
+  background: var(--primary-white);
+  border-radius: 8px;
+  box-shadow: var(--box-shadow);
+  display: flex;
+  flex-direction: column;
+  z-index: 2000;
+  overflow: hidden;
+  border: 1px solid var(--border-color);
+  user-select: none;
+}
+
+.panelHeader {
+  background: var(--primary-color);
+  padding: 6px 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: grab;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.panelHeader:active {
+  cursor: grabbing;
+}
+
+.panelTitle {
+  color: #dfe6e9;
+  font-size: 0.75rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.panelHeaderActions {
+  display: flex;
+  gap: 12px;
+  color: #b2bec3;
+  font-size: 0.9rem;
+}
+
+.panelTabs {
+  display: flex;
+  background: var(--primary-white);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.panelTab {
+  flex: 1;
+  padding: 6px 2px;
+  text-align: center;
+  color: var(--common-text-color);
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  border-bottom: 2px solid transparent;
+}
+
+.panelTab:hover {
+  background: var(--primary-hover);
+  color: var(--primary-color);
+}
+
+.panelTabActive {
+  background: var(--active-button-color);
+  color: var(--primary-color);
+  border-bottom: 2px solid var(--primary-color);
+  font-weight: 600;
+}
+
+.sidebarContent {
+  padding: 8px 10px;
+  overflow-y: auto;
+  max-height: 500px;
+  font-size: 0.7rem;
+  color: #4a5568;
+}
+
+/* Dynamic hole properties panel - matches reference layout */
+.holePropertiesPanel {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.propertyGroup {
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.propertyGroup:last-of-type {
+  border-bottom: none;
+}
+
+.propertyGroupNoBorder {
+  padding: 8px 0;
+  border-bottom: none;
+}
+
+.coordinatesGroupEnd {
+  border-bottom: 1px solid var(--border-color);
+  margin-bottom: 0;
+}
+
+.propertyGroupTitle {
+  font-size: 0.65rem;
+  font-weight: 600;
+  color: #2d3748;
+  margin-bottom: 6px;
+  text-transform: capitalize;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.propertyInfoIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  height: 14px;
+  font-size: 0.6rem;
+  font-weight: 700;
+  font-style: italic;
+  color: var(--common-text-color);
+  background: var(--primary-dark-white);
+  border-radius: 50%;
+  cursor: help;
+}
+
+.propertyGroupInline {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.propertyGroupInline .propertyGroupTitle {
+  margin-bottom: 0;
+  flex-shrink: 0;
+}
+
+.propertyGroupInline .propertyFieldWrapper {
+  flex: 0 1 auto;
+}
+
+.propertyGroupInlineField {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.propertySubLabelInline {
+  font-size: 0.65rem;
+  color: var(--project-item-text);
+}
+
+.propertyInputRow {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.propertyFieldWrapper {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.propertyInput {
+  width: 100%;
+  max-width: 90px;
+  padding: 2px 5px;
+  font-size: 0.65rem;
+  height: 20px;
+  border: 1px solid #e2e8f0;
+  border-radius: 3px;
+  background: #fff;
+  color: #2d3748;
+  text-align: center;
+}
+
+.propertyInputSmall {
+  width: 100%;
+  min-width: 80px;
+  max-width: 120px;
+  padding: 6px 8px;
+  font-size: 0.7rem;
+  height: 28px;
+  border: 1px solid #e2e8f0;
+  border-radius: 4px;
+  background: #fff;
+  color: #2d3748;
+  text-align: center;
+  box-sizing: border-box;
+}
+
+.propertyInput:read-only {
+  background: var(--primary-dark-white);
+  cursor: default;
+}
+
+.propertySubLabel {
+  font-size: 0.65rem;
+  color: var(--project-item-text);
+}
+
+.propertySeparator {
+  font-size: 0.75rem;
+  color: var(--project-item-text);
+  align-self: center;
+}
+
+.propertiesContainer {
+  background: var(--primary-white);
+  overflow: hidden;
+}
+
+/* Removed .splitSidebar as panels are now independent */
+
+.sidebarPreview {
+  width: 100%;
+  height: 220px; /* Dedicated height for the 3D block */
+  background: var(--primary-white);
+  position: relative;
+}
+
+.sidebarPreview canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.previewTitle {
+  position: absolute;
+  top: 8px;
+  left: 12px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--primary-color);
+  letter-spacing: 0.5px;
+  background: rgba(255, 255, 255, 0.8);
+  padding: 2px 6px;
+  border-radius: 4px;
+  z-index: 10;
+  pointer-events: none;
+}
+
+/* 3D Viewer in Panel */
+.miniThreeViewer {
+  width: 100%;
+  height: 220px;
+  background: var(--primary-white);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.miniThreeViewer canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+/* Ruler Styles */
+.rulerHorizontal {
+  width: 100%;
+  height: 25px;
+  background: var(--primary-dark-white);
+  border-bottom: 1px solid var(--border-color);
+  position: fixed;
+  top: 95px; /* header(60) + subHeader(35) */
+  left: 0;
   overflow: hidden;
   z-index: 1000;
 }
 
 .rulerVertical {
-  width: 1.875rem;
-  background: #f5f5f5;
-  border-right: 0.063rem solid #ccc;
-  position: relative;
+  width: 25px;
+  height: 100%;
+  background: var(--primary-dark-white);
+  border-right: 1px solid var(--border-color);
+  position: fixed;
+  top: 120px; /* Below horiz ruler */
+  left: 0;
   overflow: hidden;
   z-index: 1000;
 }
@@ -45,229 +330,1069 @@
   pointer-events: none;
 }
 
-.footer {
-  display: flex;
-  justify-content: center;
-  height: 1.875rem;
-  background: var(--primary-white);
-  color: var(--primary-color);
-  font-size: 0.7rem;
-  padding: 0.375rem 0.625rem;
-  display: flex;
-  align-items: center;
-  z-index: 1;
+/* Sections and Rows */
+.sidebarSection {
+  margin-bottom: 20px;
+  width: 100%;
 }
 
-.header {
-  height: 1.875rem;
-  background: var(--secondry-background-color);
-  color: var(--primary-color);
-  font-size: 0.875rem;
-  font-weight: 500;
-  letter-spacing: 0.02rem;
-  padding: 0.375rem 1.3rem;
+.sidebarTitle {
+  color: #2d3748;
+  font-size: 0.65rem;
+  font-weight: 600;
+  margin-bottom: 6px;
+  border-left: 2px solid var(--bv-accent);
+  padding-left: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.sidebarRow {
   display: flex;
   align-items: center;
-  z-index: 1;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  color: #4a5568;
+  font-size: 0.68rem;
+  gap: 12px;
+}
+
+.sidebarRowCentered {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 10px;
+  color: #4a5568;
+  font-size: 0.68rem;
+  width: 100%;
+}
+
+.sidebarRowCentered .sidebarRowLabel {
+  font-size: 0.62rem;
+  margin-bottom: 4px;
+  color: #4a5568;
+}
+
+.sidebarRowCentered input {
+  width: 100%;
+  max-width: 140px;
+  padding: 6px 8px;
+  height: 28px;
+  font-size: 0.7rem;
+}
+
+.sidebarRow input,
+.sidebarSelect {
+  background: var(--primary-white);
+  border: 1px solid var(--border-color);
+  color: var(--common-text-color);
+  padding: 2px 6px;
+  border-radius: 3px;
+  width: 80px;
+  font-size: 0.75rem;
+  height: 24px;
+}
+
+.sidebarRow span {
+  color: var(--project-item-text);
+}
+
+.sidebarCoords {
+  margin-top: 15px;
+  padding-top: 10px;
+  border-top: 1px solid #444;
+}
+
+.sidebarSubTitle {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #3498db;
+  margin-bottom: 8px;
+}
+
+.sidebarCoordItem {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.7rem;
+  color: var(--project-item-text);
+  padding: 4px 0;
+}
+
+/* Header & Footer */
+.header {
+  height: 60px;
+  background: var(--secondry-background-color);
+  color: var(--primary-color);
+  padding: 0 20px;
+  display: flex;
+  align-items: center;
+  z-index: 2005;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.subToolbar {
+  height: 35px;
+  background: var(--background-color);
+  border-bottom: 1px solid var(--border-color);
+  display: flex;
+  align-items: center;
+  padding: 0 20px;
+  z-index: 2004;
+  position: fixed;
+  top: 60px;
+  width: 100%;
+  gap: 15px;
 }
 
 .headerLeft {
   flex: 1;
-  text-align: left;
+  font-weight: 700;
+  font-size: 1.1rem;
+  color: var(--primary-color);
 }
-
 .headerCenter {
   flex: 2;
   display: flex;
   justify-content: center;
-  gap: 1.25rem;
+  gap: 30px;
 }
-
-.toolButton {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-direction: column;
-  background: none;
-  border: none;
-  font-size: 0.6rem;
-  cursor: pointer;
-  padding: 0.25rem;
-  border-radius: 0.25rem;
-  transition: background 0.2s ease;
-}
-
-.toolButton img {
-  width: 1rem;
-  height: 1rem;
-}
-
-.toolButton:hover {
-  background-color: var(--hover-background-color-2);
-}
-
 .headerRight {
   flex: 1;
   display: flex;
   justify-content: flex-end;
+  gap: 15px;
+}
+
+.toolButton {
+  display: flex;
+  flex-direction: column;
   align-items: center;
+  cursor: pointer;
+  padding: 4px 6px;
+  border-radius: 6px;
+  transition: all 0.2s;
+  min-width: 60px;
+}
+
+.toolButton:hover {
+  background: var(--primary-selected-color);
+}
+
+.toolButtonActive {
+  background: rgba(52, 152, 219, 0.25) !important;
+}
+.toolButton img {
+  width: 20px;
+  height: 20px;
+  margin-bottom: 4px;
+}
+.toolButton div {
+  font-size: 0.7rem;
+  color: var(--primary-color);
+  font-weight: 600;
+}
+
+.footer {
+  position: fixed;
+  bottom: 0;
+  width: 100%;
+  height: 25px;
+  background: #2d3436;
+  color: #b2bec3;
+  font-size: 0.7rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  border-top: 1px solid #444;
 }
 
 .actionButton {
-  padding: 0.375rem 0.875rem;
-  border: none;
-  border-radius: 0.25rem;
+  padding: 4px 12px;
+  border-radius: 4px;
+  font-size: 0.75rem;
   cursor: pointer;
-  font-size: 0.875rem;
-  font-weight: 500;
-  transition: background-color 0.2s ease;
+  border: none;
 }
 
 .cancelButton {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  border: 0.063rem solid var(--primary-color);
-  border-radius: 0.1rem;
-  background: var(--secondry-background-color);
-  color: var(--primary-color);
-  font-family: var(--font-family);
-  font-size: 0.6rem;
-  letter-spacing: 0.01rem;
-  width: 4rem;
-  height: 1.3rem;
+  background: var(--button-soft-grey);
+  color: var(--primary-white);
 }
-
-.cancelButton:hover {
-  background: var(--secondry-background-color);
-}
-
 .completeButton {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  border: None;
-  border-radius: 0.1rem;
   background: var(--primary-color);
   color: var(--primary-white);
-  font-family: var(--font-family);
-  font-weight: 200;
-  font-size: 0.6rem;
-  letter-spacing: 0.03rem;
-  width: 4rem;
-  height: 1.3rem;
 }
-
 .completeButton:hover {
-  color: var(--primary-color);
-  border: 0.063rem solid var(--primary-color);
-  background: var(--primary-hover);
+  background: var(--hover-button);
 }
 
-.miniThreeViewer {
-  position: fixed;
-  top: 80px;
-  right: 20px;
-  width: 300px;
-  height: 200px;
-  background: #f0f0f0;
-  border: 1px solid #ccc;
-  z-index: 10;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
-  padding: 5px;
-}
-
-.miniThreeViewer canvas {
+/* Corner Point Panel - centered, professional layout with larger inputs/buttons */
+.cornerPointPanel {
+  margin-bottom: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
   width: 100%;
-  height: 100%;
-  display: block;
 }
 
+.coordinateSection {
+  margin-bottom: 12px;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.coordinateLabel,
+.cornerTypeLabel,
+.radiusLabel,
+.chamferLabel {
+  font-size: 0.6rem;
+  font-weight: 600;
+  color: #4a5568;
+  margin-bottom: 6px;
+  text-transform: capitalize;
+  width: 100%;
+  text-align: left;
+}
+
+.coordinateInputs,
+.chamferInputs {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  justify-content: flex-start;
+  width: 100%;
+}
+
+.coordinateField,
+.chamferField {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  flex: 1;
+  max-width: 120px;
+}
+
+.coordinateField input,
+.chamferField input {
+  width: 100%;
+  min-width: 0;
+}
+
+.coordinateSubLabel,
+.chamferSubLabel,
+.radiusUnit {
+  font-size: 0.58rem;
+  color: #718096;
+}
+
+.cornerTypeSection {
+  margin-bottom: 12px;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.cornerTypeButtons {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  justify-content: flex-start;
+  width: 100%;
+}
+
+.cornerTypeBtn {
+  flex: 1;
+  min-width: 70px;
+  padding: 8px 12px;
+  font-size: 0.65rem;
+  font-weight: 500;
+  border: 1px solid #e2e8f0;
+  border-radius: 4px;
+  background: #f7fafc;
+  color: #4a5568;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.cornerTypeBtn:hover {
+  background: #edf2f7;
+  border-color: #cbd5e0;
+}
+
+.cornerTypeBtnActive {
+  background: var(--bv-primary);
+  border-color: var(--bv-primary);
+  color: #fff;
+}
+
+.radiusSection,
+.chamferSection {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid #e2e8f0;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.radiusInputRow {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 8px;
+  margin-bottom: 8px;
+  width: 100%;
+}
+
+.radiusUnit {
+  font-size: 0.6rem;
+  color: #718096;
+}
+
+.cornerDiagram {
+  margin-top: 6px;
+  padding: 6px;
+  background: #f7fafc;
+  border-radius: 4px;
+  display: flex;
+  justify-content: center;
+}
+
+.diagramSvg {
+  width: 48px;
+  height: 48px;
+  color: var(--bv-accent);
+}
+
+.diagramLabel {
+  font-size: 8px;
+  fill: #4a5568;
+  font-weight: 600;
+}
+
+.sidebarDeleteButton {
+  width: 100%;
+  padding: 6px;
+  background: #e74c3c;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  margin-top: 12px;
+  cursor: pointer;
+  font-size: 0.68rem;
+}
+
+.holeTypeDropdown {
+  background: var(--primary-white);
+  border: 1px solid var(--border-color);
+  color: var(--primary-color);
+  padding: 4px 12px;
+  border-radius: 4px;
+  font-size: 0.85rem;
+  outline: none;
+}
+
+.subToolbarLabel {
+  color: #95a5a6;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+/* Modals */
 .modalOverlay {
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: rgba(0, 0, 0, 0.3);
+  background: rgba(0, 0, 0, 0.6);
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1000;
+  z-index: 3000;
 }
 
 .modal {
-  background: white;
-  border-radius: 0.2rem;
-  padding: 0.625rem 0.875rem;
-  width: 17rem;
-  text-align: center;
-  box-shadow: 0 0.125rem 0.625rem rgba(0, 0, 0, 0.2);
-}
-
-.popupHeader {
-  display: flex;
-}
-
-.warningIcon {
-  color: var(--primary-yellow);
-  font-size: 0.9rem;
-  width: 1.5rem;
-  margin-top: 0.3rem;
+  background: var(--primary-white);
+  padding: 20px;
+  border-radius: 8px;
+  width: 350px;
+  border: 1px solid var(--border-color);
+  box-shadow: var(--box-shadow);
 }
 
 .popupTitle {
-  font-family: var(--font-family);
-  font-size: 0.8rem;
-  font-weight: 500;
-  letter-spacing: 0.01rem;
-  color: var(--header-text-color);
-  margin: 0 0.2rem 0.9rem 0;
+  color: var(--primary-color);
+  font-size: 0.875rem;
+  margin: 0;
 }
-
-.popupContent {
-  width: 20rem;
-  font-family: var(--font-family);
-  font-size: 0.6rem;
-  font-weight: 500;
-  letter-spacing: 0.01rem;
-  color: var(--header-content-color);
-  margin-left: 1.6rem;
-  margin-bottom: 1.5rem;
-  line-height: 1.5;
-}
-
 .buttonContainer {
   display: flex;
   justify-content: flex-end;
-  gap: 1rem;
+  gap: 10px;
+  margin-top: 20px;
 }
 
 .button {
-  font-family: var(--font-family);
-  font-size: 0.6rem;
-  font-weight: 400;
-  letter-spacing: 0.01rem;
-  padding: 0.25rem 0.8rem;
-  border-radius: 0.1rem;
-  font-weight: 500;
+  padding: 0.5rem 1.25rem;
+  border-radius: 0.375rem;
+  font-size: 0.875rem;
+  font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s;
+  border: none;
+  transition: background-color 0.2s;
 }
 
 .popupCancelButton {
-  background: var(--primary-white);
-  border: 0.063rem solid var(--table-border-color);
-  color: var(--header-content-color);
+  background: var(--button-soft-grey);
+  color: var(--primary-white);
+}
+
+.popupCancelButton:hover {
+  filter: brightness(0.95);
 }
 
 .popupConfirmButton {
   background: var(--primary-color);
-  border: none;
   color: var(--primary-white);
 }
 
 .popupConfirmButton:hover {
+  background: var(--hover-button);
+}
+
+.popupHeader {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+.warningIcon {
+  color: var(--primary-red);
+  font-size: 1.5rem;
+  flex-shrink: 0;
+}
+
+.subToolbar {
+  position: absolute;
+  top: 60px;
+  left: 0;
+  right: 0;
+  height: 35px;
+  background: var(--primary-dark-white);
+  border-bottom: 1px solid var(--border-color);
+  display: flex;
+  align-items: center;
+  padding: 0 20px;
+  z-index: 2004;
+  gap: 12px;
+}
+
+/* Floating Dig sub-toolbar - appears below Dig button when Dig is selected */
+.digSubToolbar {
+  position: fixed;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 10px;
+  background: var(--secondry-background-color);
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+  border: 1px solid var(--border-color);
+  z-index: 2010;
+}
+
+.digSubToolButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
   color: var(--primary-color);
-  background: var(--primary-hover);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.digSubToolButton:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.digSubToolButtonActive {
+  background: rgba(52, 152, 219, 0.4) !important;
+  color: #3498db;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Panel Designer v2 (Phase 2) — matches the 3D editor frame:
+   dark header bar with a tool capsule, floating cards with dark
+   grab handles, rounded inputs and segmented choice buttons.
+   Sizes the canvas depends on (60px header, 280px cards) are kept.
+   ───────────────────────────────────────────────────────────── */
+
+.designerContainer {
+  font-family: var(--bv-font);
+  background-color: var(--bv-ink);
+}
+
+.canvasWrapper {
+  background-color: var(--bv-surface-2);
+}
+
+/* Header */
+.header {
+  gap: 1rem;
+  padding: 0 16px;
+  color: var(--bv-on-ink);
+  background: var(--bv-ink);
+  border-bottom: 2px solid var(--bv-accent);
+}
+
+.headerLeft {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 2px;
+  font-size: 15px;
+  letter-spacing: -0.01em;
+  color: var(--bv-on-ink);
+}
+
+.headerEyebrow {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--bv-accent-light);
+}
+
+.headerCenter {
+  flex: 0 1 auto;
+  gap: 2px;
+  padding: 4px;
+  background: rgba(0, 0, 0, 0.22);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 999px;
+}
+
+.toolButton {
+  flex-direction: row;
+  gap: 6px;
+  min-width: 0;
+  padding: 6px 12px;
+  border-radius: 999px;
+}
+
+.toolButton:hover {
+  background: var(--bv-glass);
+}
+
+.toolButtonActive {
+  background: var(--bv-accent) !important;
+}
+
+.toolButton img {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  filter: brightness(0) invert(1);
+  opacity: 0.85;
+}
+
+.toolButton div {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--bv-on-ink);
+}
+
+.headerRight {
+  gap: 8px;
+}
+
+.actionButton {
+  height: 34px;
+  padding: 0 16px;
+  font-family: var(--bv-font);
+  font-size: 13px;
+  font-weight: 700;
+  border-radius: 999px;
+  transition:
+    background-color var(--bv-ease),
+    border-color var(--bv-ease);
+}
+
+.cancelButton {
+  color: var(--bv-on-ink);
+  background: transparent;
+  border: 1px solid var(--bv-glass-border);
+}
+
+.cancelButton:hover {
+  background: var(--bv-glass);
+}
+
+.completeButton {
+  color: var(--bv-on-accent);
+  background: var(--bv-accent);
+  box-shadow: 0 4px 14px var(--bv-accent-glow);
+}
+
+.completeButton:hover {
+  background: var(--bv-accent-hover);
+}
+
+/* Rulers */
+.rulerHorizontal,
+.rulerVertical {
+  background: var(--bv-surface);
+  border-color: var(--bv-border);
+}
+
+/* Floating cards */
+.sidebar {
+  background: var(--bv-surface);
+  border: 1px solid var(--bv-border);
+  border-radius: 16px;
+  box-shadow: 0 12px 32px rgba(30, 30, 18, 0.18);
+}
+
+.panelHeader {
+  min-height: 36px;
+  padding: 0 12px;
+  box-sizing: border-box;
+  background-color: var(--bv-ink);
+  background-image: radial-gradient(circle at 100% 0%, var(--bv-accent-glow) 0%, transparent 60%);
+  border-bottom: none;
+}
+
+.panelTitle {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--bv-on-ink);
+}
+
+.panelTitle::before {
+  width: 6px;
+  height: 6px;
+  content: '';
+  background: var(--bv-accent-light);
+  border-radius: 2px;
+  transform: rotate(45deg);
+}
+
+.panelHeaderActions {
+  color: var(--bv-on-ink-muted);
+}
+
+.panelTab {
+  font-family: var(--bv-font);
+  font-weight: 600;
+  color: var(--bv-text-muted);
+}
+
+.panelTab:hover {
+  color: var(--bv-text);
+  background: var(--bv-surface-2);
+}
+
+.panelTabActive {
+  color: var(--bv-text);
+  background: var(--bv-surface);
+  border-bottom-color: var(--bv-accent);
+}
+
+.sidebarContent {
+  padding: 12px;
+  color: var(--bv-text-muted);
+  background: var(--bv-surface-2);
+}
+
+.propertiesContainer,
+.sidebarPreview,
+.miniThreeViewer {
+  background: var(--bv-surface-2);
+}
+
+.previewTitle {
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--bv-on-ink);
+  background: var(--bv-ink);
+  border-radius: 999px;
+}
+
+/* Section and group titles */
+.sidebarTitle,
+.propertyGroupTitle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding-left: 0;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--bv-text);
+  border-left: none;
+}
+
+.sidebarTitle::before {
+  width: 6px;
+  height: 6px;
+  content: '';
+  background: var(--bv-accent);
+  border-radius: 2px;
+  transform: rotate(45deg);
+}
+
+.propertyGroup {
+  padding: 10px;
+  margin-bottom: 8px;
+  background: var(--bv-surface);
+  border: 1px solid var(--bv-border);
+  border-radius: 12px;
+}
+
+.coordinateLabel,
+.cornerTypeLabel,
+.radiusLabel,
+.chamferLabel {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--bv-text-muted);
+}
+
+.coordinateSubLabel,
+.chamferSubLabel,
+.radiusUnit,
+.propertySubLabel,
+.propertySubLabelInline,
+.sidebarRow span {
+  font-weight: 600;
+  color: var(--bv-text-subtle);
+}
+
+.sidebarRow,
+.sidebarRowCentered,
+.sidebarRowCentered .sidebarRowLabel {
+  color: var(--bv-text-muted);
+}
+
+/* Inputs */
+.propertyInput,
+.propertyInputSmall,
+.sidebarRow input,
+.sidebarSelect,
+.holeTypeDropdown {
+  font-family: var(--bv-font);
+  font-weight: 600;
+  color: var(--bv-text);
+  background: var(--bv-surface);
+  border: 1px solid var(--bv-border);
+  border-radius: 8px;
+  transition:
+    border-color var(--bv-ease),
+    box-shadow var(--bv-ease);
+}
+
+.propertyInput:focus,
+.propertyInputSmall:focus,
+.sidebarRow input:focus,
+.sidebarSelect:focus {
+  outline: none;
+  border-color: var(--bv-accent);
+  box-shadow: 0 0 0 3px var(--bv-accent-glow);
+}
+
+.propertyInput:read-only {
+  color: var(--bv-text-muted);
+  background: var(--bv-surface-2);
+}
+
+.propertyInfoIcon {
+  color: var(--bv-on-accent);
+  background: var(--bv-accent);
+}
+
+/* Segmented choice buttons (corner type, face) */
+.cornerTypeButtons {
+  gap: 2px;
+  padding: 3px;
+  background: var(--bv-surface);
+  border: 1px solid var(--bv-border);
+  border-radius: 999px;
+}
+
+.cornerTypeBtn {
+  padding: 6px 10px;
+  font-family: var(--bv-font);
+  font-weight: 700;
+  color: var(--bv-text-muted);
+  background: transparent;
+  border: none;
+  border-radius: 999px;
+}
+
+.cornerTypeBtn:hover {
+  color: var(--bv-text);
+  background: var(--bv-surface-2);
+}
+
+.cornerTypeBtnActive,
+.cornerTypeBtnActive:hover {
+  color: var(--bv-on-primary);
+  background: var(--bv-primary);
+}
+
+.radiusSection,
+.chamferSection {
+  border-top: 1px dashed var(--bv-border-strong);
+}
+
+.cornerDiagram {
+  background: var(--bv-surface);
+  border: 1px solid var(--bv-border);
+  border-radius: 10px;
+}
+
+.diagramSvg {
+  color: var(--bv-accent);
+}
+
+.diagramLabel {
+  fill: var(--bv-text-muted);
+}
+
+.sidebarDeleteButton {
+  padding: 8px;
+  font-family: var(--bv-font);
+  font-weight: 700;
+  color: var(--bv-danger, #c0392b);
+  background: transparent;
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  transition:
+    background-color var(--bv-ease),
+    color var(--bv-ease);
+}
+
+.sidebarDeleteButton:hover {
+  color: #fff;
+  background: var(--bv-danger, #c0392b);
+}
+
+/* Dig sub-toolbar */
+.digSubToolbar {
+  padding: 4px;
+  background: var(--bv-ink);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 999px;
+}
+
+.digSubToolButton {
+  color: var(--bv-on-ink);
+  border-radius: 50%;
+}
+
+.digSubToolButton:hover {
+  background: var(--bv-glass);
+}
+
+.digSubToolButtonActive,
+.digSubToolButtonActive:hover {
+  color: var(--bv-on-accent);
+  background: var(--bv-accent);
+}
+
+/* Leave-without-saving dialog */
+.modalOverlay {
+  background: rgba(20, 20, 10, 0.55);
+  backdrop-filter: blur(3px);
+}
+
+.modal {
+  width: 360px;
+  padding: 0 0 18px;
+  overflow: hidden;
+  background: var(--bv-surface);
+  border: none;
+  border-radius: 18px;
+  box-shadow: 0 24px 60px rgba(10, 10, 4, 0.35);
+}
+
+.modal::before {
+  display: block;
+  height: 5px;
+  content: '';
+  background: var(--bv-accent);
+}
+
+.popupHeader {
+  padding: 18px 20px 0;
+}
+
+.popupTitle {
+  font-family: var(--bv-font);
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--bv-text);
+}
+
+.warningIcon {
+  color: var(--bv-accent);
+}
+
+.buttonContainer {
+  padding: 0 20px;
+}
+
+.button {
+  font-family: var(--bv-font);
+  border-radius: 999px;
+}
+
+.popupCancelButton {
+  color: var(--bv-text);
+  background: var(--bv-surface-2);
+  border: 1px solid var(--bv-border);
+}
+
+.popupConfirmButton {
+  color: var(--bv-on-accent);
+  background: var(--bv-accent);
+}
+
+.popupConfirmButton:hover {
+  background: var(--bv-accent-hover);
+}
+
+/* Keep the floating cards off the screen edge (their position is set in code) */
+.sidebar {
+  margin-left: -12px;
+}
+
+.footer {
+  color: var(--bv-on-ink-muted);
+  background: var(--bv-ink);
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+/* 2D floor plan — wall properties card (TwoDSidebar) */
+.wallRow {
+  margin-top: 10px;
+}
+
+.wallLabel {
+  font-weight: 600;
+  color: var(--bv-text-muted);
+}
+
+.wallField {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.sidebarRow .wallInput {
+  width: 116px;
+  height: 30px;
+  padding: 0 32px 0 8px;
+  box-sizing: border-box;
+  font-family: var(--bv-font);
+  font-size: 13px;
+  font-weight: 600;
+  text-align: right;
+  color: var(--bv-text);
+  background: var(--bv-surface);
+  border: 1px solid var(--bv-border);
+  border-radius: 8px;
+}
+
+.sidebarRow .wallInput:focus {
+  outline: none;
+  border-color: var(--bv-accent);
+  box-shadow: 0 0 0 3px var(--bv-accent-glow);
+}
+
+.sidebarRow .wallUnit {
+  position: absolute;
+  right: 9px;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--bv-text-subtle);
+  pointer-events: none;
+}
+
+.wallEmpty {
+  margin-top: 8px;
+  padding: 10px;
+  font-size: 12px;
+  color: var(--bv-text-subtle);
+  text-align: center;
+  background: var(--bv-surface);
+  border: 1px dashed var(--bv-border-strong);
+  border-radius: 10px;
+}
+
+/* Points selection as a segmented pill */
+.pointModes {
+  display: flex;
+  gap: 2px;
+  margin-top: 10px;
+  padding: 3px;
+  background: var(--bv-surface);
+  border: 1px solid var(--bv-border);
+  border-radius: 999px;
+}
+
+.pointMode {
+  position: relative;
+  display: flex;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 4px;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: capitalize;
+  color: var(--bv-text-muted);
+  border-radius: 999px;
+  cursor: pointer;
+  transition:
+    background-color var(--bv-ease),
+    color var(--bv-ease);
+}
+
+.pointMode input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.pointMode:hover {
+  color: var(--bv-text);
+}
+
+.pointModeActive,
+.pointModeActive:hover {
+  color: var(--bv-on-primary);
+  background: var(--bv-primary);
+}
+
+.pointMode:focus-within {
+  box-shadow: 0 0 0 3px var(--bv-accent-glow);
 }

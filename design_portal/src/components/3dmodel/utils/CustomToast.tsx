@@ -15,18 +15,18 @@ export const CustomToast = ({
       {/* Icon */}
       <div
         className={`flex h-[1.25rem] w-[1.25rem] flex-shrink-0 items-center justify-center rounded-full ${
-          isError ? 'bg-red-500/20' : 'bg-green-500/20'
+          isError ? 'bg-[var(--bv-danger-soft)]' : 'bg-[var(--bv-success-soft)]'
         }`}
       >
         {isError ? (
-          <FaExclamation className="text-[0.65rem] text-red-500" />
+          <FaExclamation className="text-[0.65rem] text-[var(--bv-danger)]" />
         ) : (
-          <FaCheck className="text-[0.65rem] text-green-500" />
+          <FaCheck className="text-[0.65rem] text-[var(--bv-success)]" />
         )}
       </div>
 
       {/* Message */}
-      <p className="m-0 flex-1 font-[poppins] text-[0.75rem] leading-[1rem] font-medium tracking-wide text-gray-800">
+      <p className="m-0 flex-1 font-[family-name:var(--bv-font)] text-[0.8rem] leading-[1.1rem] font-semibold text-[var(--bv-text)]">
         {message}
       </p>
     </div>

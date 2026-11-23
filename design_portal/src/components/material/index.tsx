@@ -4,7 +4,7 @@ import type React from 'react';
 import { useEffect } from 'react';
 import AddMaterialPopup from './addItem';
 // import { ContextMenus } from './components/ContextMenus';
-import { CreateCompanyPopup } from './components/CreateCompanyPopup';
+import { ConfirmDeletePopup, CreateCompanyPopup } from './components/CreateCompanyPopup';
 import { MaterialSidebar } from './components/MaterialSidebar';
 import { MaterialTable } from './components/MaterialTable';
 import { MaterialToolbar } from './components/MaterialToolbar';
@@ -12,6 +12,7 @@ import { CATEGORY_TABS } from './constants';
 import { useMaterialData } from './hooks/useMaterialData';
 import { useMaterialState } from './hooks/useMaterialState';
 import styles from './material.module.css';
+import { flattenMaterial } from './utils/materialMapper';
 const Material: React.FC = () => {
   const {
     companyMaterials,
@@ -21,6 +22,7 @@ const Material: React.FC = () => {
     fetchMaterialsByType,
     fetchCompanyMaterials,
     createCompany,
+    deleteMaterial,
   } = useMaterialData();
 
   const {
@@ -49,6 +51,10 @@ const Material: React.FC = () => {
     setContextMaterialMenu,
     setCreateCompanyPopup,
     setCompanyName,
+    editingMaterial,
+    setEditingMaterial,
+    deletingMaterial,
+    setDeletingMaterial,
   } = useMaterialState();
 
   /** When a category is clicked, open it and load its materials */
@@ -71,6 +77,7 @@ const Material: React.FC = () => {
   /** Select a sub-item and load all materials for that company */
   const handleSubItemClick = (itemId: string) => {
     setSelectedSubItem(itemId);
+    setCompanyID(itemId);
     fetchCompanyMaterials(itemId);
   };
 
@@ -110,6 +117,40 @@ const Material: React.FC = () => {
   };
 
   /** Open the popup to add a new material under a company */
+  const handleEditMaterial = (materialId: string) => {
+    const materialRow = companyMaterials.find((m) => m.id === materialId);
+    if (materialRow && materialRow._original) {
+      const flattened = flattenMaterial(materialRow._original as any);
+      setEditingMaterial(flattened);
+      setAddMaterialPopup(true);
+    }
+  };
+
+  const handleDeleteMaterial = (materialId: string) => {
+    const material = companyMaterials.find((m) => m.id === materialId);
+    if (material) {
+      setDeletingMaterial(material);
+    }
+  };
+
+  const confirmDeleteMaterial = async () => {
+    if (deletingMaterial) {
+      const success = await deleteMaterial(
+        deletingMaterial.id,
+        selectedSubItem || undefined,
+        selectedType || undefined
+      );
+      if (success) {
+        setDeletingMaterial(null);
+      }
+    }
+  };
+
+  /** Open the popup to add a new material */
+  const handleAddNewMaterial = () => {
+    setEditingMaterial(null);
+    setAddMaterialPopup(true);
+  };
 
   // Filter and sort materials
   const getFilteredMaterials = () => {
@@ -151,11 +192,11 @@ const Material: React.FC = () => {
   }, []);
 
   return (
-    <div className="flex h-screen flex-row overflow-hidden bg-[var(--background-color)]">
+    <div className={styles.page}>
       <Sidebar />
 
-      <div className="relative flex flex-1 flex-col overflow-hidden">
-        <Header isBorderRadius={true} dashboardName="Material" />
+      <div className={styles.pageRight}>
+        <Header isBorderRadius={true} dashboardName="Materials" />
 
         {!addMaterialPopup ? (
           <div className={styles.maincontainer}>
@@ -169,12 +210,12 @@ const Material: React.FC = () => {
               onMaterialContextMenu={handleMaterialContextMenu}
               selectedSubItem={selectedSubItem}
               onAddCompany={handleAddCompany}
-              setAddMaterialPopup={setAddMaterialPopup}
+              setAddMaterialPopup={handleAddNewMaterial}
               setCompanyID={setCompanyID}
               setMaterialType={setSelectedType}
             />
 
-            <div className="flex min-w-0 flex-1 flex-col gap-[0.75rem] overflow-hidden px-[0.5rem]">
+            <div className={styles.materialrightside}>
               <MaterialToolbar
                 searchQuery={searchQuery}
                 onSearchChange={setSearchQuery}
@@ -194,6 +235,8 @@ const Material: React.FC = () => {
                 activeTab={activeTab}
                 onTabChange={setActiveTab}
                 onSort={setSortColumn}
+                onEdit={handleEditMaterial}
+                onDelete={handleDeleteMaterial}
               />
             </div>
           </div>
@@ -203,6 +246,7 @@ const Material: React.FC = () => {
             companyId={companyID}
             handleGetCompanyMaterials={fetchCompanyMaterials}
             selectedType={expandedCategory}
+            initialData={editingMaterial}
           />
         )}
       </div>
@@ -214,6 +258,14 @@ const Material: React.FC = () => {
           onCompanyNameChange={setCompanyName}
           onCreateCompany={handleCreateCompany}
           onClose={() => setCreateCompanyPopup(false)}
+        />
+      )}
+
+      {deletingMaterial && (
+        <ConfirmDeletePopup
+          itemName={deletingMaterial.name}
+          onConfirm={confirmDeleteMaterial}
+          onClose={() => setDeletingMaterial(null)}
         />
       )}
     </div>

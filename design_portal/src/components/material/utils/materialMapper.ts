@@ -8,6 +8,7 @@ export const mapMaterial = (m: MaterialMap, type?: string): TableRow => {
   // Base material variables (common to all categories)
   const baseMaterial = {
     id: m.id,
+    _original: m,
     material_name: m.name,
     material_description: m.description,
     material_type: m.properties.material_type || m.type,
@@ -375,4 +376,33 @@ export const mapMaterial = (m: MaterialMap, type?: string): TableRow => {
 
   // Combine base material and category-specific properties
   return { ...baseMaterial, name: m.name || '', ...categorySpecific };
+};
+
+export const flattenMaterial = (m: MaterialMap): any => {
+  const rawPropertiesId = (m.properties as Record<string, unknown>)?.id;
+  const propertiesId = typeof rawPropertiesId === 'string' ? rawPropertiesId : undefined;
+
+  return {
+    name: m.name,
+    description: m.description,
+    type: m.properties.material_type || m.type,
+    ...m.properties,
+    // Keep both ids explicit; endpoint updates must always use material id.
+    propertiesId,
+    materialId: m.id,
+    id: m.id,
+    // Map snake_case to camelCase for the form if necessary
+    thickness: m.properties.thickness,
+    lengthTrim: m.properties.length_trim,
+    roughThickness: m.properties.rough_thickness,
+    unitOfIssue: m.properties.unit_of_issue,
+    defaultCost: m.properties.default_cost,
+    sellPrice: m.properties.sell_price,
+    defaultMarkup: m.properties.default_markup,
+    salesTax: m.properties.sales_tax,
+    defaultTaxRate: m.properties.default_tax_rate,
+    waste: m.properties.waste,
+    estimate: m.properties.estimate,
+    // Add more if needed, but the form seems to use these
+  };
 };

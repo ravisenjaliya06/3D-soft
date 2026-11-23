@@ -3015,7 +3015,7 @@ CATALOG = [
         "position": {"x": 0, "y": 0, "z": 0},
         "rotation": {"x": 0, "y": 0, "z": 0},
         "scale": {"x": 1, "y": 1, "z": 1},
-        "material": [],
+        "material": ["120 Degree Euro"],
     },
     {
         "id": "c2d2a8b4-9b3e-4a2e-7f85-511111111101",
@@ -3226,7 +3226,7 @@ CATALOG = [
     },
     {
         "id": "c0a1b2c3-d4e5-4f67-8a9b-1c2d3e4f5001",
-        "name": "BACK_PANEL_1",
+        "name": "BACK_PLANK_1",
         "type": "plank",
         "geometry_type": "BOX_GEOMETRY",
         "parent": "7f21c1a3-6d44-4e1c-9f77-8d3b8c2a1001",
@@ -3239,7 +3239,7 @@ CATALOG = [
     },
     {
         "id": "d1b2c3d4-e5f6-4a78-9b0c-2d3e4f5a6002",
-        "name": "BACK_PANEL_2",
+        "name": "BACK_PLANK_2",
         "type": "plank",
         "geometry_type": "BOX_GEOMETRY",
         "parent": "7f21c1a3-6d44-4e1c-9f77-8d3b8c2a1001",
@@ -3252,7 +3252,7 @@ CATALOG = [
     },
     {
         "id": "e2c3d4e5-f6a7-4b89-8c1d-3e4f5a6b7003",
-        "name": "BACK_PANEL_3",
+        "name": "BACK_PLANK_3",
         "type": "plank",
         "geometry_type": "BOX_GEOMETRY",
         "parent": "7f21c1a3-6d44-4e1c-9f77-8d3b8c2a1001",
@@ -3265,7 +3265,7 @@ CATALOG = [
     },
     {
         "id": "f3d4e5f6-a7b8-4c90-9d2e-4f5a6b7c8004",
-        "name": "BACK_PANEL_4",
+        "name": "BACK_PLANK_4",
         "type": "plank",
         "geometry_type": "BOX_GEOMETRY",
         "parent": "7f21c1a3-6d44-4e1c-9f77-8d3b8c2a1001",
@@ -3278,7 +3278,7 @@ CATALOG = [
     },
     {
         "id": "a4e5f6a7-b8c9-4d01-8e3f-5a6b7c8d9005",
-        "name": "BACK_PANEL_5",
+        "name": "BACK_PLANK_5",
         "type": "plank",
         "geometry_type": "BOX_GEOMETRY",
         "parent": "7f21c1a3-6d44-4e1c-9f77-8d3b8c2a1001",
@@ -3291,7 +3291,7 @@ CATALOG = [
     },
     {
         "id": "b5f6a7b8-c9d0-4e12-9f4a-6b7c8d9e0006",
-        "name": "BACK_PANEL_6",
+        "name": "BACK_PLANK_6",
         "type": "plank",
         "geometry_type": "BOX_GEOMETRY",
         "parent": "7f21c1a3-6d44-4e1c-9f77-8d3b8c2a1001",
@@ -3304,7 +3304,7 @@ CATALOG = [
     },
     {
         "id": "c6a7b8c9-d0e1-4f23-8a5b-7c8d9e0f1007",
-        "name": "BACK_PANEL_7",
+        "name": "BACK_PLANK_7",
         "type": "plank",
         "geometry_type": "BOX_GEOMETRY",
         "parent": "7f21c1a3-6d44-4e1c-9f77-8d3b8c2a1001",
@@ -3317,7 +3317,7 @@ CATALOG = [
     },
     {
         "id": "d7b8c9d0-e1f2-4a34-9b6c-8d9e0f1a2008",
-        "name": "BACK_PANEL_8",
+        "name": "BACK_PLANK_8",
         "type": "plank",
         "geometry_type": "BOX_GEOMETRY",
         "parent": "7f21c1a3-6d44-4e1c-9f77-8d3b8c2a1001",
@@ -3334,8 +3334,8 @@ CATALOG = [
         "type": "plank",
         "geometry_type": "BOX_GEOMETRY",
         "parent": "7f21c1a3-6d44-4e1c-9f77-8d3b8c2a1001",
-        "dimensions": {"width": 18, "height": 1964, "depth": 580},
-        "position": {"x": -370.5, "y": 0, "z": 0},
+        "dimensions": {"width": 18, "height": 1964, "depth": 532},
+        "position": {"x": -370.5, "y": 0, "z": 9},
         "rotation": {"x": 0, "y": 0, "z": 0},
         "scale": {"x": 1, "y": 1, "z": 1},
         "material": ["3/4 1s Poplar Ply", "Alder Ven EB"],
@@ -3347,8 +3347,8 @@ CATALOG = [
         "type": "plank",
         "geometry_type": "BOX_GEOMETRY",
         "parent": "7f21c1a3-6d44-4e1c-9f77-8d3b8c2a1001",
-        "dimensions": {"width": 18, "height": 1964, "depth": 580},
-        "position": {"x": 0, "y": 0, "z": 0},
+        "dimensions": {"width": 18, "height": 1964, "depth": 532},
+        "position": {"x": 0, "y": 0, "z": 9},
         "rotation": {"x": 0, "y": 0, "z": 0},
         "scale": {"x": 1, "y": 1, "z": 1},
         "material": ["3/4 1s Poplar Ply", "Alder Ven EB"],
@@ -3360,8 +3360,8 @@ CATALOG = [
         "type": "plank",
         "geometry_type": "BOX_GEOMETRY",
         "parent": "7f21c1a3-6d44-4e1c-9f77-8d3b8c2a1001",
-        "dimensions": {"width": 18, "height": 1964, "depth": 580},
-        "position": {"x": 370.5, "y": 0, "z": 0},
+        "dimensions": {"width": 18, "height": 1964, "depth": 532},
+        "position": {"x": 370.5, "y": 0, "z": 9},
         "rotation": {"x": 0, "y": 0, "z": 0},
         "scale": {"x": 1, "y": 1, "z": 1},
         "material": ["3/4 1s Poplar Ply", "Alder Ven EB"],
@@ -3373,8 +3373,8 @@ CATALOG = [
         "type": "plank",
         "geometry_type": "BOX_GEOMETRY",
         "parent": "7f21c1a3-6d44-4e1c-9f77-8d3b8c2a1001",
-        "dimensions": {"width": 352.5, "height": 18, "depth": 580},
-        "position": {"x": -555.75, "y": 0, "z": 0},
+        "dimensions": {"width": 352.5, "height": 18, "depth": 532},
+        "position": {"x": -555.75, "y": 0, "z": 9},
         "rotation": {"x": 0, "y": 0, "z": 0},
         "scale": {"x": 1, "y": 1, "z": 1},
         "material": ["3/4 1s Poplar Ply", "Alder Ven EB"],
@@ -3386,8 +3386,8 @@ CATALOG = [
         "type": "plank",
         "geometry_type": "BOX_GEOMETRY",
         "parent": "7f21c1a3-6d44-4e1c-9f77-8d3b8c2a1001",
-        "dimensions": {"width": 352.5, "height": 18, "depth": 580},
-        "position": {"x": -185.25, "y": 0, "z": 0},
+        "dimensions": {"width": 352.5, "height": 18, "depth": 532},
+        "position": {"x": -185.25, "y": 0, "z": 9},
         "rotation": {"x": 0, "y": 0, "z": 0},
         "scale": {"x": 1, "y": 1, "z": 1},
         "material": ["3/4 1s Poplar Ply", "Alder Ven EB"],
@@ -3399,8 +3399,8 @@ CATALOG = [
         "type": "plank",
         "geometry_type": "BOX_GEOMETRY",
         "parent": "7f21c1a3-6d44-4e1c-9f77-8d3b8c2a1001",
-        "dimensions": {"width": 352.5, "height": 18, "depth": 580},
-        "position": {"x": 185.25, "y": 0, "z": 0},
+        "dimensions": {"width": 352.5, "height": 18, "depth": 532},
+        "position": {"x": 185.25, "y": 0, "z": 9},
         "rotation": {"x": 0, "y": 0, "z": 0},
         "scale": {"x": 1, "y": 1, "z": 1},
         "material": ["3/4 1s Poplar Ply", "Alder Ven EB"],
@@ -3412,8 +3412,8 @@ CATALOG = [
         "type": "plank",
         "geometry_type": "BOX_GEOMETRY",
         "parent": "7f21c1a3-6d44-4e1c-9f77-8d3b8c2a1001",
-        "dimensions": {"width": 352.5, "height": 18, "depth": 580},
-        "position": {"x": 555.75, "y": 0, "z": 0},
+        "dimensions": {"width": 352.5, "height": 18, "depth": 532},
+        "position": {"x": 555.75, "y": 0, "z": 9},
         "rotation": {"x": 0, "y": 0, "z": 0},
         "scale": {"x": 1, "y": 1, "z": 1},
         "material": ["3/4 1s Poplar Ply", "Alder Ven EB"],
@@ -3491,8 +3491,8 @@ CATALOG = [
         "type": "plank",
         "geometry_type": "BOX_GEOMETRY",
         "parent": "7f21c1a3-6d44-4e1c-9f77-8d3b8c2a1002",
-        "dimensions": {"width": 18, "height": 364, "depth": 580},
-        "position": {"x": -500, "y": -800, "z": 0},
+        "dimensions": {"width": 18, "height": 364, "depth": 532},
+        "position": {"x": -500, "y": -800, "z": 9},
         "rotation": {"x": 0, "y": 0, "z": 0},
         "scale": {"x": 1, "y": 1, "z": 1},
         "material": ["3/4 1s Poplar Ply", "Alder Ven EB"],
@@ -3504,8 +3504,8 @@ CATALOG = [
         "type": "plank",
         "geometry_type": "BOX_GEOMETRY",
         "parent": "7f21c1a3-6d44-4e1c-9f77-8d3b8c2a1002",
-        "dimensions": {"width": 18, "height": 364, "depth": 580},
-        "position": {"x": 245.5, "y": -800, "z": 0},
+        "dimensions": {"width": 18, "height": 364, "depth": 532},
+        "position": {"x": 245.5, "y": -800, "z": 9},
         "rotation": {"x": 0, "y": 0, "z": 0},
         "scale": {"x": 1, "y": 1, "z": 1},
         "material": ["3/4 1s Poplar Ply", "Alder Ven EB"],
@@ -3557,8 +3557,8 @@ CATALOG = [
         "type": "plank",
         "geometry_type": "BOX_GEOMETRY",
         "parent": "7f21c1a3-6d44-4e1c-9f77-8d3b8c2a1002",
-        "dimensions": {"width": 473, "height": 18, "depth": 580},
-        "position": {"x": -745.5, "y": 200, "z": 0},
+        "dimensions": {"width": 473, "height": 18, "depth": 532},
+        "position": {"x": -745.5, "y": 200, "z": 9},
         "rotation": {"x": 0, "y": 0, "z": 0},
         "scale": {"x": 1, "y": 1, "z": 1},
         "material": ["3/4 1s Poplar Ply", "Alder Ven EB"],
@@ -3571,7 +3571,7 @@ CATALOG = [
         "geometry_type": "BOX_GEOMETRY",
         "parent": "7f21c1a3-6d44-4e1c-9f77-8d3b8c2a1002",
         "dimensions": {"width": 473, "height": 1600, "depth": 18},
-        "position": {"x": -745.5, "y": 200, "z": -291},
+        "position": {"x": -745.5, "y": 200, "z": -266},
         "rotation": {"x": 0, "y": 0, "z": 0},
         "scale": {"x": 1, "y": 1, "z": 1},
         "material": ["3/4 1s Poplar Ply", "Alder Ven EB"],
@@ -3648,8 +3648,8 @@ CATALOG = [
         "type": "plank",
         "geometry_type": "BOX_GEOMETRY",
         "parent": "7f21c1a3-6d44-4e1c-9f77-8d3b8c2a1003",
-        "dimensions": {"width": 564, "height": 18, "depth": 280},
-        "position": {"x": 0, "y": 0, "z": 0},
+        "dimensions": {"width": 564, "height": 18, "depth": 232},
+        "position": {"x": 0, "y": 0, "z": 9},
         "rotation": {"x": 0, "y": 0, "z": 0},
         "scale": {"x": 1, "y": 1, "z": 1},
         "material": ["3/4 1s Poplar Ply", "Alder Ven EB"],
@@ -3662,7 +3662,7 @@ CATALOG = [
         "geometry_type": "BOX_GEOMETRY",
         "parent": "7f21c1a3-6d44-4e1c-9f77-8d3b8c2a1003",
         "dimensions": {"width": 564, "height": 684, "depth": 18},
-        "position": {"x": 0, "y": 0, "z": -141},
+        "position": {"x": 0, "y": 0, "z": -116},
         "rotation": {"x": 0, "y": 0, "z": 0},
         "scale": {"x": 1, "y": 1, "z": 1},
         "material": ["3/4 1s Poplar Ply", "Alder Ven EB"],
@@ -3739,8 +3739,8 @@ CATALOG = [
         "type": "plank",
         "geometry_type": "BOX_GEOMETRY",
         "parent": "7f21c1a3-6d44-4e1c-9f77-8d3b8c2a1004",
-        "dimensions": {"width": 564, "height": 18, "depth": 580},
-        "position": {"x": 0, "y": 0, "z": 0},
+        "dimensions": {"width": 564, "height": 18, "depth": 532},
+        "position": {"x": 0, "y": 0, "z": 9},
         "rotation": {"x": 0, "y": 0, "z": 0},
         "scale": {"x": 1, "y": 1, "z": 1},
         "material": ["3/4 1s Poplar Ply", "Alder Ven EB"],
@@ -3753,7 +3753,7 @@ CATALOG = [
         "geometry_type": "BOX_GEOMETRY",
         "parent": "7f21c1a3-6d44-4e1c-9f77-8d3b8c2a1004",
         "dimensions": {"width": 564, "height": 834, "depth": 18},
-        "position": {"x": 0, "y": 0, "z": -291},
+        "position": {"x": 0, "y": 0, "z": -266},
         "rotation": {"x": 0, "y": 0, "z": 0},
         "scale": {"x": 1, "y": 1, "z": 1},
         "material": ["3/4 1s Poplar Ply", "Alder Ven EB"],
@@ -3830,8 +3830,8 @@ CATALOG = [
         "type": "plank",
         "geometry_type": "BOX_GEOMETRY",
         "parent": "7f21c1a3-6d44-4e1c-9f77-8d3b8c2a1005",
-        "dimensions": {"width": 564, "height": 18, "depth": 580},
-        "position": {"x": 0, "y": -600, "z": 0},
+        "dimensions": {"width": 564, "height": 18, "depth": 532},
+        "position": {"x": 0, "y": -600, "z": 9},
         "rotation": {"x": 0, "y": 0, "z": 0},
         "scale": {"x": 1, "y": 1, "z": 1},
         "material": ["3/4 1s Poplar Ply", "Alder Ven EB"],
@@ -3843,8 +3843,8 @@ CATALOG = [
         "type": "plank",
         "geometry_type": "BOX_GEOMETRY",
         "parent": "7f21c1a3-6d44-4e1c-9f77-8d3b8c2a1005",
-        "dimensions": {"width": 564, "height": 18, "depth": 580},
-        "position": {"x": 0, "y": -200, "z": 0},
+        "dimensions": {"width": 564, "height": 18, "depth": 532},
+        "position": {"x": 0, "y": -200, "z": 9},
         "rotation": {"x": 0, "y": 0, "z": 0},
         "scale": {"x": 1, "y": 1, "z": 1},
         "material": ["3/4 1s Poplar Ply", "Alder Ven EB"],
@@ -3856,8 +3856,8 @@ CATALOG = [
         "type": "plank",
         "geometry_type": "BOX_GEOMETRY",
         "parent": "7f21c1a3-6d44-4e1c-9f77-8d3b8c2a1005",
-        "dimensions": {"width": 564, "height": 18, "depth": 580},
-        "position": {"x": 0, "y": 200, "z": 0},
+        "dimensions": {"width": 564, "height": 18, "depth": 532},
+        "position": {"x": 0, "y": 200, "z": 9},
         "rotation": {"x": 0, "y": 0, "z": 0},
         "scale": {"x": 1, "y": 1, "z": 1},
         "material": ["3/4 1s Poplar Ply", "Alder Ven EB"],
@@ -3869,8 +3869,8 @@ CATALOG = [
         "type": "plank",
         "geometry_type": "BOX_GEOMETRY",
         "parent": "7f21c1a3-6d44-4e1c-9f77-8d3b8c2a1005",
-        "dimensions": {"width": 564, "height": 18, "depth": 580},
-        "position": {"x": 0, "y": 600, "z": 0},
+        "dimensions": {"width": 564, "height": 18, "depth": 532},
+        "position": {"x": 0, "y": 600, "z": 9},
         "rotation": {"x": 0, "y": 0, "z": 0},
         "scale": {"x": 1, "y": 1, "z": 1},
         "material": ["3/4 1s Poplar Ply", "Alder Ven EB"],
@@ -3883,7 +3883,7 @@ CATALOG = [
         "geometry_type": "BOX_GEOMETRY",
         "parent": "7f21c1a3-6d44-4e1c-9f77-8d3b8c2a1005",
         "dimensions": {"width": 564, "height": 2164, "depth": 18},
-        "position": {"x": 0, "y": 0, "z": -291},
+        "position": {"x": 0, "y": 0, "z": -266},
         "rotation": {"x": 0, "y": 0, "z": 0},
         "scale": {"x": 1, "y": 1, "z": 1},
         "material": ["3/4 1s Poplar Ply", "Alder Ven EB"],
@@ -3960,8 +3960,8 @@ CATALOG = [
         "type": "plank",
         "geometry_type": "BOX_GEOMETRY",
         "parent": "7f21c1a3-6d44-4e1c-9f77-8d3b8c2a1006",
-        "dimensions": {"width": 18, "height": 324, "depth": 280},
-        "position": {"x": 0, "y": 0, "z": 0},
+        "dimensions": {"width": 18, "height": 324, "depth": 232},
+        "position": {"x": 0, "y": 0, "z": 9},
         "rotation": {"x": 0, "y": 0, "z": 0},
         "scale": {"x": 1, "y": 1, "z": 1},
         "material": ["3/4 1s Poplar Ply", "Alder Ven EB"],
@@ -3974,7 +3974,7 @@ CATALOG = [
         "geometry_type": "BOX_GEOMETRY",
         "parent": "7f21c1a3-6d44-4e1c-9f77-8d3b8c2a1006",
         "dimensions": {"width": 1164, "height": 324, "depth": 18},
-        "position": {"x": 0, "y": 0, "z": -141},
+        "position": {"x": 0, "y": 0, "z": -116},
         "rotation": {"x": 0, "y": 0, "z": 0},
         "scale": {"x": 1, "y": 1, "z": 1},
         "material": ["3/4 1s Poplar Ply", "Alder Ven EB"],
@@ -4051,8 +4051,8 @@ CATALOG = [
         "type": "plank",
         "geometry_type": "BOX_GEOMETRY",
         "parent": "7f21c1a3-6d44-4e1c-9f77-8d3b8c2a1007",
-        "dimensions": {"width": 18, "height": 364, "depth": 580},
-        "position": {"x": -300, "y": 0, "z": 0},
+        "dimensions": {"width": 18, "height": 364, "depth": 532},
+        "position": {"x": -300, "y": 0, "z": 9},
         "rotation": {"x": 0, "y": 0, "z": 0},
         "scale": {"x": 1, "y": 1, "z": 1},
         "material": ["3/4 1s Poplar Ply", "Alder Ven EB"],
@@ -4064,8 +4064,8 @@ CATALOG = [
         "type": "plank",
         "geometry_type": "BOX_GEOMETRY",
         "parent": "7f21c1a3-6d44-4e1c-9f77-8d3b8c2a1007",
-        "dimensions": {"width": 18, "height": 364, "depth": 580},
-        "position": {"x": 300, "y": 0, "z": 0},
+        "dimensions": {"width": 18, "height": 364, "depth": 532},
+        "position": {"x": 300, "y": 0, "z": 9},
         "rotation": {"x": 0, "y": 0, "z": 0},
         "scale": {"x": 1, "y": 1, "z": 1},
         "material": ["3/4 1s Poplar Ply", "Alder Ven EB"],
@@ -4078,7 +4078,7 @@ CATALOG = [
         "geometry_type": "BOX_GEOMETRY",
         "parent": "7f21c1a3-6d44-4e1c-9f77-8d3b8c2a1007",
         "dimensions": {"width": 1764, "height": 364, "depth": 18},
-        "position": {"x": 0, "y": 0, "z": -291},
+        "position": {"x": 0, "y": 0, "z": -266},
         "rotation": {"x": 0, "y": 0, "z": 0},
         "scale": {"x": 1, "y": 1, "z": 1},
         "material": ["3/4 1s Poplar Ply", "Alder Ven EB"],
@@ -4155,8 +4155,8 @@ CATALOG = [
         "type": "plank",
         "geometry_type": "BOX_GEOMETRY",
         "parent": "7f21c1a3-6d44-4e1c-9f77-8d3b8c2a1008",
-        "dimensions": {"width": 18, "height": 364, "depth": 580},
-        "position": {"x": 500, "y": -800, "z": 0},
+        "dimensions": {"width": 18, "height": 364, "depth": 532},
+        "position": {"x": 500, "y": -800, "z": 9},
         "rotation": {"x": 0, "y": 0, "z": 0},
         "scale": {"x": 1, "y": 1, "z": 1},
         "material": ["3/4 1s Poplar Ply", "Alder Ven EB"],
@@ -4168,8 +4168,8 @@ CATALOG = [
         "type": "plank",
         "geometry_type": "BOX_GEOMETRY",
         "parent": "7f21c1a3-6d44-4e1c-9f77-8d3b8c2a1008",
-        "dimensions": {"width": 18, "height": 364, "depth": 580},
-        "position": {"x": -245.5, "y": -800, "z": 0},
+        "dimensions": {"width": 18, "height": 364, "depth": 532},
+        "position": {"x": -245.5, "y": -800, "z": 9},
         "rotation": {"x": 0, "y": 0, "z": 0},
         "scale": {"x": 1, "y": 1, "z": 1},
         "material": ["3/4 1s Poplar Ply", "Alder Ven EB"],
@@ -4220,8 +4220,8 @@ CATALOG = [
         "type": "plank",
         "geometry_type": "BOX_GEOMETRY",
         "parent": "7f21c1a3-6d44-4e1c-9f77-8d3b8c2a1008",
-        "dimensions": {"width": 473, "height": 18, "depth": 580},
-        "position": {"x": 745.5, "y": 200, "z": 0},
+        "dimensions": {"width": 473, "height": 18, "depth": 532},
+        "position": {"x": 745.5, "y": 200, "z": 9},
         "rotation": {"x": 0, "y": 0, "z": 0},
         "scale": {"x": 1, "y": 1, "z": 1},
         "material": ["3/4 1s Poplar Ply", "Alder Ven EB"],
@@ -4234,7 +4234,7 @@ CATALOG = [
         "geometry_type": "BOX_GEOMETRY",
         "parent": "7f21c1a3-6d44-4e1c-9f77-8d3b8c2a1008",
         "dimensions": {"width": 473, "height": 1600, "depth": 18},
-        "position": {"x": 745.5, "y": 200, "z": -291},
+        "position": {"x": 745.5, "y": 200, "z": -266},
         "rotation": {"x": 0, "y": 0, "z": 0},
         "scale": {"x": 1, "y": 1, "z": 1},
         "material": ["3/4 1s Poplar Ply", "Alder Ven EB"],
@@ -4311,8 +4311,8 @@ CATALOG = [
         "type": "plank",
         "geometry_type": "BOX_GEOMETRY",
         "parent": "7f21c1a3-6d44-4e1c-9f77-8d3b8c2a1009",
-        "dimensions": {"width": 18, "height": 2364, "depth": 580},
-        "position": {"x": -300, "y": 0, "z": 0},
+        "dimensions": {"width": 18, "height": 2364, "depth": 532},
+        "position": {"x": -300, "y": 0, "z": 9},
         "rotation": {"x": 0, "y": 0, "z": 0},
         "scale": {"x": 1, "y": 1, "z": 1},
         "material": ["3/4 1s Poplar Ply", "Alder Ven EB"],
@@ -4324,8 +4324,8 @@ CATALOG = [
         "type": "plank",
         "geometry_type": "BOX_GEOMETRY",
         "parent": "7f21c1a3-6d44-4e1c-9f77-8d3b8c2a1009",
-        "dimensions": {"width": 573, "height": 18, "depth": 580},
-        "position": {"x": -595.5, "y": -600, "z": 0},
+        "dimensions": {"width": 573, "height": 18, "depth": 532},
+        "position": {"x": -595.5, "y": -600, "z": 9},
         "rotation": {"x": 0, "y": 0, "z": 0},
         "scale": {"x": 1, "y": 1, "z": 1},
         "material": ["3/4 1s Poplar Ply", "Alder Ven EB"],
@@ -4337,8 +4337,8 @@ CATALOG = [
         "type": "plank",
         "geometry_type": "BOX_GEOMETRY",
         "parent": "7f21c1a3-6d44-4e1c-9f77-8d3b8c2a1009",
-        "dimensions": {"width": 573, "height": 18, "depth": 580},
-        "position": {"x": -595.5, "y": 0, "z": 0},
+        "dimensions": {"width": 573, "height": 18, "depth": 532},
+        "position": {"x": -595.5, "y": 0, "z": 9},
         "rotation": {"x": 0, "y": 0, "z": 0},
         "scale": {"x": 1, "y": 1, "z": 1},
         "material": ["3/4 1s Poplar Ply", "Alder Ven EB"],
@@ -4350,8 +4350,8 @@ CATALOG = [
         "type": "plank",
         "geometry_type": "BOX_GEOMETRY",
         "parent": "7f21c1a3-6d44-4e1c-9f77-8d3b8c2a1009",
-        "dimensions": {"width": 573, "height": 18, "depth": 580},
-        "position": {"x": -595.5, "y": 600, "z": 0},
+        "dimensions": {"width": 573, "height": 18, "depth": 532},
+        "position": {"x": -595.5, "y": 600, "z": 9},
         "rotation": {"x": 0, "y": 0, "z": 0},
         "scale": {"x": 1, "y": 1, "z": 1},
         "material": ["3/4 1s Poplar Ply", "Alder Ven EB"],
@@ -4363,8 +4363,8 @@ CATALOG = [
         "type": "plank",
         "geometry_type": "BOX_GEOMETRY",
         "parent": "7f21c1a3-6d44-4e1c-9f77-8d3b8c2a1009",
-        "dimensions": {"width": 1173, "height": 18, "depth": 580},
-        "position": {"x": 295.5, "y": 800, "z": 0},
+        "dimensions": {"width": 1173, "height": 18, "depth": 532},
+        "position": {"x": 295.5, "y": 800, "z": 9},
         "rotation": {"x": 0, "y": 0, "z": 0},
         "scale": {"x": 1, "y": 1, "z": 1},
         "material": ["3/4 1s Poplar Ply", "Alder Ven EB"],
@@ -4377,7 +4377,7 @@ CATALOG = [
         "geometry_type": "BOX_GEOMETRY",
         "parent": "7f21c1a3-6d44-4e1c-9f77-8d3b8c2a1009",
         "dimensions": {"width": 1764, "height": 2364, "depth": 18},
-        "position": {"x": 0, "y": 0, "z": -291},
+        "position": {"x": 0, "y": 0, "z": -266},
         "rotation": {"x": 0, "y": 0, "z": 0},
         "scale": {"x": 1, "y": 1, "z": 1},
         "material": ["3/4 1s Poplar Ply", "Alder Ven EB"],
@@ -4454,8 +4454,8 @@ CATALOG = [
         "type": "plank",
         "geometry_type": "BOX_GEOMETRY",
         "parent": "7f21c1a3-6d44-4e1c-9f77-8d3b8c2a1010",
-        "dimensions": {"width": 1164, "height": 18, "depth": 380},
-        "position": {"x": 0, "y": -500, "z": 0},
+        "dimensions": {"width": 1164, "height": 18, "depth": 332},
+        "position": {"x": 0, "y": -500, "z": 9},
         "rotation": {"x": 0, "y": 0, "z": 0},
         "scale": {"x": 1, "y": 1, "z": 1},
         "material": ["3/4 1s Poplar Ply", "Alder Ven EB"],
@@ -4467,8 +4467,8 @@ CATALOG = [
         "type": "plank",
         "geometry_type": "BOX_GEOMETRY",
         "parent": "7f21c1a3-6d44-4e1c-9f77-8d3b8c2a1010",
-        "dimensions": {"width": 1164, "height": 18, "depth": 380},
-        "position": {"x": 0, "y": 0, "z": 0},
+        "dimensions": {"width": 1164, "height": 18, "depth": 332},
+        "position": {"x": 0, "y": 0, "z": 9},
         "rotation": {"x": 0, "y": 0, "z": 0},
         "scale": {"x": 1, "y": 1, "z": 1},
         "material": ["3/4 1s Poplar Ply", "Alder Ven EB"],
@@ -4480,8 +4480,8 @@ CATALOG = [
         "type": "plank",
         "geometry_type": "BOX_GEOMETRY",
         "parent": "7f21c1a3-6d44-4e1c-9f77-8d3b8c2a1010",
-        "dimensions": {"width": 1164, "height": 18, "depth": 380},
-        "position": {"x": 0, "y": 500, "z": 0},
+        "dimensions": {"width": 1164, "height": 18, "depth": 332},
+        "position": {"x": 0, "y": 500, "z": 9},
         "rotation": {"x": 0, "y": 0, "z": 0},
         "scale": {"x": 1, "y": 1, "z": 1},
         "material": ["3/4 1s Poplar Ply", "Alder Ven EB"],
@@ -4493,8 +4493,8 @@ CATALOG = [
         "type": "plank",
         "geometry_type": "BOX_GEOMETRY",
         "parent": "7f21c1a3-6d44-4e1c-9f77-8d3b8c2a1010",
-        "dimensions": {"width": 18, "height": 573, "depth": 380},
-        "position": {"x": -200, "y": -795.5, "z": 0},
+        "dimensions": {"width": 18, "height": 573, "depth": 332},
+        "position": {"x": -200, "y": -795.5, "z": 9},
         "rotation": {"x": 0, "y": 0, "z": 0},
         "scale": {"x": 1, "y": 1, "z": 1},
         "material": ["3/4 1s Poplar Ply", "Alder Ven EB"],
@@ -4506,8 +4506,8 @@ CATALOG = [
         "type": "plank",
         "geometry_type": "BOX_GEOMETRY",
         "parent": "7f21c1a3-6d44-4e1c-9f77-8d3b8c2a1010",
-        "dimensions": {"width": 18, "height": 482, "depth": 380},
-        "position": {"x": 200, "y": -250, "z": 0},
+        "dimensions": {"width": 18, "height": 482, "depth": 332},
+        "position": {"x": 200, "y": -250, "z": 9},
         "rotation": {"x": 0, "y": 0, "z": 0},
         "scale": {"x": 1, "y": 1, "z": 1},
         "material": ["3/4 1s Poplar Ply", "Alder Ven EB"],
@@ -4519,8 +4519,8 @@ CATALOG = [
         "type": "plank",
         "geometry_type": "BOX_GEOMETRY",
         "parent": "7f21c1a3-6d44-4e1c-9f77-8d3b8c2a1010",
-        "dimensions": {"width": 18, "height": 482, "depth": 380},
-        "position": {"x": -200, "y": 250, "z": 0},
+        "dimensions": {"width": 18, "height": 482, "depth": 332},
+        "position": {"x": -200, "y": 250, "z": 9},
         "rotation": {"x": 0, "y": 0, "z": 0},
         "scale": {"x": 1, "y": 1, "z": 1},
         "material": ["3/4 1s Poplar Ply", "Alder Ven EB"],
@@ -4532,8 +4532,8 @@ CATALOG = [
         "type": "plank",
         "geometry_type": "BOX_GEOMETRY",
         "parent": "7f21c1a3-6d44-4e1c-9f77-8d3b8c2a1010",
-        "dimensions": {"width": 18, "height": 573, "depth": 380},
-        "position": {"x": 200, "y": 795.5, "z": 0},
+        "dimensions": {"width": 18, "height": 573, "depth": 332},
+        "position": {"x": 200, "y": 795.5, "z": 9},
         "rotation": {"x": 0, "y": 0, "z": 0},
         "scale": {"x": 1, "y": 1, "z": 1},
         "material": ["3/4 1s Poplar Ply", "Alder Ven EB"],
@@ -4546,7 +4546,7 @@ CATALOG = [
         "geometry_type": "BOX_GEOMETRY",
         "parent": "7f21c1a3-6d44-4e1c-9f77-8d3b8c2a1010",
         "dimensions": {"width": 1164, "height": 2164, "depth": 18},
-        "position": {"x": 0, "y": 0, "z": -191},
+        "position": {"x": 0, "y": 0, "z": -166},
         "rotation": {"x": 0, "y": 0, "z": 0},
         "scale": {"x": 1, "y": 1, "z": 1},
         "material": ["3/4 1s Poplar Ply", "Alder Ven EB"],
@@ -4576,16 +4576,17 @@ def create_finish() -> None:
             },
         )
 
-        if created:
-            organization = get_registered_organization()
-            for org in organization:
-                FinishesLibrary.objects.create(
-                    type=finish_data["type"],
-                    name=finish_data["name"],
-                    description=finish_data["description"],
-                    color=finish_data["color"],
-                    organization=org,
-                )
+        organization = get_registered_organization()
+        for org in organization:
+            FinishesLibrary.objects.update_or_create(
+                type=finish_data["type"],
+                name=finish_data["name"],
+                organization=org,
+                defaults={
+                    "description": finish_data["description"],
+                    "color": finish_data["color"],
+                },
+            )
         finish_objects[finish_data["name"]] = finish
     return finish_objects
 
@@ -4610,15 +4611,14 @@ def create_finish_type() -> None:
             defaults=defaults,
         )
 
-        if created:
-            organization = get_registered_organization()
-            for org in organization:
-                FinishesLibrary.objects.create(
-                    type=finish_type_data["type"],
-                    name=finish_type_data["name"],
-                    organization=org,
-                    **defaults,
-                )
+        organization = get_registered_organization()
+        for org in organization:
+            FinishesLibrary.objects.update_or_create(
+                type=finish_type_data["type"],
+                name=finish_type_data["name"],
+                organization=org,
+                defaults=defaults,
+            )
         finish_type_objects[finish_type_data["name"]] = finish_type
 
     return finish_type_objects
@@ -4643,15 +4643,15 @@ def create_textures() -> None:
             organization=texture_data["organization"],
             defaults=defaults,
         )
-        if created:
-            organization = get_registered_organization()
-            for org in organization:
-                FinishesLibrary.objects.update_or_create(
-                    type=texture_data["type"],
-                    name=texture_data["name"],
-                    organization=org,
-                    **defaults,
-                )
+
+        organization = get_registered_organization()
+        for org in organization:
+            FinishesLibrary.objects.update_or_create(
+                type=texture_data["type"],
+                name=texture_data["name"],
+                organization=org,
+                defaults=defaults,
+            )
         texture_objects[texture_data["name"]] = texture
     return texture_objects
 
@@ -4726,11 +4726,13 @@ def create_materials(
 
         material, created = Material.objects.update_or_create(
             name=material_data["name"],
-            type=material_type,
-            company=company,
             organization=None,
             is_catalog=False,
-            defaults={"description": material_data.get("description", "")},
+            defaults={
+                "type": material_type,
+                "company": company,
+                "description": material_data.get("description", ""),
+            },
         )
 
         Properties.objects.update_or_create(
@@ -4746,7 +4748,7 @@ def create_materials(
             texture_name = texture_data["texture"]
 
             texture = FinishesLibrary.objects.filter(
-                name=texture_name, type=FinishesChoices.TEXTURE.value, organization=None
+                name=texture_name, type="Texture", organization=None
             ).first()
 
             if not texture:
@@ -4801,10 +4803,12 @@ def create_materials(
             org_material, created = Material.objects.update_or_create(
                 name=material_data["name"],
                 type=material_type,
-                company=org_company,
                 organization=org,
                 is_catalog=False,
-                defaults={"description": material_data.get("description", "")},
+                defaults={
+                    "company": org_company,
+                    "description": material_data.get("description", ""),
+                },
             )
 
             Properties.objects.update_or_create(
@@ -4821,7 +4825,7 @@ def create_materials(
 
                 texture = FinishesLibrary.objects.filter(
                     name=texture_name,
-                    type=FinishesChoices.TEXTURE.value,
+                    type="Texture",
                     organization=org,
                 ).first()
 
@@ -4976,6 +4980,8 @@ def _attach_material_by_name(
     else:
         return
 
+    catalog.materials.clear()
+
     for material_name in material_data:
         if not material_name:
             continue
@@ -4990,8 +4996,8 @@ def _attach_material_by_name(
 
 
 if __name__ == "__main__":
-    create_finish()
-    create_finish_type()
+    # create_finish()
+    # create_finish_type()
     create_textures()
     company_objects = create_company()
     create_materials(company_objects)
