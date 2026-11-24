@@ -11744,14 +11744,61 @@
         "parent_name": "CUPBOARD_1"
     },
     {
+        "Name": "BACK_PLANK_8",
+        "ID": "5669a902-0fa5-426b-8bcc-7e7d02cc67dd",
+        "Dimensions": "352.50 x 973.00",
+        "Unique ID": "D0701",
+        "width": 352.5,
+        "height": 973.0,
+        "texture_grain_code": 0,
+        "x": 2.5,
+        "y": 2.5,
+        "is_rotated": false,
+        "sheet_num": "D07",
+        "sheet_width": 2480,
+        "sheet_height": 1240,
+        "sheet_thickness": 18.0,
+        "original_height": 973.0,
+        "material_name": "3/4 1s Poplar Ply",
+        "depth": 18.0,
+        "minifix_holes": [],
+        "panel_design": {
+            "corner_types": [],
+            "corner_radius": [],
+            "curve_controls": {},
+            "outline": [],
+            "holes": []
+        },
+        "grooves": [],
+        "edge_banding": {
+            "top": {
+                "name": "Alder Ven EB",
+                "thickness": 0.8
+            },
+            "bottom": {
+                "name": "Alder Ven EB",
+                "thickness": 0.8
+            },
+            "left": {
+                "name": "Alder Ven EB",
+                "thickness": 0.8
+            },
+            "right": {
+                "name": "Alder Ven EB",
+                "thickness": 0.8
+            }
+        },
+        "parent_name": "CUPBOARD_1"
+    },
+    {
         "Name": "HORIZONTAL_PLANK_3",
         "ID": "3b17b4e8-b816-48d5-9f43-c6239f69ba6c",
         "Dimensions": "352.50 x 580.00",
-        "Unique ID": "D0701",
+        "Unique ID": "D0702",
         "width": 352.5,
         "height": 580.0,
         "texture_grain_code": 0,
-        "x": 2.5,
+        "x": 360.0,
         "y": 2.5,
         "is_rotated": false,
         "sheet_num": "D07",
@@ -12225,11 +12272,11 @@
         "Name": "HORIZONTAL_PLANK_4",
         "ID": "bbbfa066-1e7a-4430-81c0-34257323b0b5",
         "Dimensions": "352.50 x 580.00",
-        "Unique ID": "D0702",
+        "Unique ID": "D0703",
         "width": 352.5,
         "height": 580.0,
         "texture_grain_code": 0,
-        "x": 2.5,
+        "x": 360.0,
         "y": 587.5,
         "is_rotated": false,
         "sheet_num": "D07",
@@ -12692,53 +12739,6 @@
             }
         ],
         "edge_banding": {
-            "right": {
-                "name": "Alder Ven EB",
-                "thickness": 0.8
-            }
-        },
-        "parent_name": "CUPBOARD_1"
-    },
-    {
-        "Name": "BACK_PLANK_8",
-        "ID": "5669a902-0fa5-426b-8bcc-7e7d02cc67dd",
-        "Dimensions": "352.50 x 973.00",
-        "Unique ID": "D0703",
-        "width": 352.5,
-        "height": 973.0,
-        "texture_grain_code": 0,
-        "x": 360.0,
-        "y": 2.5,
-        "is_rotated": false,
-        "sheet_num": "D07",
-        "sheet_width": 2480,
-        "sheet_height": 1240,
-        "sheet_thickness": 18.0,
-        "original_height": 973.0,
-        "material_name": "3/4 1s Poplar Ply",
-        "depth": 18.0,
-        "minifix_holes": [],
-        "panel_design": {
-            "corner_types": [],
-            "corner_radius": [],
-            "curve_controls": {},
-            "outline": [],
-            "holes": []
-        },
-        "grooves": [],
-        "edge_banding": {
-            "top": {
-                "name": "Alder Ven EB",
-                "thickness": 0.8
-            },
-            "bottom": {
-                "name": "Alder Ven EB",
-                "thickness": 0.8
-            },
-            "left": {
-                "name": "Alder Ven EB",
-                "thickness": 0.8
-            },
             "right": {
                 "name": "Alder Ven EB",
                 "thickness": 0.8

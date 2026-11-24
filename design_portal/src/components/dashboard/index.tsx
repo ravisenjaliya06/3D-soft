@@ -44,12 +44,36 @@ const ProjectDashboard = () => {
     fetchDesigns();
   }, []);
 
-  // Stats Data for cleaner mapping (same values as before)
+  // Stats Data — each card now has a unique colour scheme
   const statsData = [
-    { label: 'Projects', value: 0, Icon: LuFolderKanban, hint: 'Active client projects' },
-    { label: 'Designs', value: designsCount, Icon: LuBox, hint: 'Furniture designs saved' },
-    { label: 'Users', value: 0, Icon: LuUsers, hint: 'Team members' },
-    { label: 'Sales', value: 0, Icon: LuTrendingUp, hint: 'Orders this period' },
+    {
+      label: 'Projects',
+      value: 0,
+      Icon: LuFolderKanban,
+      hint: 'Active client projects',
+      colorClass: styles.statProjects,
+    },
+    {
+      label: 'Designs',
+      value: designsCount,
+      Icon: LuBox,
+      hint: 'Furniture designs saved',
+      colorClass: styles.statDesigns,
+    },
+    {
+      label: 'Users',
+      value: 0,
+      Icon: LuUsers,
+      hint: 'Team members',
+      colorClass: styles.statUsers,
+    },
+    {
+      label: 'Sales',
+      value: 0,
+      Icon: LuTrendingUp,
+      hint: 'Orders this period',
+      colorClass: styles.statSales,
+    },
   ];
 
   // Features Data (same routes as before)
@@ -87,7 +111,7 @@ const ProjectDashboard = () => {
         <Header dashboardName="Overview" isBorderRadius={true} />
 
         <div className={styles.mainContent}>
-          {/* Bento: welcome tile + four stat tiles */}
+          {/* ── Bento grid: hero tile + four stat tiles ── */}
           <div className={styles.bento}>
             <section className={styles.hero}>
               <div className={styles.heroText}>
@@ -116,21 +140,33 @@ const ProjectDashboard = () => {
               </div>
             </section>
 
+            {/* Stat cards with large background icon watermark */}
             {statsData.map((stat, index) => (
-              <div key={index} className={styles.statCard}>
-                <div className={styles.iconContainer}>
-                  <stat.Icon aria-hidden="true" />
+              <div key={index} className={`${styles.statCard} ${stat.colorClass}`}>
+                {/* Giant watermark icon in the background */}
+                <div className={styles.statBgIcon} aria-hidden="true">
+                  <stat.Icon />
                 </div>
-                <div className={styles.statInfo}>
-                  <p className={styles.statLabel}>{stat.label}</p>
+
+                <div className={styles.statTop}>
+                  <div className={styles.iconContainer}>
+                    <stat.Icon aria-hidden="true" />
+                  </div>
+                  <span className={styles.statBadge}>
+                    {stat.value > 0 ? 'Active' : '—'}
+                  </span>
+                </div>
+
+                <div className={styles.statBottom}>
                   <h3 className={styles.statValue}>{stat.value}</h3>
+                  <p className={styles.statLabel}>{stat.label}</p>
                   <span className={styles.statHint}>{stat.hint}</span>
                 </div>
               </div>
             ))}
           </div>
 
-          {/* Workflow: the four areas as numbered steps */}
+          {/* ── Workflow pipeline ── */}
           <div className={styles.workflow}>
             <div className={styles.sectionHead}>
               <h3 className={styles.sectionTitle}>Your workflow</h3>
@@ -146,8 +182,15 @@ const ProjectDashboard = () => {
                   onClick={() => router.push(feature.route)}
                   style={{ cursor: 'pointer' }}
                 >
+                  {/* Large watermark icon in background */}
+                  <div className={styles.featureBgIcon} aria-hidden="true">
+                    <feature.Icon />
+                  </div>
+
                   <div className={styles.featureTop}>
-                    <span className={styles.featureStep}>{String(index + 1).padStart(2, '0')}</span>
+                    <span className={styles.featureStep}>
+                      {String(index + 1).padStart(2, '0')}
+                    </span>
                     <div className={styles.featureIconWrapper}>
                       <feature.Icon aria-hidden="true" />
                     </div>
