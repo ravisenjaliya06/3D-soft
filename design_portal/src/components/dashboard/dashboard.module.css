@@ -1,15 +1,20 @@
 /* ─────────────────────────────────────────────────────────────
-   Dashboard — Olive & Terracotta (see DESIGN_RULES.md)
+   Dashboard — Phinx modern bento  (see DESIGN_RULES.md)
+   Eye-catching cards with big watermark background icons,
+   gradient stat cards, and zero vertical scroll on desktop.
    ───────────────────────────────────────────────────────────── */
+
+/* ── Shell ─────────────────────────────────────────────────── */
 
 .container {
   display: flex;
   flex-direction: column;
   height: 100vh;
+  max-height: 100vh;
   overflow: hidden;
   font-family: var(--bv-font);
   color: var(--bv-text);
-  background-color: var(--bv-bg);
+  background: var(--bv-surface-2);
 }
 
 .rightside {
@@ -18,6 +23,7 @@
   display: flex;
   flex-direction: column;
   min-width: 0;
+  min-height: 0;
   overflow: hidden;
 }
 
@@ -25,16 +31,26 @@
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 1.6rem;
+  justify-content: space-between;
+  min-height: 0;
+  gap: clamp(0.65rem, 1.4vh, 1.15rem);
   width: 100%;
-  max-width: 1600px;
+  max-width: 1680px;
   margin: 0 auto;
-  padding: 1.6rem 2rem 2rem;
+  padding: clamp(0.65rem, 1.4vh, 1.1rem) clamp(1.2rem, 2vw, 2.2rem) clamp(0.75rem, 1.6vh, 1.25rem);
   box-sizing: border-box;
   overflow-y: auto;
 }
 
-/* ── Hero ──────────────────────────────────────────────────── */
+@media (min-width: 1025px) and (min-height: 560px) {
+  .mainContent {
+    overflow-y: hidden;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   HERO TILE  — premium dark teal with layered depth
+   ═══════════════════════════════════════════════════════════════ */
 
 .hero {
   position: relative;
@@ -42,7 +58,7 @@
   grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
   align-items: center;
   gap: 1.5rem;
-  min-height: 13rem;
+  min-height: 0;
   padding: 1.8rem 2.2rem;
   overflow: hidden;
   border-radius: 1.4rem;
@@ -52,74 +68,110 @@
     linear-gradient(var(--bv-glass) 1px, transparent 1px),
     linear-gradient(90deg, var(--bv-glass) 1px, transparent 1px),
     radial-gradient(circle at 95% 0%, var(--bv-accent-glow) 0%, transparent 45%),
+    radial-gradient(ellipse at 15% 100%, rgba(6, 93, 120, 0.4) 0%, transparent 50%),
     linear-gradient(135deg, var(--bv-ink) 0%, var(--bv-ink-2) 100%);
   background-size:
     26px 26px,
     26px 26px,
     100% 100%,
+    100% 100%,
     100% 100%;
+  box-shadow: 0 8px 32px -8px rgba(4, 49, 63, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+/* Soft ambient glow overlay in top-right corner */
+.hero::before {
+  content: '';
+  position: absolute;
+  top: -30%;
+  right: -10%;
+  width: 55%;
+  height: 110%;
+  background: radial-gradient(circle, rgba(76, 224, 126, 0.08) 0%, transparent 60%);
+  pointer-events: none;
+}
+
+.heroText {
+  position: relative;
+  z-index: 1;
 }
 
 .heroEyebrow {
   display: inline-flex;
   align-items: center;
   gap: 0.4rem;
-  padding: 0.3rem 0.7rem;
-  font-size: clamp(11px, 0.68rem, 13px);
+  width: fit-content;
+  padding: 0.22rem 0.7rem;
+  font-size: clamp(10px, 0.68rem, 12px);
   font-weight: 700;
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--bv-accent-light);
-  background: var(--bv-glass);
-  border: 1px solid var(--bv-glass-border);
+  background: rgba(76, 224, 126, 0.08);
+  border: 1px solid rgba(76, 224, 126, 0.2);
   border-radius: var(--bv-radius-pill);
+  backdrop-filter: blur(4px);
+}
+
+.heroEyebrow svg {
+  font-size: 1.1em;
+  filter: drop-shadow(0 0 4px rgba(76, 224, 126, 0.5));
 }
 
 .heroTitle {
-  margin: 0.9rem 0 0;
-  font-size: clamp(22px, 1.9rem, 38px);
-  font-weight: 700;
-  line-height: 1.12;
-  letter-spacing: -0.025em;
+  margin: clamp(0.35rem, 0.8vh, 0.7rem) 0 0;
+  font-size: clamp(18px, 1.55vw, 30px);
+  font-weight: 800;
+  line-height: 1.15;
+  letter-spacing: -0.03em;
   color: var(--bv-on-ink);
+  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
 }
 
 .heroTitle span {
   color: var(--bv-accent-light);
+  text-shadow: 0 0 24px rgba(76, 224, 126, 0.3);
 }
 
 .heroLead {
   max-width: 32rem;
-  margin: 0.6rem 0 0;
-  font-size: clamp(13px, 0.88rem, 16px);
-  line-height: 1.55;
+  margin: clamp(0.3rem, 0.65vh, 0.55rem) 0 0;
+  font-size: clamp(12px, 0.82vw, 14.5px);
+  line-height: 1.5;
   color: var(--bv-on-ink-muted);
 }
 
 .heroButton {
   display: inline-flex;
   align-items: center;
-  gap: 0.45rem;
-  margin-top: 1.2rem;
-  padding: 0 1.2rem;
-  height: clamp(40px, 2.7rem, 48px);
+  gap: 0.5rem;
+  width: fit-content;
+  margin-top: clamp(0.55rem, 1.2vh, 1rem);
+  padding: 0 clamp(1rem, 1.4vw, 1.3rem);
+  height: clamp(34px, 2.4rem, 42px);
   font-family: var(--bv-font);
-  font-size: clamp(13px, 0.85rem, 15px);
+  font-size: clamp(12px, 0.82rem, 14px);
   font-weight: 600;
-  color: var(--bv-on-accent);
-  background: var(--bv-accent);
-  border: none;
+  letter-spacing: 0.01em;
+  color: #ffffff;
+  background: linear-gradient(135deg, var(--bv-accent) 0%, #15834a 100%);
+  border: 1px solid rgba(255, 255, 255, 0.15);
   border-radius: var(--bv-radius);
-  box-shadow: var(--bv-shadow-md);
+  box-shadow:
+    0 4px 14px rgba(26, 159, 85, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.12);
   cursor: pointer;
   transition:
-    background-color var(--bv-ease),
-    transform var(--bv-ease);
+    transform var(--bv-ease),
+    box-shadow var(--bv-ease);
 }
 
 .heroButton:hover {
-  background: var(--bv-accent-hover);
-  transform: translateY(-1px);
+  transform: translateY(-2px);
+  box-shadow:
+    0 6px 20px rgba(26, 159, 85, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.15);
 }
 
 .heroButton:focus-visible {
@@ -127,7 +179,9 @@
   box-shadow: 0 0 0 3px var(--bv-accent-glow);
 }
 
+/* Illustration with soft glow behind it */
 .heroArt {
+  position: relative;
   display: flex;
   justify-content: flex-end;
   align-items: center;
@@ -135,40 +189,77 @@
   max-height: 14rem;
 }
 
+/* Soft orb glow behind the illustration */
+.heroArt::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 70%;
+  height: 70%;
+  transform: translate(-50%, -50%);
+  background: radial-gradient(circle, rgba(76, 224, 126, 0.12) 0%, transparent 65%);
+  pointer-events: none;
+}
+
 .heroArt svg {
+  position: relative;
+  z-index: 1;
   width: 100%;
   height: 100%;
   max-height: 14rem;
+  filter: drop-shadow(0 8px 20px rgba(4, 30, 40, 0.3));
 }
 
-/* ── Stats ─────────────────────────────────────────────────── */
-
-.statsGrid {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 1rem;
-  width: 100%;
-}
+/* ═══════════════════════════════════════════════════════════════
+   STAT CARDS — each with its own gradient + big watermark icon
+   ═══════════════════════════════════════════════════════════════ */
 
 .statCard {
+  position: relative;
   display: flex;
-  align-items: center;
-  gap: 1rem;
-  padding: 1.2rem 1.3rem;
-  background: var(--bv-surface);
-  border: 1px solid var(--bv-border);
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 0;
+  padding: clamp(0.7rem, 1.3vh, 1.05rem) clamp(0.85rem, 1.3vw, 1.2rem);
+  box-sizing: border-box;
   border-radius: var(--bv-radius-lg);
-  box-shadow: var(--bv-shadow-sm);
+  overflow: hidden;
+  border: 1px solid transparent;
   transition:
-    border-color var(--bv-ease),
-    box-shadow var(--bv-ease),
-    transform var(--bv-ease);
+    transform var(--bv-ease),
+    box-shadow var(--bv-ease);
 }
 
 .statCard:hover {
-  border-color: var(--bv-border-strong);
-  box-shadow: var(--bv-shadow-md);
-  transform: translateY(-2px);
+  transform: translateY(-3px);
+  box-shadow: 0 10px 28px rgba(0,0,0,0.12);
+}
+
+/* Giant watermark icon sitting behind the content */
+.statBgIcon {
+  position: absolute;
+  right: -8%;
+  bottom: -12%;
+  font-size: clamp(70px, 6.5vw, 110px);
+  line-height: 1;
+  opacity: 0.1;
+  pointer-events: none;
+  transition: opacity var(--bv-ease), transform var(--bv-ease);
+}
+
+.statCard:hover .statBgIcon {
+  opacity: 0.18;
+  transform: scale(1.08) rotate(-3deg);
+}
+
+/* Top row: small icon pill + badge */
+.statTop {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
 
 .iconContainer {
@@ -176,70 +267,195 @@
   flex-shrink: 0;
   align-items: center;
   justify-content: center;
-  width: clamp(44px, 3.2rem, 58px);
-  height: clamp(44px, 3.2rem, 58px);
-  font-size: clamp(20px, 1.4rem, 26px);
-  color: var(--bv-primary);
-  background: var(--bv-primary-soft);
-  border-radius: 0.9rem;
+  width: clamp(38px, 2.8vw, 50px);
+  height: clamp(38px, 2.8vw, 50px);
+  font-size: clamp(19px, 1.3vw, 25px);
+  border-radius: 0.85rem;
+  transition: transform var(--bv-ease);
 }
 
-.statCard:nth-child(2) .iconContainer {
-  color: var(--bv-on-accent);
-  background: var(--bv-accent);
+.statCard:hover .iconContainer {
+  transform: scale(1.08);
 }
 
-.statInfo {
+.statBadge {
+  padding: 0.15rem 0.5rem;
+  font-size: clamp(9px, 0.6vw, 10.5px);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  border-radius: var(--bv-radius-pill);
+}
+
+/* Bottom row: number + label + hint */
+.statBottom {
+  position: relative;
+  z-index: 1;
   display: flex;
   flex-direction: column;
-  min-width: 0;
-}
-
-.statLabel {
-  margin: 0;
-  font-size: clamp(11px, 0.7rem, 13px);
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--bv-text-subtle);
 }
 
 .statValue {
-  margin: 0.25rem 0 0;
-  font-size: clamp(22px, 1.8rem, 34px);
-  font-weight: 700;
+  margin: 0;
+  font-size: clamp(24px, 2.1vw, 38px);
+  font-weight: 800;
   line-height: 1;
   font-variant-numeric: tabular-nums;
-  color: var(--bv-text);
+  letter-spacing: -0.03em;
+}
+
+.statLabel {
+  margin: 0.15rem 0 0;
+  font-size: clamp(11px, 0.72vw, 13px);
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
 }
 
 .statHint {
-  margin-top: 0.3rem;
-  font-size: clamp(11px, 0.7rem, 13px);
-  color: var(--bv-text-muted);
+  margin-top: 0.1rem;
+  font-size: clamp(10px, 0.64vw, 11.5px);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-/* ── Quick access ──────────────────────────────────────────── */
+/* ── Per-card colour themes ───────────────────────────────── */
+
+/* Projects — Phinx teal */
+.statProjects {
+  background: linear-gradient(135deg, #065d78 0%, #04485d 100%);
+  color: #ffffff;
+  box-shadow: 0 6px 20px rgba(6,93,120,0.25);
+}
+.statProjects .iconContainer {
+  color: #065d78;
+  background: rgba(255,255,255,0.92);
+}
+.statProjects .statBadge {
+  color: rgba(255,255,255,0.85);
+  background: rgba(255,255,255,0.15);
+}
+.statProjects .statHint { color: rgba(255,255,255,0.65); }
+.statProjects .statBgIcon { color: #fff; }
+
+/* Designs — green accent */
+.statDesigns {
+  background: linear-gradient(135deg, #1a9f55 0%, #148543 100%);
+  color: #ffffff;
+  box-shadow: 0 6px 20px rgba(26,159,85,0.25);
+}
+.statDesigns .iconContainer {
+  color: #1a9f55;
+  background: rgba(255,255,255,0.92);
+}
+.statDesigns .statBadge {
+  color: rgba(255,255,255,0.85);
+  background: rgba(255,255,255,0.15);
+}
+.statDesigns .statHint { color: rgba(255,255,255,0.65); }
+.statDesigns .statBgIcon { color: #fff; }
+
+/* Users — warm amber */
+.statUsers {
+  background: linear-gradient(135deg, #c47d10 0%, #9e6500 100%);
+  color: #ffffff;
+  box-shadow: 0 6px 20px rgba(196,125,16,0.22);
+}
+.statUsers .iconContainer {
+  color: #b07a10;
+  background: rgba(255,255,255,0.92);
+}
+.statUsers .statBadge {
+  color: rgba(255,255,255,0.85);
+  background: rgba(255,255,255,0.15);
+}
+.statUsers .statHint { color: rgba(255,255,255,0.65); }
+.statUsers .statBgIcon { color: #fff; }
+
+/* Sales — deep indigo */
+.statSales {
+  background: linear-gradient(135deg, #4f46e5 0%, #3730a3 100%);
+  color: #ffffff;
+  box-shadow: 0 6px 20px rgba(79,70,229,0.22);
+}
+.statSales .iconContainer {
+  color: #4f46e5;
+  background: rgba(255,255,255,0.92);
+}
+.statSales .statBadge {
+  color: rgba(255,255,255,0.85);
+  background: rgba(255,255,255,0.15);
+}
+.statSales .statHint { color: rgba(255,255,255,0.65); }
+.statSales .statBgIcon { color: #fff; }
+
+/* ═══════════════════════════════════════════════════════════════
+   BENTO GRID  — hero spans 2 rows, 4 stat cards fill the rest
+   ═══════════════════════════════════════════════════════════════ */
+
+.bento {
+  display: grid;
+  grid-template-columns: minmax(0, 1.45fr) repeat(2, minmax(0, 1fr));
+  grid-template-rows: repeat(2, minmax(0, 1fr));
+  gap: clamp(0.6rem, 1.1vh, 0.95rem);
+  flex: 1.15;
+  min-height: 0;
+}
+
+.bento .hero {
+  grid-row: 1 / span 2;
+  grid-template-columns: minmax(0, 1fr);
+  align-content: space-between;
+  min-height: 0;
+  height: 100%;
+  padding: clamp(0.9rem, 1.8vh, 1.4rem) clamp(1.1rem, 1.8vw, 1.6rem) 0;
+  box-sizing: border-box;
+}
+
+.bento .heroArt {
+  justify-content: flex-end;
+  align-items: flex-end;
+  height: 100%;
+  max-height: clamp(4.5rem, 12vh, 8.5rem);
+  margin-right: -0.4rem;
+}
+
+.bento .heroArt svg {
+  width: auto;
+  height: 100%;
+  max-height: clamp(4.5rem, 12vh, 8.5rem);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   WORKFLOW — numbered pipeline with big watermark icons
+   ═══════════════════════════════════════════════════════════════ */
+
+.workflow {
+  display: flex;
+  flex-direction: column;
+  flex: 0.85;
+  min-height: 0;
+  justify-content: flex-end;
+}
 
 .sectionHead {
   display: flex;
   align-items: baseline;
-  gap: 0.8rem;
-  margin-bottom: 0.9rem;
+  gap: 0.7rem;
+  margin-bottom: clamp(0.3rem, 0.7vh, 0.55rem);
 }
 
 .sectionTitle {
   margin: 0;
-  font-size: clamp(16px, 1.1rem, 20px);
+  font-size: clamp(14px, 0.95vw, 17px);
   font-weight: 700;
+  letter-spacing: -0.01em;
   color: var(--bv-text);
 }
 
 .sectionSub {
-  font-size: clamp(12px, 0.78rem, 14px);
+  font-size: clamp(11px, 0.72vw, 12.5px);
   color: var(--bv-text-subtle);
 }
 
@@ -250,16 +466,35 @@
   width: 100%;
 }
 
+.workflow .featuresGrid {
+  position: relative;
+  gap: clamp(0.6rem, 1.1vw, 0.95rem);
+  flex: 1;
+  min-height: 0;
+}
+
+/* Dashed connector line between workflow steps */
+.workflow .featuresGrid::before {
+  position: absolute;
+  top: calc(clamp(0.65rem, 1.3vh, 1.1rem) + clamp(44px, 3.2vw, 58px) / 2);
+  left: 2.2rem;
+  right: 2.2rem;
+  height: 2px;
+  content: '';
+  background: repeating-linear-gradient(90deg, var(--bv-border-strong) 0 6px, transparent 6px 13px);
+  z-index: 0;
+}
+
 .featureCard {
   position: relative;
   display: flex;
   flex-direction: column;
-  padding: 1.3rem;
+  padding: clamp(0.7rem, 1.3vh, 1.1rem) clamp(0.9rem, 1.3vw, 1.2rem);
   overflow: hidden;
   background: var(--bv-surface);
   border: 1px solid var(--bv-border);
   border-radius: var(--bv-radius-lg);
-  box-shadow: var(--bv-shadow-sm);
+  box-shadow: 0 2px 8px rgba(6,68,87,0.05);
   cursor: pointer;
   transition:
     border-color var(--bv-ease),
@@ -267,6 +502,25 @@
     transform var(--bv-ease);
 }
 
+/* Giant watermark icon behind feature card */
+.featureBgIcon {
+  position: absolute;
+  right: -6%;
+  bottom: -10%;
+  font-size: clamp(60px, 5.5vw, 95px);
+  line-height: 1;
+  color: var(--bv-primary);
+  opacity: 0.06;
+  pointer-events: none;
+  transition: opacity var(--bv-ease), transform var(--bv-ease);
+}
+
+.featureCard:hover .featureBgIcon {
+  opacity: 0.12;
+  transform: scale(1.1) rotate(-4deg);
+}
+
+/* Bottom accent line on hover */
 .featureCard::after {
   content: '';
   position: absolute;
@@ -274,15 +528,15 @@
   right: 0;
   bottom: 0;
   height: 3px;
-  background: var(--bv-accent);
+  background: linear-gradient(90deg, var(--bv-primary) 0%, var(--bv-accent) 100%);
   transform: scaleX(0);
   transform-origin: left;
-  transition: transform 240ms cubic-bezier(0.2, 0, 0, 1);
+  transition: transform 280ms cubic-bezier(0.2, 0, 0, 1);
 }
 
 .featureCard:hover {
   border-color: var(--bv-primary);
-  box-shadow: var(--bv-shadow-md);
+  box-shadow: 0 10px 28px rgba(6,93,120,0.1);
   transform: translateY(-3px);
 }
 
@@ -292,30 +546,48 @@
 
 .featureTop {
   display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  margin-bottom: 1.2rem;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 0.6rem;
+  margin-bottom: clamp(0.5rem, 1vh, 0.9rem);
+  position: relative;
+  z-index: 1;
+}
+
+.featureStep {
+  font-size: clamp(18px, 1.3vw, 24px);
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -0.04em;
+  color: var(--bv-accent);
+  background: var(--bv-surface);
+  padding: 0 2px;
 }
 
 .featureIconWrapper {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: clamp(46px, 3.4rem, 60px);
-  height: clamp(46px, 3.4rem, 60px);
-  font-size: clamp(22px, 1.5rem, 28px);
+  width: clamp(44px, 3.2vw, 58px);
+  height: clamp(44px, 3.2vw, 58px);
+  font-size: clamp(22px, 1.5vw, 28px);
   color: var(--bv-on-primary);
   background: var(--bv-primary);
   border-radius: 1rem;
-  transition: background-color var(--bv-ease);
+  box-shadow: 0 0 0 4px var(--bv-surface);
+  transition:
+    background-color var(--bv-ease),
+    transform var(--bv-ease);
 }
 
 .featureCard:hover .featureIconWrapper {
   background: var(--bv-accent);
+  transform: scale(1.06);
 }
 
 .featureArrow {
-  font-size: clamp(18px, 1.2rem, 22px);
+  margin-left: auto;
+  font-size: clamp(16px, 1.1vw, 20px);
   color: var(--bv-text-subtle);
   transition:
     color var(--bv-ease),
@@ -324,122 +596,42 @@
 
 .featureCard:hover .featureArrow {
   color: var(--bv-accent);
-  transform: translate(2px, -2px);
+  transform: translate(3px, -3px);
 }
 
 .featureTitle {
+  position: relative;
+  z-index: 1;
   margin: 0;
-  font-size: clamp(15px, 1rem, 19px);
+  font-size: clamp(14px, 0.95vw, 17px);
   font-weight: 700;
   color: var(--bv-text);
 }
 
 .featureDesc {
-  margin: 0.35rem 0 0;
-  font-size: clamp(12px, 0.78rem, 14px);
-  line-height: 1.5;
+  position: relative;
+  z-index: 1;
+  margin: 0.25rem 0 0;
+  font-size: clamp(11px, 0.74vw, 13px);
+  line-height: 1.42;
   color: var(--bv-text-muted);
 }
 
-/* ── Bento layout (Phase 2) ────────────────────────────────── */
-
-.bento {
-  display: grid;
-  grid-template-columns: minmax(0, 1.5fr) repeat(2, minmax(0, 1fr));
-  grid-template-rows: repeat(2, minmax(0, auto));
-  gap: 1rem;
-}
-
-.bento .hero {
-  grid-row: 1 / span 2;
-  grid-template-columns: minmax(0, 1fr);
-  align-content: space-between;
-  min-height: 21rem;
-  padding: 1.8rem 1.8rem 0;
-}
-
-.bento .heroArt {
-  justify-content: flex-end;
-  align-items: flex-end;
-  max-height: 10.5rem;
-  margin-right: -0.4rem;
-}
-
-.bento .statCard {
-  flex-direction: column;
-  align-items: flex-start;
+.workflow .featureCard {
+  min-height: 0;
+  box-sizing: border-box;
   justify-content: space-between;
-  gap: 0.8rem;
-  padding: 1.1rem 1.2rem;
 }
 
-.bento .statCard:nth-child(3) {
-  color: var(--bv-on-primary);
-  background: var(--bv-primary);
-  border-color: var(--bv-primary);
-}
-
-.bento .statCard:nth-child(3) .statLabel,
-.bento .statCard:nth-child(3) .statValue,
-.bento .statCard:nth-child(3) .statHint {
-  color: var(--bv-on-primary);
-}
-
-.bento .statCard:nth-child(3) .iconContainer {
-  color: var(--bv-on-accent);
-  background: var(--bv-accent);
-}
-
-.bento .statValue {
-  font-size: clamp(26px, 2rem, 40px);
-}
-
-/* Workflow: numbered steps joined by a dashed line */
-.workflow .featuresGrid {
-  position: relative;
-}
-
-.workflow .featuresGrid::before {
-  position: absolute;
-  top: calc(1.3rem + clamp(46px, 3.4rem, 60px) / 2);
-  left: 2rem;
-  right: 2rem;
-  height: 2px;
-  content: '';
-  background: repeating-linear-gradient(90deg, var(--bv-border-strong) 0 6px, transparent 6px 12px);
-}
-
-.workflow .featureTop {
-  position: relative;
-  z-index: 1;
-  align-items: center;
-  justify-content: flex-start;
-  gap: 0.7rem;
-}
-
-.featureStep {
-  font-size: clamp(22px, 1.6rem, 30px);
-  font-weight: 800;
-  line-height: 1;
-  letter-spacing: -0.03em;
-  color: var(--bv-accent);
-  background: var(--bv-surface);
-}
-
-.workflow .featureArrow {
-  margin-left: auto;
-}
-
-.workflow .featureIconWrapper {
-  border-radius: 50%;
-  box-shadow: 0 0 0 5px var(--bv-surface);
-}
-
-/* ── Responsive ────────────────────────────────────────────── */
+/* ═══════════════════════════════════════════════════════════════
+   RESPONSIVE
+   ═══════════════════════════════════════════════════════════════ */
 
 @media (max-width: 1024px) {
   .bento {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-rows: auto;
+    flex: none;
   }
 
   .bento .hero {
@@ -447,6 +639,10 @@
     grid-row: auto;
     min-height: 0;
     padding-bottom: 1.6rem;
+  }
+
+  .workflow {
+    flex: none;
   }
 
   .workflow .featuresGrid::before {
@@ -471,7 +667,11 @@
   .statCard,
   .featureCard,
   .featureCard::after,
-  .heroButton {
+  .heroButton,
+  .iconContainer,
+  .featureIconWrapper,
+  .statBgIcon,
+  .featureBgIcon {
     transition: none;
   }
 }
