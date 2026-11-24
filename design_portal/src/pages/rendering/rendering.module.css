@@ -322,58 +322,6 @@
   box-shadow: var(--bv-shadow-md);
 }
 
-.spinner {
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 64px;
-  height: 64px;
-  font-size: 24px;
-  color: var(--bv-accent);
-}
-
-.spinner::before {
-  position: absolute;
-  inset: 0;
-  content: '';
-  border: 4px solid var(--bv-accent-soft);
-  border-top-color: var(--bv-accent);
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-.loaderArea p {
-  margin: 0.3rem 0 0;
-  font-size: var(--bv-fs-body);
-  font-weight: 700;
-  color: var(--bv-text);
-  animation: pulse 1.5s ease-in-out infinite;
-}
-
-.loaderArea small {
-  font-size: clamp(12px, 0.76rem, 14px);
-  line-height: 1.5;
-  color: var(--bv-text-muted);
-}
-
-@keyframes pulse {
-  0%,
-  100% {
-    opacity: 0.7;
-  }
-
-  50% {
-    opacity: 1;
-  }
-}
-
 /* Error */
 
 .error {

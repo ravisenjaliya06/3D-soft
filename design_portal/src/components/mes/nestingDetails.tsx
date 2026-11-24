@@ -1,3 +1,5 @@
+import { useMinimumVisible } from '@/components/common/useMinimumVisible';
+import PhinxLoader from '@/components/common/PhinxLoader';
 import Header from '@/components/header/header';
 import Sidebar from '@/components/sidebar/sidebar';
 import { API_ENDPOINT } from '@/services/ApiEndPoints';
@@ -20,6 +22,7 @@ interface NestingDetailsProps {
 const NestingDetails: React.FC<NestingDetailsProps> = ({ designId, versionId }) => {
   const [data, setData] = useState<any[] | null>(null);
   const [loading, setLoading] = useState(true);
+  const showLoading = useMinimumVisible(loading);
   const [error, setError] = useState<string | null>(null);
   const [activeSheet, setActiveSheet] = useState<string | null>(null);
   const [hoveredPart, setHoveredPart] = useState<any | null>(null);
@@ -86,10 +89,9 @@ const NestingDetails: React.FC<NestingDetailsProps> = ({ designId, versionId }) 
         <Header isBorderRadius={true} dashboardName="Sheet layout" />
 
         <div className={styles.maincontent}>
-          {loading ? (
+          {showLoading ? (
             <div className={styles.loader}>
-              <span className={styles.spinner} aria-hidden="true" />
-              Laying out panels on sheets…
+              <PhinxLoader scene="sheet" label="Laying out panels on sheets…" />
             </div>
           ) : error ? (
             <div className={styles.error}>

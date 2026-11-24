@@ -1,4 +1,4 @@
-import Loading_style from '@/components/loading.module.css';
+import PhinxLoader from '@/components/common/PhinxLoader';
 import styles from '@/components/sidebar/sidebar.module.css';
 import { REDIRECT } from '@/services/CommonStatus';
 import { assets } from '@/svgPaths';
@@ -80,12 +80,7 @@ const Sidebar = () => {
 
   return (
     <header className={styles.container}>
-      {isLoading && (
-        <div className={Loading_style.loadingOverlay}>
-          <div className={Loading_style.loadingSpinner}></div>
-          <p>Loading...</p>
-        </div>
-      )}
+      {isLoading && <PhinxLoader overlay label="Opening your workspace…" />}
 
       <div className={styles.topbar}>
         <button

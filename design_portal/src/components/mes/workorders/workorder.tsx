@@ -1,3 +1,4 @@
+import { PhinxMiniLoader } from '@/components/common/PhinxLoader';
 import { CatalogItem } from '@/components/3dmodel/interface';
 import { SettingConfigs, sheetData, sheetsData } from '@/components/settings/interface';
 import { API_ENDPOINT } from '@/services/ApiEndPoints';
@@ -215,7 +216,9 @@ const WorkOrder = (workOrderData: WorkOrderData) => {
                     </div>
                   ))
                 ) : (
-                  <li>Loading...</li>
+                  <li>
+                    <PhinxMiniLoader label="Loading…" />
+                  </li>
                 )}
               </div>
             </div>

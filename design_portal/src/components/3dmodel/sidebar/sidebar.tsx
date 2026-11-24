@@ -1,3 +1,4 @@
+import { PhinxMiniLoader } from '@/components/common/PhinxLoader';
 import { _3DMODEL, assets } from '@/svgPaths';
 import gsap from 'gsap';
 import Image from 'next/image';
@@ -3472,9 +3473,7 @@ const Sidebar: React.FC = () => {
                               </div>
                               {isFetchingTextures && (
                                 <div className="flex justify-center py-2">
-                                  <span className="text-[0.6rem] font-semibold text-[var(--primary-color)]">
-                                    Loading...
-                                  </span>
+                                  <PhinxMiniLoader label="Loading textures…" />
                                 </div>
                               )}
                             </div>

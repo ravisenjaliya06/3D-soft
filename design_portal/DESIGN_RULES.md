@@ -153,3 +153,17 @@ The owner wants every screen to look clearly different from the inherited design
    - Panel Designer drawing: panel fill/outline olive, hover/selection outlines dark olive ink `#2B2A1A` (terracotta would clash with the orange slotting colour), helper dots terracotta.
    - Editor header, toolbar, texture picker, Designs form borders, material wizard icon, `plus.svg`.
    - Quotation / BOM PDF exports: `PDF_THEME.titleColor` in `mes/constants.tsx` is now olive `[84, 83, 51]`, so generated PDFs use the new brand colour too.
+
+## Loaders (2026-11-24)
+
+All loading states use `src/components/common/PhinxLoader.tsx` (+ `.module.css`); no circular spinners remain.
+
+- Scenes share one 3.6s rhythm, teal frame + green finishing piece, tape-measure progress strip:
+  `cabinet` (general / full-screen), `sofa` (design lists), `lamp` (rendering), `sheet` (nesting / sheet layout).
+- `overlay` = fixed full-screen card; `size` sm/md/lg; `PhinxMiniLoader` (three stacking boards) for inline spots.
+- Animation cycle is 2.6s (cabinet is fully assembled at ~1.5s).
+- App-wide `PageLoader` (mounted in `_app.tsx`) shows on first load and every route change, held at least 1.6s, max 15s; scene picked by route. Other overlays hide while it is up.
+- In-page loaders use `useMinimumVisible` (min 1.2s) so they never flicker; the editor DOM loader holds the same 1.2s.
+- `prefers-reduced-motion` shows the finished piece with a soft fade.
+- The editor's DOM loader (`showFullScreenLoader` in `3dmodel/handler/items.tsx`) renders the same component via `createRoot`.
+- `components/loading.module.css` was removed; old `.spinner` / `@keyframes spin` rules were deleted from page CSS.

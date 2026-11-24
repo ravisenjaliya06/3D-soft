@@ -305,21 +305,6 @@
   color: var(--bv-text-muted);
 }
 
-.spinner {
-  width: 18px;
-  height: 18px;
-  border: 2px solid var(--bv-primary-soft);
-  border-top-color: var(--bv-accent);
-  border-radius: 50%;
-  animation: spin 0.8s linear infinite;
-}
-
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
 /* ── Table ─────────────────────────────────────────────────── */
 
 .tablecontainer {

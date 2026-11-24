@@ -1,4 +1,5 @@
 import { store } from '@/components/3dmodel/store';
+import PageLoader from '@/components/common/PageLoader';
 import BackendStatusGate from '@/components/maintenance/BackendStatusGate';
 import MaintenanceGate from '@/components/maintenance/MaintenanceGate';
 import { REDIRECT } from '@/services/CommonStatus';
@@ -49,6 +50,7 @@ export default function MyApp({ Component, pageProps }: AppProps) {
   return (
     <>
       <Provider store={store}>
+        <PageLoader />
         <BackendStatusGate>
           <MaintenanceGate showBannerOnPages={showMaintenanceBanner}>
             <main

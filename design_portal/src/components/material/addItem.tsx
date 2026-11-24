@@ -1,3 +1,4 @@
+import { PhinxMiniLoader } from '@/components/common/PhinxLoader';
 import InputField from '@/components/inputfields/InputField';
 import { API_ENDPOINT } from '@/services/ApiEndPoints';
 import commonService from '@/services/CommonService';
@@ -31,7 +32,13 @@ const ModelViewer = ({ file }: { file: File | null }) => {
   return (
     <div className={styles.modelBox}>
       {url ? (
-        <Suspense fallback={<div className={styles.modelBoxNote}>Loading...</div>}>
+        <Suspense
+          fallback={
+            <div className={styles.modelBoxNote}>
+              <PhinxMiniLoader label="Loading model…" />
+            </div>
+          }
+        >
           <Canvas key={url} shadows camera={{ position: [0, 0, 5], fov: 85 }}>
             <Stage intensity={0.5} environment="city" adjustCamera={1.8}>
               <GltfModel url={url} />
