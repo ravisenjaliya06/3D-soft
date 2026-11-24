@@ -357,6 +357,9 @@ export const TEMPLATE = {
 export const TITLELOGO_SVG = {
   titleLogo: '/assets/titleLogo.svg',
   headerbraventologo: '/assets/headerbraventologo.svg',
+  phinxLogo: '/assets/phinx/phinx-logo.svg',
+  phinxLogoLight: '/assets/phinx/phinx-logo-light.svg',
+  phinxMark: '/assets/phinx/phinx-mark.svg',
 };
 
 export const TOOLBAR = {

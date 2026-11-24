@@ -246,6 +246,7 @@ const Material: React.FC = () => {
             companyId={companyID}
             handleGetCompanyMaterials={fetchCompanyMaterials}
             selectedType={expandedCategory}
+            initialData={editingMaterial}
           />
         )}
       </div>
@@ -257,6 +258,14 @@ const Material: React.FC = () => {
           onCompanyNameChange={setCompanyName}
           onCreateCompany={handleCreateCompany}
           onClose={() => setCreateCompanyPopup(false)}
+        />
+      )}
+
+      {deletingMaterial && (
+        <ConfirmDeletePopup
+          itemName={deletingMaterial.name}
+          onConfirm={confirmDeleteMaterial}
+          onClose={() => setDeletingMaterial(null)}
         />
       )}
     </div>

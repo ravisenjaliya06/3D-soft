@@ -617,7 +617,7 @@
 .minifixInputGroup input {
   padding: 0.5rem 0.7rem;
   border-radius: 0.4rem;
-  border: 1px solid rgba(84, 83, 51, 0.2);
+  border: 1px solid rgba(6, 93, 120, 0.2);
   font-family: var(--font-family);
   font-size: 0.75rem;
   color: var(--primary-color);
@@ -653,7 +653,7 @@
 .minifixSubmitButton:hover {
   filter: brightness(110%);
   transform: translateY(-1px);
-  box-shadow: 0 4px 6px -1px rgba(84, 83, 51, 0.2);
+  box-shadow: 0 4px 6px -1px rgba(6, 93, 120, 0.2);
 }
 
 .successPopup,
@@ -752,7 +752,7 @@
   font-weight: 700;
   background-color: transparent;
   color: var(--primary-color);
-  border: 1px solid rgba(84, 83, 51, 0.3);
+  border: 1px solid rgba(6, 93, 120, 0.3);
   border-radius: 0.4rem;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -760,7 +760,7 @@
 }
 
 .cancelButton:hover {
-  background-color: rgba(84, 83, 51, 0.05);
+  background-color: rgba(6, 93, 120, 0.05);
 }
 
 @keyframes fadeInOut {

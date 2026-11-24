@@ -22,7 +22,7 @@ const AuthShowcase = ({
 }: AuthShowcaseProps) => (
   <aside className={styles.showcase}>
     <div className={styles.showcaseTop}>
-      <img src={assets.Logo} alt="Bravento" className={styles.showcaseLogo} />
+      <img src={assets.phinxLogoLight} alt="Phinx" className={styles.showcaseLogo} />
       <span className={styles.eyebrow}>
         <LuRuler aria-hidden="true" />
         {eyebrow}

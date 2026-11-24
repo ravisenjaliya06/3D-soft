@@ -779,7 +779,7 @@ export const PropertiesSidebar: React.FC<PropertiesSidebarProps> = ({
                 <button
                   type="button"
                   className={styles.sidebarDeleteButton}
-                  style={{ backgroundColor: '#545333', color: '#fff' }}
+                  style={{ backgroundColor: '#065D78', color: '#fff' }}
                   onClick={splitSelectedLine}
                 >
                   Add new point to center
@@ -888,8 +888,8 @@ export const PropertiesSidebar: React.FC<PropertiesSidebarProps> = ({
                           stroke="currentColor"
                           strokeWidth="1.5"
                         />
-                        <circle cx="10" cy="50" r="2" fill="#C8571B" />
-                        <circle cx="50" cy="10" r="2" fill="#C8571B" />
+                        <circle cx="10" cy="50" r="2" fill="#1A9F55" />
+                        <circle cx="50" cy="10" r="2" fill="#1A9F55" />
                         <text x="30" y="38" className={styles.diagramLabel}>
                           r
                         </text>
@@ -952,8 +952,8 @@ export const PropertiesSidebar: React.FC<PropertiesSidebarProps> = ({
                           stroke="currentColor"
                           strokeWidth="1.5"
                         />
-                        <circle cx="10" cy="50" r="2" fill="#C8571B" />
-                        <circle cx="50" cy="10" r="2" fill="#C8571B" />
+                        <circle cx="10" cy="50" r="2" fill="#1A9F55" />
+                        <circle cx="50" cy="10" r="2" fill="#1A9F55" />
                         <text x="18" y="48" className={styles.diagramLabel}>
                           d1
                         </text>
@@ -1115,8 +1115,8 @@ export const PropertiesSidebar: React.FC<PropertiesSidebarProps> = ({
                       stroke="currentColor"
                       strokeWidth="1.5"
                     />
-                    <circle cx="10" cy="50" r="2" fill="#C8571B" />
-                    <circle cx="50" cy="10" r="2" fill="#C8571B" />
+                    <circle cx="10" cy="50" r="2" fill="#1A9F55" />
+                    <circle cx="50" cy="10" r="2" fill="#1A9F55" />
                     <text x="30" y="38" className={styles.diagramLabel}>
                       r
                     </text>
@@ -1176,8 +1176,8 @@ export const PropertiesSidebar: React.FC<PropertiesSidebarProps> = ({
                       opacity={0.6}
                     />
                     <path d="M 10 50 L 50 10" fill="none" stroke="currentColor" strokeWidth="1.5" />
-                    <circle cx="10" cy="50" r="2" fill="#C8571B" />
-                    <circle cx="50" cy="10" r="2" fill="#C8571B" />
+                    <circle cx="10" cy="50" r="2" fill="#1A9F55" />
+                    <circle cx="50" cy="10" r="2" fill="#1A9F55" />
                     <text x="18" y="48" className={styles.diagramLabel}>
                       d1
                     </text>

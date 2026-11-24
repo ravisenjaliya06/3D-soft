@@ -1122,11 +1122,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ threeDView, onViewModeChange, viewMod
       >
         <div style={{ flexDirection: 'column', display: 'flex' }}>
           <div className={styles.group}>
-            <img
-              src={assets.headerbraventologo}
-              className={styles.projectLogo}
-              alt="Toolbar Logo"
-            />
+            <img src={assets.phinxLogoLight} className={styles.projectLogo} alt="Toolbar Logo" />
           </div>
           <div className={styles.partLineGroup}>
             <img src={assets.tool_part_line} className={styles.partLine} alt="Toolbar Logo" />

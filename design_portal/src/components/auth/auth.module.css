@@ -955,7 +955,7 @@
   color: var(--bv-text);
   background: var(--bv-surface);
   border-radius: 1.4rem;
-  box-shadow: 0 1.6rem 3.6rem rgba(10, 10, 4, 0.35);
+  box-shadow: 0 1.6rem 3.6rem rgba(2, 18, 24, 0.35);
 }
 
 /* Terracotta tab on top of the form card */

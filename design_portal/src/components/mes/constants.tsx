@@ -62,7 +62,7 @@ export const QUOTATION_HEADERS = [
 ];
 
 export const PDF_THEME = {
-  titleColor: [84, 83, 51] as [number, number, number],
+  titleColor: [6, 93, 120] as [number, number, number],
   lightGray: [242, 242, 242] as [number, number, number],
   tableHeaderBg: [0, 0, 0] as [number, number, number],
   tableHeaderText: [255, 255, 255] as [number, number, number],
@@ -113,7 +113,7 @@ export const getQuoteTerms = () => [
   '   - GST charged as per prevailing rates at billing time',
   '   - All disputes subject to Ahmedabad jurisdiction only',
   '   - Material specifications are subject to availability; equivalent quality alternatives may be provided with customer consent',
-  "   - Payment should be made via cheque/NEFT/RTGS in favor of 'Bravento Furniture Solutions'",
+  '   - Payment should be made via cheque/NEFT/RTGS in favour of the company named on this quotation',
   '   - Any additional work during installation is chargeable',
 ];
 

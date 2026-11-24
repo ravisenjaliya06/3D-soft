@@ -60,14 +60,14 @@ const Forgot = () => {
         eyebrow="Account recovery"
         title="Locked out of the workshop?"
         highlight="We'll get you back in."
-        lead="Enter the email on your Bravento account and we'll send a secure link to reset your password. Your designs and cut lists stay safe."
+        lead="Enter the email on your Phinx account and we'll send a secure link to reset your password. Your designs and cut lists stay safe."
       />
 
       {/* ── Reset form ──────────────────────────────────────── */}
       <section className={styles.formPanel}>
         <div className={styles.formInner}>
           <div className={styles.brandRow}>
-            <img src={assets.Logo} alt="Bravento" className={styles.brandLogo} />
+            <img src={assets.phinxLogoLight} alt="Phinx" className={styles.brandLogo} />
           </div>
 
           <button
@@ -121,7 +121,7 @@ const Forgot = () => {
 
           <p className={styles.legal}>
             <LuShieldCheck aria-hidden="true" />
-            Secure reset links · © {new Date().getFullYear()} Bravento Technologies
+            Secure reset links · © {new Date().getFullYear()} Phinx
           </p>
         </div>
       </section>

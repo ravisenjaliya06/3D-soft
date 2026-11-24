@@ -201,18 +201,41 @@ const Nesting = () => {
   };
 
   const getOrganizationDisplayData = (organizationDetails: any) => {
-    const companyName = organizationDetails?.company_name || 'BRAVENTO FURNITURE SOLUTIONS';
-    const companyAddress =
-      organizationDetails?.company_address ||
-      'Address: 123, Furniture Complex, S.G. Highway, Ahmedabad - 380015, Gujarat, India';
-    const contactLine = `Phone: ${organizationDetails?.company_phone || '+91 79 1234 5678'} | Email: ${
-      organizationDetails?.company_email || 'sales@bravento.com'
-    } | Website: ${organizationDetails?.company_website || 'www.bravento.com'}`;
-    const taxLine = `GSTIN: ${
-      organizationDetails?.company_gstin || '24XXXXX1234X1Z5'
-    } | PAN: ${organizationDetails?.company_pan || 'XXXXX1234X'}`;
+    // No placeholder company data: anything the organisation hasn't filled in stays blank.
+    const joinFilled = (parts: [string, string | undefined][]) =>
+      parts
+        .filter(([, value]) => Boolean(value && String(value).trim()))
+        .map(([label, value]) => `${label}: ${value}`)
+        .join(' | ');
+    const companyName = organizationDetails?.company_name || '';
+    const companyAddress = organizationDetails?.company_address || '';
+    const contactLine = joinFilled([
+      ['Phone', organizationDetails?.company_phone],
+      ['Email', organizationDetails?.company_email],
+      ['Website', organizationDetails?.company_website],
+    ]);
+    const taxLine = joinFilled([
+      ['GSTIN', organizationDetails?.company_gstin],
+      ['PAN', organizationDetails?.company_pan],
+    ]);
     return { companyName, companyAddress, contactLine, taxLine };
   };
+
+  /** Banking lines for quotations, without placeholder values; empty fields are left out. */
+  const getBankingLines = (organizationDetails: any): string[] =>
+    (
+      [
+        ['Bank Name', organizationDetails?.bank_name],
+        ['Account Name', organizationDetails?.account_name],
+        ['Account Number', organizationDetails?.account_number],
+        ['Account Type', organizationDetails?.account_type],
+        ['IFSC Code', organizationDetails?.ifsc_code],
+        ['Branch', organizationDetails?.branch_name],
+        ['UPI ID', organizationDetails?.upi_id],
+      ] as [string, string | undefined][]
+    )
+      .filter(([, value]) => Boolean(value && String(value).trim()))
+      .map(([label, value]) => `${label}: ${value}`);
 
   const countHardware = (partsList: any[]) => {
     let minifixCamCount = 0;
@@ -285,14 +308,9 @@ const Nesting = () => {
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(255, 255, 255);
     doc.setFontSize(15);
-    doc.text(
-      'BRAVENTO - Bill of Materials',
-      leftMargin + printableWidth * 0.34,
-      firstPageTop + 13,
-      {
-        align: 'center',
-      }
-    );
+    doc.text('PHINX - Bill of Materials', leftMargin + printableWidth * 0.34, firstPageTop + 13, {
+      align: 'center',
+    });
     doc.setTextColor(0, 0, 0);
 
     const metaStartY = firstPageTop + 24;
@@ -768,7 +786,7 @@ const Nesting = () => {
       const finalPrice = Math.round(estCost * PRICING.markupMultiplier); // 50% margin guess
 
       const summaryData: any[] = [
-        [{ v: 'BRAVENTO - Bill of Materials', t: 's', s: titleStyle }, '', '', '', '', '', '', ''],
+        [{ v: 'PHINX - Bill of Materials', t: 's', s: titleStyle }, '', '', '', '', '', '', ''],
         [],
         [
           { v: 'Project ID:', s: boldStyle },
@@ -1071,37 +1089,30 @@ const Nesting = () => {
       cursorY += wrapped.length * 12 + 2;
     });
 
-    // Banking section
-    cursorY += 8;
-    ensureSpace(130, 40);
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(11);
-    doc.text('Banking Details', leftMargin, cursorY);
-    cursorY += 16;
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(9);
-    const bankingLines = [
-      `Bank Name: ${organizationDetails?.bank_name || 'HDFC Bank Ltd.'}`,
-      `Account Name: ${organizationDetails?.account_name || 'Bravento Furniture Solutions'}`,
-      `Account Number: ${organizationDetails?.account_number || '50200012345678'}`,
-      `Account Type: ${organizationDetails?.account_type || 'Current Account'}`,
-      `IFSC Code: ${organizationDetails?.ifsc_code || 'HDFC0001234'}`,
-      `Branch: ${organizationDetails?.branch_name || 'S.G. Highway, Ahmedabad - 380015'}`,
-      `UPI ID: ${organizationDetails?.upi_id || 'bravento@hdfcbank'}`,
-    ];
-    bankingLines.forEach((line) => {
-      ensureSpace(14, 40);
-      doc.text(line, leftMargin, cursorY);
-      cursorY += 14;
-    });
-    cursorY += 10;
+    // Banking section (only when the organisation has filled in banking details)
+    const bankingLines = getBankingLines(organizationDetails);
+    if (bankingLines.length > 0) {
+      cursorY += 8;
+      ensureSpace(130, 40);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(11);
+      doc.text('Banking Details', leftMargin, cursorY);
+      cursorY += 16;
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(9);
+      bankingLines.forEach((line) => {
+        ensureSpace(14, 40);
+        doc.text(line, leftMargin, cursorY);
+        cursorY += 14;
+      });
+      cursorY += 10;
+    }
 
     // Mandatory terminal footer block: NOTE + signature + thank-you
     const signatureX = doc.internal.pageSize.getWidth() - 215;
     const footerCompany = `For ${companyName}`;
     const footerDate = `Date: ${quoteDate}`;
-    const thankYou =
-      'Thank you for considering Bravento Furniture Solutions. We look forward to transforming your space!';
+    const thankYou = 'Thank you for choosing us. We look forward to transforming your space!';
     const noteLine =
       'NOTE: Please share your purchase order to confirm this quotation. Our team will contact you for final measurements and design approval.';
     ensureSpace(110, 40);
@@ -1765,7 +1776,7 @@ const Nesting = () => {
         ],
         [
           {
-            v: "   • Payment should be made via cheque/NEFT/RTGS in favor of 'Bravento Furniture Solutions'",
+            v: '   • Payment should be made via cheque/NEFT/RTGS in favour of the company named on this quotation',
             s: sTermC,
           },
         ],
@@ -1776,34 +1787,17 @@ const Nesting = () => {
           },
         ],
         [],
-        [{ v: 'BANKING DETAILS FOR PAYMENT:', s: sTermH }],
-        [{ v: `Bank Name: ${organizationDetails?.bank_name || 'HDFC Bank Ltd.'}`, s: sP }],
-        [
-          {
-            v: `Account Name: ${organizationDetails?.account_name || 'Bravento Furniture Solutions'}`,
-            s: sP,
-          },
-        ],
-        [
-          {
-            v: `Account Number: ${organizationDetails?.account_number || '50200012345678'}`,
-            s: sP,
-          },
-        ],
-        [{ v: `Account Type: ${organizationDetails?.account_type || 'Current Account'}`, s: sP }],
-        [{ v: `IFSC Code: ${organizationDetails?.ifsc_code || 'HDFC0001234'}`, s: sP }],
-        [
-          {
-            v: `Branch: ${organizationDetails?.branch_name || 'S.G. Highway, Ahmedabad - 380015'}`,
-            s: sP,
-          },
-        ],
-        [
-          {
-            v: `UPI ID: ${organizationDetails?.upi_id || 'bravento@hdfcbank'} (for advance payments)`,
-            s: sP,
-          },
-        ],
+        ...(getBankingLines(organizationDetails).length > 0
+          ? [
+              [{ v: 'BANKING DETAILS FOR PAYMENT:', s: sTermH }],
+              ...getBankingLines(organizationDetails).map((line) => [
+                {
+                  v: line.startsWith('UPI ID:') ? `${line} (for advance payments)` : line,
+                  s: sP,
+                },
+              ]),
+            ]
+          : []),
         [],
         [
           { v: 'NOTE:', s: sKey },
@@ -1824,7 +1818,7 @@ const Nesting = () => {
         [],
         [
           {
-            v: 'Thank you for considering Bravento Furniture Solutions. We look forward to transforming your space!',
+            v: 'Thank you for choosing us. We look forward to transforming your space!',
             s: sH2C,
           },
         ],
@@ -1837,7 +1831,7 @@ const Nesting = () => {
 
       // Merges based strictly on python extracted sample layout
       if (!ws['!merges']) ws['!merges'] = [];
-      ws['!merges'].push({ s: { r: 0, c: 0 }, e: { r: 0, c: 8 } }); // BRAVENTO FURNITURE SOLUTIONS
+      ws['!merges'].push({ s: { r: 0, c: 0 }, e: { r: 0, c: 8 } }); // company name row
       ws['!merges'].push({ s: { r: 1, c: 0 }, e: { r: 1, c: 8 } }); // Custom Furniture...
       ws['!merges'].push({ s: { r: 2, c: 0 }, e: { r: 2, c: 8 } }); // Address...
       ws['!merges'].push({ s: { r: 3, c: 0 }, e: { r: 3, c: 8 } }); // Phone...

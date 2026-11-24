@@ -10,7 +10,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(20, 20, 10, 0.5);
+  background: rgba(4, 30, 40, 0.5);
   backdrop-filter: blur(3px);
   animation: fadeIn 0.2s ease-out;
 }
@@ -35,7 +35,7 @@
   font-family: var(--bv-font);
   background: var(--bv-surface);
   border-radius: 1.2rem;
-  box-shadow: 0 1.5rem 3.5rem rgba(10, 10, 4, 0.35);
+  box-shadow: 0 1.5rem 3.5rem rgba(2, 18, 24, 0.35);
   animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 

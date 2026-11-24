@@ -1,4 +1,6 @@
-# Bravento Redesign — Design Rules
+# Phinx (formerly Bravento) Redesign — Design Rules
+
+> **24 Nov 2026 — rebrand to Phinx.** The product is now called **Phinx**. Colours come from the Phinx logo: teal `#065D78` (primary, dark panels use `#064457` / `#04313F`) and green — `#1A9F55` for buttons/text on white, the exact logo green `#4CE07E` on dark teal. Logos live in `public/assets/phinx/`: `phinx-logo.svg` (full colour, for light backgrounds), `phinx-logo-light.svg` (teal parts white, for dark surfaces — used in the top nav, sign-in panel and Rendering bar), `phinx-mark.svg` (symbol only, browser-tab icon). Every mention of "olive" below now means teal and every "terracotta" means green. The "100% free" banner was removed from `_app.tsx`.
 
 Goal: a modern, attractive, user‑friendly look for **every page**, applied **one page at a time**,
 with **zero change to functionality**. Any AI or developer working on the redesign must follow these rules.
@@ -20,13 +22,13 @@ with **zero change to functionality**. Any AI or developer working on the redesi
 
 ### Product theme
 
-Bravento is a **furniture & home‑interior manufacturing** platform (3D design → cut lists → nesting → CNC).
+Phinx is a **furniture & home‑interior manufacturing** platform (3D design → cut lists → nesting → CNC).
 Every page should feel like a premium interior/workshop tool:
 
-- Olive panels with terracotta highlights; blueprint/grid motifs and dimension lines for
+- Teal panels with green highlights; blueprint/grid motifs and dimension lines for
   decorative areas; furniture illustrations (cabinets, wardrobes, kitchens) drawn as inline SVG using tokens.
 - Copy speaks the trade: cabinets, wardrobes, kitchens, boards/sheets, cut lists, nesting, edge banding, CNC, workshop.
-- The `Logo.svg` artwork has white parts — place it only on dark (`--bv-ink`) surfaces.
+- Use `phinx-logo-light.svg` on dark (`--bv-ink`) surfaces and `phinx-logo.svg` on white.
 
 3. **Keep `html { font-size: 1vw }`.** All layouts use `rem` = 1% of viewport width. Changing it breaks every page.
 4. **One page (or one shared component) per change.** Finish, check it in the browser, commit, then move on.

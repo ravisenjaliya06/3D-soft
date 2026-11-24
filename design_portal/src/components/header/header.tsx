@@ -101,7 +101,7 @@ const Header = ({
         className={`${styles.mainheader} ${isBorderRadius ? styles.withBorderRadius : styles.noBorderRadius} ${isDropdownOpen ? styles.dropdownShadow : ''}`}
       >
         <div className={styles.headerTitle}>
-          <span className={styles.headerEyebrow}>Bravento</span>
+          <span className={styles.headerEyebrow}>Phinx</span>
           <p>{dashboardName}</p>
         </div>
 

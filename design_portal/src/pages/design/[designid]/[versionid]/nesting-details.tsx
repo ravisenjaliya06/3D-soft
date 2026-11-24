@@ -23,7 +23,7 @@ const NestingDetailsPage = () => {
   return (
     <>
       <Head>
-        <title>Nesting Details | Bravento</title>
+        <title>Nesting Details | Phinx</title>
       </Head>
       <NestingDetails designId={designId} versionId={versionId} />
     </>

@@ -58,9 +58,10 @@ const Designs = () => {
   const [projectType, setProjectType] = useState('');
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [activeFilter, setActiveFilter] = useState<string | null>(null);
+  const designsScrollRef = useRef<HTMLDivElement | null>(null);
   const filterDropdownRef = useRef<HTMLDivElement | null>(null);
   const actionDropdownRef = useRef<HTMLDivElement | null>(null);
-  const dropdownButtonRef = useRef<HTMLImageElement | null>(null);
+  const dropdownButtonRef = useRef<HTMLButtonElement | null>(null);
   const [showEditPopup, setshowEditPopup] = useState(false);
   const [showDeletePopup, setshowDeletePopup] = useState(false);
   const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null);
@@ -92,8 +93,76 @@ const Designs = () => {
     },
   };
 
+  const setFieldError = (fieldId: string, message: string) => {
+    setErrors((prev) => ({ ...prev, [fieldId]: message }));
+  };
+
+  const clearFieldError = (fieldId: string) => {
+    setErrors((prev) => {
+      if (!prev[fieldId]) return prev;
+      const next = { ...prev };
+      delete next[fieldId];
+      return next;
+    });
+  };
+
+  const isEmailValid = (email: string) => {
+    const trimmed = email.trim();
+    if (!trimmed) return false;
+    const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return re.test(trimmed);
+  };
+
+  const countDigits = (value: string) => {
+    return (value.match(/\d/g) || []).length;
+  };
+
+  const isContactCharsAllowed = (contact: string) => {
+    // Allow optional leading +, then digits, spaces or dashes only
+    return /^\+?[0-9\s-]*$/.test(contact);
+  };
+
+  const isContactValid = (contact: string) => {
+    const digits = countDigits(contact);
+    return digits >= 7 && digits <= 15;
+  };
+
+  const handleCustomerChange =
+    (fieldId: string, setter: (v: string) => void) => (e: ChangeEvent<HTMLInputElement>) => {
+      const value = e.target.value;
+      setter(value);
+      if (fieldId === 'customer_email') {
+        if (!value.trim() || isEmailValid(value)) {
+          clearFieldError(fieldId);
+        } else {
+          setFieldError(fieldId, 'Please enter a valid email address.');
+        }
+        return;
+      }
+      if (fieldId === 'customer_contact') {
+        if (!value.trim() || (isContactCharsAllowed(value) && isContactValid(value))) {
+          clearFieldError(fieldId);
+        } else {
+          setFieldError(
+            fieldId,
+            'Contact may include spaces/dashes, optional leading +, and must have 7–15 digits.'
+          );
+        }
+        return;
+      }
+      if (fieldId === 'order_number' || fieldId === 'customer_company') {
+        if (value.trim()) {
+          clearFieldError(fieldId);
+        } else {
+          setFieldError(fieldId, 'This field is required.');
+        }
+      } else {
+        clearFieldError(fieldId);
+      }
+    };
+
   const filterStatusOptions = [
-    { value: null, label: 'All Projects', icon: assets.design_list_icon, color: '' },
+    { value: null, label: 'All Designs', icon: assets.design_list_icon, color: '' },
     { value: 'Draft', label: 'Draft', icon: assets.draft_svg, color: styles.statusDraft },
     { value: 'Ready', label: 'Ready', icon: assets.ready_svg, color: styles.statusReady },
     { value: 'Nesting', label: 'Nesting', icon: assets.nesting_svg, color: styles.statusNesting },
@@ -106,17 +175,92 @@ const Designs = () => {
     { value: 'Deleted', label: 'Deleted', icon: assets.delete_svg, color: styles.statusDelete },
   ];
 
-  const fields = [
+  const projectFields = [
     {
       label: 'Design Name',
       id: 'name',
       type: 'text',
       placeholder: 'Enter a creative name...',
       onChange: (e: ChangeEvent<HTMLInputElement>) => setDesingName(e.target.value),
+      value: designName,
+    },
+    {
+      label: 'Project Type (Optional)',
+      id: 'project_type',
+      type: 'text',
+      placeholder: 'e.g. Wardrobe, Kitchen...',
+      onChange: (e: ChangeEvent<HTMLInputElement>) => setProjectType(e.target.value),
+      value: projectType,
     },
   ];
 
-  const editFields = [
+  const customerFields = [
+    {
+      label: 'Order Number*',
+      id: 'order_number',
+      type: 'text',
+      placeholder: 'Enter order number...',
+      onChange: (e: ChangeEvent<HTMLInputElement>) =>
+        handleCustomerChange('order_number', setOrderNumber)(e),
+      value: orderNumber,
+    },
+    {
+      label: 'Customer Name',
+      id: 'customer',
+      type: 'text',
+      placeholder: 'Enter customer name...',
+      onChange: (e: ChangeEvent<HTMLInputElement>) =>
+        handleCustomerChange('customer', setCustomerName)(e),
+      value: customerName,
+    },
+    {
+      label: 'Customer Company*',
+      id: 'customer_company',
+      type: 'text',
+      placeholder: 'Enter customer company...',
+      onChange: (e: ChangeEvent<HTMLInputElement>) =>
+        handleCustomerChange('customer_company', setCustomerCompany)(e),
+      value: customerCompany,
+    },
+    {
+      label: 'Customer Address',
+      id: 'customer_address',
+      type: 'text',
+      placeholder: 'Enter customer address...',
+      onChange: (e: ChangeEvent<HTMLInputElement>) =>
+        handleCustomerChange('customer_address', setCustomerAddress)(e),
+      value: customerAddress,
+    },
+    {
+      label: 'Customer GSTIN',
+      id: 'customer_gstin',
+      type: 'text',
+      placeholder: 'Enter customer GSTIN...',
+      onChange: (e: ChangeEvent<HTMLInputElement>) =>
+        handleCustomerChange('customer_gstin', setCustomerGstin)(e),
+      value: customerGstin,
+    },
+    {
+      label: 'Customer Contact',
+      id: 'customer_contact',
+      type: 'text',
+      placeholder: 'Enter customer contact...',
+      onChange: (e: ChangeEvent<HTMLInputElement>) =>
+        handleCustomerChange('customer_contact', setCustomerContact)(e),
+      value: customerContact,
+    },
+    {
+      label: 'Customer Email',
+      id: 'customer_email',
+      type: 'email',
+      placeholder: 'Enter customer email...',
+      onChange: (e: ChangeEvent<HTMLInputElement>) =>
+        handleCustomerChange('customer_email', setCustomerEmail)(e),
+      value: customerEmail,
+    },
+  ];
+
+  const editProjectFields = [
     {
       label: 'Design Name',
       type: 'text',
@@ -186,23 +330,93 @@ const Designs = () => {
     return matchesSearch && matchesStatus;
   });
 
-  const handleCreateDesign = async () => {
-    if (!designName.trim()) return;
-    setLoading(true);
+  const hasMoreDesigns = visibleDesigns < filteredDesigns.length;
+
+  const loadMoreDesigns = () => {
+    if (!hasMoreDesigns || isAppendingDesigns || loading) return;
+    setIsAppendingDesigns(true);
+
+    window.setTimeout(() => {
+      setVisibleDesigns((prev) => Math.min(prev + DESIGNS_BATCH_SIZE, filteredDesigns.length));
+      setIsAppendingDesigns(false);
+    }, 250);
+  };
+
+  const handleDesignsScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    const target = e.currentTarget;
+    const reachedBottom =
+      target.scrollHeight - target.scrollTop <= target.clientHeight + SCROLL_THRESHOLD_PX;
+
+    if (reachedBottom) {
+      loadMoreDesigns();
+    }
+  };
+
+  const buildDesignFormData = (includeStatus = false) => {
     const formData = new FormData();
+
     formData.append('design_name', designName);
 
+    if (includeStatus) {
+      formData.append('status', designStatus);
+    }
+
+    const fields: Record<string, string> = {
+      order_number: orderNumber,
+      customer_name: customerName,
+      customer_company: customerCompany,
+      customer_address: customerAddress,
+      customer_gstin: customerGstin,
+      customer_contact: customerContact,
+      customer_email: customerEmail,
+      project_type: projectType,
+    };
+
+    Object.entries(fields).forEach(([key, value]) => {
+      if (value?.trim()) {
+        formData.append(key, value.trim());
+      }
+    });
+
+    return formData;
+  };
+
+  const handleCreateDesign = async () => {
+    if (!designName.trim()) return;
+
+    // Validate required customer fields
+    const validationErrors: Record<string, string> = {};
+    const requiredCustomer: Array<[string, string]> = [
+      ['order_number', orderNumber],
+      ['customer_company', customerCompany],
+    ];
+    requiredCustomer.forEach(([key, val]) => {
+      if (!val || !val.trim()) {
+        validationErrors[key] = 'This field is required.';
+      }
+    });
+    if (customerEmail && !isEmailValid(customerEmail)) {
+      validationErrors['customer_email'] = 'Please enter a valid email address.';
+    }
+    if (
+      customerContact &&
+      (!isContactValid(customerContact) || !isContactCharsAllowed(customerContact))
+    ) {
+      validationErrors['customer_contact'] =
+        'Contact may include spaces/dashes, optional leading +, and must have 7–15 digits.';
+    }
+    if (Object.keys(validationErrors).length > 0) {
+      setErrors(validationErrors);
+      return;
+    }
+
+    setLoading(true);
+
     try {
-      const response: { status: number; data: Design } = await CommonService.post(
-        API_ENDPOINT.CREATE_DESIGN,
-        formData
-      );
+      const response = await CommonService.post(API_ENDPOINT.CREATE_DESIGN, buildDesignFormData());
+
       if (response.status === 201) {
         router.push(`/template/${response.data.id}`);
-      } else {
-        setApiErrorMessage(response.data.detail);
-        setErrorPopup(true);
-        setTimeout(() => setErrorPopup(false), 3000);
       }
     } catch (err) {
       console.error(err);
@@ -214,16 +428,38 @@ const Designs = () => {
 
   const handleEditClick = async () => {
     if (!selectedDesign) return;
+
+    // Validate required customer fields
+    const validationErrors: Record<string, string> = {};
+    const requiredCustomer: Array<[string, string]> = [
+      ['order_number', orderNumber],
+      ['customer_company', customerCompany],
+    ];
+    requiredCustomer.forEach(([key, val]) => {
+      if (!val || !val.trim()) {
+        validationErrors[key] = 'This field is required.';
+      }
+    });
+    if (customerEmail && !isEmailValid(customerEmail)) {
+      validationErrors['customer_email'] = 'Please enter a valid email address.';
+    }
+    if (customerContact && !isContactValid(customerContact)) {
+      validationErrors['customer_contact'] =
+        'Contact must contain 10–15 digits (spaces/dashes allowed).';
+    }
+    if (Object.keys(validationErrors).length > 0) {
+      setErrors(validationErrors);
+      return;
+    }
+
     setLoading(true);
-    const formData = new FormData();
-    formData.append('design_name', designName);
-    formData.append('status', designStatus);
 
     try {
-      const response: { status: number; data: Design } = await CommonService.put(
+      const response = await CommonService.put(
         API_ENDPOINT.UPDATE_DESIGN_DETAILS(selectedDesign.id),
-        formData
+        buildDesignFormData(true)
       );
+
       if (response.status === 200) {
         setshowEditPopup(false);
         await fetchDesigns();
@@ -296,9 +532,12 @@ const Designs = () => {
     }
   };
 
-  const handleRedirectDesign = (id: string) => {
-    store.dispatch(resetStoreForNewDesign());
-    router.push(`/design/${id}`);
+  const handleRedirectDesign = (design: Design) => {
+    if (design.versions && design.versions.length > 0) {
+      window.location.href = `/design/${design.id}/${design.versions[0].id}`;
+    } else {
+      window.location.href = `/design/${design.id}`;
+    }
   };
 
   useEffect(() => {
@@ -326,6 +565,15 @@ const Designs = () => {
     return () => document.removeEventListener('mousedown', handleOutsideClick);
   }, [isDropdownOpen, activeDropdownId]);
 
+  useEffect(() => {
+    setVisibleDesigns(DESIGNS_BATCH_SIZE);
+    setIsAppendingDesigns(false);
+
+    if (designsScrollRef.current) {
+      designsScrollRef.current.scrollTop = 0;
+    }
+  }, [searchQuery, activeFilter, activeView]);
+
   const formatDate = (dateStr: string) => {
     return new Intl.DateTimeFormat('en-GB', {
       day: 'numeric',
@@ -334,70 +582,163 @@ const Designs = () => {
     }).format(new Date(dateStr));
   };
 
-  return (
-    <div className={styles.container}>
-      {errorPopup && (
-        <div className={styles.errorPopup}>
-          <img src={assets.error} alt="Error" />
-          <p>{apiErrorMessage}</p>
+  const STATUS_ICON: Record<string, IconType> = {
+    Draft: LuPenLine,
+    Ready: LuCircleCheck,
+    Nesting: LuLayoutGrid,
+    Completed: LuPackageCheck,
+    Deleted: LuTrash2,
+  };
+
+  const designMeta = (design: Design) =>
+    [design.order_number, design.customer_company, design.project_type].filter(Boolean).join(' · ');
+
+  const renderStatus = (status: string, variant: 'LIST' | 'GRID') => {
+    const StatusIcon = STATUS_ICON[status] ?? LuCircleDot;
+    return (
+      <div
+        className={`${variant === 'LIST' ? styles.status : styles.gridStatus} ${statusStyles[variant][status] ?? ''}`}
+      >
+        <StatusIcon aria-hidden="true" />
+        {status}
+      </div>
+    );
+  };
+
+  const renderActionMenu = (design: Design, menuClass: string) => (
+    <>
+      <button
+        type="button"
+        className={`${styles.three_icon} ${design.status === 'Deleted' ? styles.three_icon_disabled : ''}`}
+        aria-label="Design actions"
+        onClick={(e) => handlathreedot(e, design.id, design.status)}
+      >
+        <LuEllipsisVertical aria-hidden="true" />
+      </button>
+      {activeDropdownId === design.id && (
+        <div className={menuClass} ref={actionDropdownRef}>
+          <ul className={styles.three_dots_dropdown}>
+            <li onClick={(e) => handleEditClickPopUp(e, design.id)}>
+              <LuPencil className={styles.actionIcon} aria-hidden="true" />
+              Edit details
+            </li>
+            <li className={styles.delete} onClick={(e) => handleDeleteClickPopUp(e, design.id)}>
+              <LuTrash2 className={styles.actionIcon} aria-hidden="true" />
+              Move to trash
+            </li>
+          </ul>
         </div>
       )}
+    </>
+  );
 
+  const activeFilterLabel =
+    filterStatusOptions.find((opt) => opt.value === activeFilter)?.label ?? 'All Designs';
+
+  return (
+    <div className={styles.container}>
       <Sidebar />
       <div className={styles.rightside}>
-        <Header isBorderRadius={true} dashboardName="Design Studio" />
+        <Header isBorderRadius={true} dashboardName="Designs" />
 
         <div className={styles.maincontent}>
-          {/* Welcome Section */}
-          <div className={styles.createdesigns}>
-            <div className={styles.createdesignscontent}>
-              <h2 className={styles.createdesignstext}>Ready for a new masterpiece?</h2>
-              <p className={styles.createdesignssubtext}>
-                Bring your ideas to life with our advanced 3D modeling and visualization suite.
-              </p>
-            </div>
+          {/* Studio rail: new design + status shelves */}
+          <aside className={styles.studioRail} aria-label="Design library">
+            <button
+              type="button"
+              className={styles.createdesignButton}
+              onClick={() => {
+                setDesingName('');
+                setDesingStatus('');
+                setOrderNumber('');
+                setCustomerName('');
+                setCustomerCompany('');
+                setCustomerAddress('');
+                setCustomerGstin('');
+                setCustomerContact('');
+                setCustomerEmail('');
+                setProjectType('');
+                setShowPopup(true);
+              }}
+            >
+              <span className={styles.eyebrow}>
+                <LuBox aria-hidden="true" />
+                Design studio
+              </span>
+              <span className={styles.createdesingtext}>
+                <strong>Start a new piece</strong>
+                <small>Cabinets, wardrobes and kitchens in 3D — then nesting and production.</small>
+              </span>
+              <span className={styles.createPill}>
+                <LuPlus aria-hidden="true" />
+                New design
+              </span>
+            </button>
 
-            <div className={styles.createdesignButton} onClick={() => setShowPopup(true)}>
-              <div className={styles.createdesignButtoncontent}>
-                <div className={styles.createdesing}>
-                  <img src={assets.plus_icon} alt="+" />
-                  <div className={styles.createdesingtext}>
-                    <h4>Create New Design</h4>
-                    <p>Start from scratch or a template</p>
-                  </div>
-                </div>
-                <div className={styles.createbuttonimage}>
-                  <img src={assets.createdesignicon} alt="Design studio" />
-                </div>
-              </div>
+            <div className={styles.shelfBlock}>
+              <span className={styles.shelfLabel}>Status</span>
+              <nav className={styles.statusList} aria-label="Filter by status">
+                {filterStatusOptions.map((opt) => {
+                  const OptIcon = opt.value ? (STATUS_ICON[opt.value] ?? LuCircleDot) : LuLayers;
+                  const count = opt.value
+                    ? designs.filter((dsg) => dsg.status === opt.value).length
+                    : designs.length;
+                  const isActive = activeFilter === opt.value;
+                  return (
+                    <button
+                      type="button"
+                      key={opt.label}
+                      aria-pressed={isActive}
+                      className={`${styles.statusItem} ${isActive ? styles.statusItemActive : ''}`}
+                      onClick={() => setActiveFilter(opt.value)}
+                    >
+                      <OptIcon className={styles.statusItemIcon} aria-hidden="true" />
+                      <span>{opt.label}</span>
+                      <span className={styles.statusItemCount}>{count}</span>
+                    </button>
+                  );
+                })}
+              </nav>
             </div>
-          </div>
+          </aside>
 
           {/* Create Popup */}
           {showPopup && (
             <div className={styles.createpopupOverlay}>
               <div className={styles.createpopup}>
-                <img src={assets.createicon} className={styles.createicon} alt="Studio" />
-                <img
-                  src={assets.close}
-                  className={styles.createclose}
-                  alt="Close"
-                  onClick={() => setShowPopup(false)}
-                />
-                <div className={styles.create_right_side}>
-                  <h2>New Project</h2>
-                  <p>Give your design a name to get started.</p>
-                  <form
-                    onSubmit={(e) => {
-                      e.preventDefault();
-                      handleCreateDesign();
-                    }}
+                <div className={styles.createheader}>
+                  <span className={styles.modalIcon}>
+                    <LuPlus aria-hidden="true" />
+                  </span>
+                  <div>
+                    <h2>New design</h2>
+                    <p>Name your design and add the order details to get started.</p>
+                  </div>
+                  <button
+                    type="button"
+                    className={styles.createclose}
+                    aria-label="Close"
+                    onClick={() => setShowPopup(false)}
                   >
-                    <div className={styles.createinputGroup}>
-                      {fields.map((field, i) => (
+                    <LuX aria-hidden="true" />
+                  </button>
+                </div>
+                <form
+                  className={styles.modalBody}
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    handleCreateDesign();
+                  }}
+                >
+                  <div className={styles.formSection}>
+                    <h3 className={styles.formSectionTitle}>Design details</h3>
+                    <div className={`${styles.twoColsWrapper} ${styles.scrollArea}`}>
+                      {projectFields.map((field, i) => (
                         <InputField
                           key={i}
-                          borderColor="rgba(57, 37, 121, 0.1)"
+                          className={styles.inputField}
+                          mediumField
+                          borderColor="rgba(6, 93, 120, 0.1)"
                           {...field}
                           error=""
                         />
@@ -413,7 +754,7 @@ const Designs = () => {
                           key={i}
                           className={styles.inputField}
                           mediumField
-                          borderColor="rgba(84, 83, 51, 0.1)"
+                          borderColor="rgba(6, 93, 120, 0.1)"
                           {...field}
                           error={errors[(field as any).id] ?? ''}
                         />
@@ -426,7 +767,8 @@ const Designs = () => {
                     Cancel
                   </button>
                   <button className={styles.createcontinueButton} onClick={handleCreateDesign}>
-                    Start Design
+                    Start designing
+                    <LuArrowRight aria-hidden="true" />
                   </button>
                 </div>
               </div>
@@ -442,56 +784,28 @@ const Designs = () => {
               </div>
 
               <div className={styles.searchWrapper}>
-                <img src={assets.search_design} alt="Search" className={styles.searchIcon} />
+                <LuSearch className={styles.searchIcon} aria-hidden="true" />
                 <input
                   type="text"
-                  placeholder="Search your designs..."
+                  placeholder="Search designs by name…"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className={styles.searchInput}
                 />
               </div>
 
-              <div className={styles.designsIcon}>
-                <div className={styles.filterWrapper}>
-                  <img
-                    src={assets.sort_searching}
-                    alt="Filter"
-                    onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                    ref={dropdownButtonRef}
-                    className={activeFilter ? styles.activeView : ''}
-                  />
-                  {isDropdownOpen && (
-                    <div className={styles.dropdownMenuProfile} ref={filterDropdownRef}>
-                      {filterStatusOptions.map((opt) => (
-                        <div
-                          key={opt.label}
-                          className={`${styles.dropdownItem} ${activeFilter === opt.value ? styles.activeDropdownItem : ''}`}
-                          onClick={() => {
-                            setActiveFilter(opt.value);
-                            setIsDropdownOpen(false);
-                          }}
-                        >
-                          <img
-                            src={opt.icon}
-                            alt={opt.label}
-                            className={styles.dropdownStatusIcon}
-                          />
-                          {opt.label}
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-                <img
-                  src={activeView === 'list' ? assets.list_formate : assets.disactive_list}
-                  alt="List"
+              <div className={styles.viewToggle} role="group" aria-label="View">
+                <button
+                  type="button"
                   className={activeView === 'list' ? styles.activeView : ''}
                   onClick={() => setActiveView('list')}
-                />
-                <img
-                  src={activeView === 'grid' ? assets.active_grid : assets.grid_formate}
-                  alt="Grid"
+                  aria-label="List view"
+                  title="List view"
+                >
+                  <LuList aria-hidden="true" />
+                </button>
+                <button
+                  type="button"
                   className={activeView === 'grid' ? styles.activeView : ''}
                   onClick={() => setActiveView('grid')}
                   aria-label="Grid view"
@@ -502,11 +816,24 @@ const Designs = () => {
               </div>
             </div>
 
-            <div className={styles.designviewpart}>
-              {loading && <div className="p-8 text-center text-slate-400">Loading catalog...</div>}
+            <div
+              className={styles.designviewpart}
+              ref={designsScrollRef}
+              onScroll={handleDesignsScroll}
+            >
+              {loading && (
+                <div className={styles.stateBox}>
+                  <div className={styles.scrollLoaderSpinner} />
+                  <p>Loading your designs…</p>
+                </div>
+              )}
               {!loading && filteredDesigns.length === 0 && (
-                <div className="rounded-3xl border border-dashed bg-white p-12 text-center font-medium text-slate-400">
-                  No projects found matching your criteria.
+                <div className={styles.stateBox}>
+                  <span className={styles.stateIcon}>
+                    <LuFolderOpen aria-hidden="true" />
+                  </span>
+                  <strong>No designs found</strong>
+                  <p>Try a different search or filter, or create a new design.</p>
                 </div>
               )}
 
@@ -516,53 +843,39 @@ const Designs = () => {
                     <div
                       key={design.id}
                       className={`${styles.designview} ${design.status === 'Deleted' ? styles.cursorNotAllowed : ''} ${activeDropdownId === design.id ? styles.activeDesignRow : ''}`}
-                      onClick={() => design.status !== 'Deleted' && handleRedirectDesign(design.id)}
+                      onClick={() => design.status !== 'Deleted' && handleRedirectDesign(design)}
                     >
-                      <img
-                        src={assets.design_list_icon}
-                        className={styles.design_list_icon}
-                        alt="D"
-                      />
+                      <span className={styles.design_list_icon}>
+                        <LuBox aria-hidden="true" />
+                      </span>
                       <div className={styles.designviewcontent}>
-                        <h4 className={styles.designName}>{design.design_name}</h4>
+                        <div className={styles.designTitleBlock}>
+                          <h4 className={styles.designName}>{design.design_name}</h4>
+                          {designMeta(design) && (
+                            <p className={styles.designMeta}>{designMeta(design)}</p>
+                          )}
+                        </div>
                         <div className={styles.designsdetailsontime}>
                           <div className={styles.designCreatedAt}>
-                            <p className={styles.designTime}>Author</p>
+                            <p className={styles.designTime}>
+                              <LuUser aria-hidden="true" />
+                              Author
+                            </p>
                             <span className={styles.userName}>{userdetails?.username || '—'}</span>
                           </div>
                           <div className={styles.designUpdateAt}>
-                            <p className={styles.designTime}>Updated</p>
+                            <p className={styles.designTime}>
+                              <LuCalendar aria-hidden="true" />
+                              Updated
+                            </p>
                             <span className={styles.userName}>{formatDate(design.updated_at)}</span>
                           </div>
                         </div>
-                        <div className={`${styles.status} ${statusStyles['LIST'][design.status]}`}>
-                          <img src={statusStyles['SVG'][design.status]} alt="" />
-                          {design.status}
-                        </div>
+                        {renderStatus(design.status, 'LIST')}
                       </div>
 
                       <div className={styles.threedot_container}>
-                        <img
-                          src={assets.three_dots}
-                          alt="Menu"
-                          className={styles.three_icon}
-                          onClick={(e) => handlathreedot(e, design.id, design.status)}
-                        />
-                        {activeDropdownId === design.id && (
-                          <div className={styles.three_dots} ref={actionDropdownRef}>
-                            <ul className={styles.three_dots_dropdown}>
-                              <li onClick={(e) => handleEditClickPopUp(e, design.id)}>
-                                <img src={assets.editicon} alt="" className={styles.actionIcon} /> Edit Details
-                              </li>
-                              <li
-                                className={styles.delete}
-                                onClick={(e) => handleDeleteClickPopUp(e, design.id)}
-                              >
-                                <img src={assets.deleteicon} alt="" className="w-4" /> Move to Trash
-                              </li>
-                            </ul>
-                          </div>
-                        )}
+                        {renderActionMenu(design, styles.three_dots)}
                       </div>
                     </div>
                   ))}
@@ -573,7 +886,7 @@ const Designs = () => {
                     <div
                       key={design.id}
                       className={`${styles.gridItemContainer} ${design.status === 'Deleted' ? styles.cursorNotAllowed : ''} ${activeDropdownId === design.id ? styles.activeDesignRow : ''}`}
-                      onClick={() => design.status !== 'Deleted' && handleRedirectDesign(design.id)}
+                      onClick={() => design.status !== 'Deleted' && handleRedirectDesign(design)}
                     >
                       <div className={styles.gridPreview}>
                         <LuBox aria-hidden="true" />
@@ -583,40 +896,14 @@ const Designs = () => {
                       </div>
                       <div className={styles.gridItem}>
                         <div className={styles.gridTitle}>
-                          <img src={assets.grid_computer} alt="GLB" />
                           <p title={design.design_name}>{design.design_name}</p>
-                        </div>
-                        <div className={styles.gridAction}>
-                          <img
-                            src={assets.three_dots}
-                            alt="Menu"
-                            className={styles.three_icon}
-                            onClick={(e) => handlathreedot(e, design.id, design.status)}
-                          />
-                          {activeDropdownId === design.id && (
-                            <div className={styles.gridthree_dots} ref={actionDropdownRef}>
-                              <ul className={styles.three_dots_dropdown}>
-                                <li onClick={(e) => handleEditClickPopUp(e, design.id)}>
-                                  <img src={assets.editicon} alt="" className="w-4" /> Edit
-                                </li>
-                                <li
-                                  className={styles.delete}
-                                  onClick={(e) => handleDeleteClickPopUp(e, design.id)}
-                                >
-                                  <img src={assets.deleteicon} alt="" className="w-4" /> Trash
-                                </li>
-                              </ul>
-                            </div>
+                          {designMeta(design) && (
+                            <span className={styles.designMeta}>{designMeta(design)}</span>
                           )}
                         </div>
                       </div>
                       <div className={styles.gridBottom}>
-                        <div
-                          className={`${styles.gridStatus} ${statusStyles['GRID'][design.status]}`}
-                        >
-                          <img src={statusStyles['SVG'][design.status]} alt="" />
-                          {design.status}
-                        </div>
+                        {renderStatus(design.status, 'GRID')}
                         <div className={styles.gridDesignUpdateAt}>
                           <p className={styles.gridDesignTime}>Updated</p>
                           <p className={styles.gridUserSubtitle}>{formatDate(design.updated_at)}</p>
@@ -628,15 +915,10 @@ const Designs = () => {
               )}
             </div>
 
-            {visibleDesigns < filteredDesigns.length && (
-              <div className={styles.designsLoadMore}>
-                <div
-                  className={styles.loadmore}
-                  onClick={() => setVisibleDesigns((prev) => prev + 6)}
-                >
-                  <p>View More Projects</p>
-                  <img src={assets.progress_upload} alt="" className={styles.process_upload} />
-                </div>
+            {isAppendingDesigns && (
+              <div className={styles.scrollLoaderRow}>
+                <div className={styles.scrollLoaderSpinner} />
+                <p>Loading more designs…</p>
               </div>
             )}
           </div>
@@ -644,32 +926,67 @@ const Designs = () => {
 
         {/* Edit Popup */}
         {showEditPopup && (
-          <div className={styles.popupOverlay} onClick={() => setshowEditPopup(false)}>
-            <div className={styles.popup} onClick={(e) => e.stopPropagation()}>
-              <img src={assets.editpopupicon} className={styles.editpopupicon} alt="Edit" />
-              <img
-                src={assets.close}
-                className={styles.editclose}
-                alt="X"
-                onClick={() => setshowEditPopup(false)}
-              />
-              <div className={styles.edit_right_side}>
-                <h3>Project Settings</h3>
-                <p>Update your design name or status below.</p>
+          <div className={styles.createpopupOverlay} onClick={() => setshowEditPopup(false)}>
+            <div className={styles.createpopup} onClick={(e) => e.stopPropagation()}>
+              <div className={styles.createheader}>
+                <span className={styles.modalIcon}>
+                  <LuPencil aria-hidden="true" />
+                </span>
+                <div>
+                  <h2>Edit design</h2>
+                  <p>Update the design and customer details.</p>
+                </div>
+                <button
+                  type="button"
+                  className={styles.createclose}
+                  aria-label="Close"
+                  onClick={() => setshowEditPopup(false)}
+                >
+                  <LuX aria-hidden="true" />
+                </button>
               </div>
-              <form onSubmit={(e) => e.preventDefault()}>
-                <div className={styles.inputGroup}>
-                  {editFields.map((field, i) => (
-                    <InputField key={i} borderColor="rgba(57, 37, 121, 0.1)" {...field} error="" />
-                  ))}
+              <form className={styles.modalBody} onSubmit={(e) => e.preventDefault()}>
+                <div className={styles.formSection}>
+                  <h3 className={styles.formSectionTitle}>Design details</h3>
+                  <div className={`${styles.twoColsWrapper} ${styles.scrollArea}`}>
+                    {editProjectFields.map((field, i) => (
+                      <InputField
+                        key={i}
+                        className={styles.inputField}
+                        mediumField
+                        borderColor="rgba(6, 93, 120, 0.1)"
+                        {...field}
+                        error=""
+                      />
+                    ))}
+                  </div>
+                </div>
+
+                <div className={styles.formSection}>
+                  <h3 className={styles.formSectionTitle}>Customer details</h3>
+                  <div className={`${styles.customerGrid} ${styles.scrollArea}`}>
+                    {customerFields.map((field, i) => (
+                      <InputField
+                        key={i}
+                        className={styles.inputField}
+                        mediumField
+                        borderColor="rgba(6, 93, 120, 0.1)"
+                        {...field}
+                        error={errors[(field as any).id] ?? ''}
+                      />
+                    ))}
+                  </div>
                 </div>
               </form>
-              <div className={styles.editButtonGrop}>
-                <button className={styles.canceleditButton} onClick={() => setshowEditPopup(false)}>
+              <div className={styles.createButtonGrop}>
+                <button
+                  className={styles.cancelcreateButton}
+                  onClick={() => setshowEditPopup(false)}
+                >
                   Cancel
                 </button>
-                <button className={styles.continueButton} onClick={handleEditClick}>
-                  Save Changes
+                <button className={styles.createcontinueButton} onClick={handleEditClick}>
+                  Save changes
                 </button>
               </div>
             </div>
@@ -680,23 +997,31 @@ const Designs = () => {
         {showDeletePopup && (
           <div className={styles.deletepopupOverlay} onClick={() => setshowDeletePopup(false)}>
             <div className={styles.deletepopup} onClick={(e) => e.stopPropagation()}>
-              <img src={assets.deletepopup} className={styles.deletepopupicon} alt="Delete" />
-              <img
-                src={assets.close}
+              <button
+                type="button"
                 className={styles.close}
-                alt="X"
+                aria-label="Close"
                 onClick={() => setshowDeletePopup(false)}
-              />
+              >
+                <LuX aria-hidden="true" />
+              </button>
+              <span className={styles.deletepopupicon}>
+                <LuTriangleAlert aria-hidden="true" />
+              </span>
               <div className={styles.right_side}>
-                <h2>Discard Design?</h2>
-                <p>This will move the design to the trash. You can restore it later if needed.</p>
+                <h2>Move design to trash?</h2>
+                <p>
+                  <strong>{designName || 'This design'}</strong> will be moved to the trash. You can
+                  restore it later if needed.
+                </p>
               </div>
               <div className={styles.deleteButtonGrop}>
                 <button className={styles.cancelButton} onClick={() => setshowDeletePopup(false)}>
-                  No, Keep it
+                  No, keep it
                 </button>
                 <button className={styles.deleteButton} onClick={handleDeleteClick}>
-                  Yes, Move to Trash
+                  <LuTrash2 aria-hidden="true" />
+                  Yes, move to trash
                 </button>
               </div>
             </div>
