@@ -1,4 +1,4 @@
-const TITLE_PROJECT_NAME = 'Bravento';
+const TITLE_PROJECT_NAME = 'Phinx';
 
 export const STATUS_CODES = {
   OK: 200,

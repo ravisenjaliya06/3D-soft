@@ -4,7 +4,8 @@ import commonService from '@/services/CommonService';
 import { assets } from '@/svgPaths';
 import { OrbitControls, Stage, useGLTF } from '@react-three/drei';
 import { Canvas } from '@react-three/fiber';
-import React, { Fragment, Suspense, useEffect, useState } from 'react';
+import React, { Suspense, useEffect, useState } from 'react';
+import { LuCheck } from 'react-icons/lu';
 import { formatEnumLabel } from '../3dmodel/sceneCreator/utils';
 import styles from './material.module.css';
 import { MaterialProperties, MaterialPropertiesInput } from './types';
@@ -3044,7 +3045,7 @@ const AddMaterialPopup: React.FC<Props> = ({
               value={field.key === 'type' && currentStep === 0 ? selectedMaterialType : value}
               onFocus={onActivate}
               placeholder={field.placeholder}
-              className="text-[#392579]"
+              className="text-[var(--bv-primary)]"
               fullWidth={true}
               onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
                 handleInputChange(field.key, e.target.value)
@@ -3185,181 +3186,236 @@ const AddMaterialPopup: React.FC<Props> = ({
   return (
     <div className={styles.addMaterialPageWrapper}>
       <div className={styles.addMaterialCard}>
-        {/* Header Section */}
-        <div className={styles.formHeader}>
+        {/* Left: step guide */}
+        <aside className={styles.formHeader}>
           <div className={styles.formTitleSection}>
-            <h3>{currentPopup?.title || 'Add New Material'}</h3>
+            <span className={styles.formEyebrow}>Material library</span>
+            <h3>{initialData ? 'Edit material' : 'New material'}</h3>
             <p className={styles.formSubtitle}>
-              Fill in the details and choose the materials that perfectly match your needs.
+              Describe the board, edge or fitting once — designs and cut lists reuse it.
             </p>
           </div>
-        </div>
 
-        {/* Step Indicator Section */}
-        <div className={styles.stepIndicatorWrapper}>
-          {steps.map((label, index) => {
-            const isCurrent = index === uiStep;
-            const isCompleted = index < uiStep;
+          <ol className={styles.stepIndicatorWrapper}>
+            {steps.map((label, index) => {
+              const isCurrent = index === uiStep;
+              const isCompleted = index < uiStep;
 
-            return (
-              <Fragment key={label}>
-                <div
+              return (
+                <li
+                  key={label}
                   className={`${styles.stepItem} ${isCurrent ? styles.active : ''} ${isCompleted ? styles.completed : ''}`}
                   onClick={() => handleStepClick(index)}
+                  aria-current={isCurrent ? 'step' : undefined}
                 >
                   <div className={styles.stepCircle}>
-                    {isCompleted ? (
-                      <img
-                        src="/assets/material/Checkcircle.svg"
-                        alt="Completed"
-                        className="h-5 w-5"
-                      />
-                    ) : (
-                      index + 1
-                    )}
+                    {isCompleted ? <LuCheck aria-hidden="true" /> : index + 1}
                   </div>
-                  <span className={styles.stepLabel}>{label}</span>
-                </div>
-                {index < steps.length - 1 && <div className={styles.stepConnector} />}
-              </Fragment>
-            );
-          })}
-        </div>
+                  <div className={styles.stepText}>
+                    <span className={styles.stepLabel}>{label}</span>
+                    <span className={styles.stepHint}>{STEP_HINTS[index]}</span>
+                  </div>
+                </li>
+              );
+            })}
+          </ol>
 
-        {/* Form Body Section */}
-        <div className={`${styles.formContentScroll} ${styles.custom_scrollbar}`}>
-          {(() => {
-            const hasImageFields = currentPopup?.fields.some((field) => field.img);
-            const isModelStep = currentPopup?.fields.some((field) => field.key === 'model_file');
+          <div className={styles.stepProgress}>
+            <div className={styles.stepProgressText}>
+              Step {currentStep + 1} of {currentSequence.length}
+            </div>
+            <div className={styles.stepProgressTrack}>
+              <span
+                className={styles.stepProgressFill}
+                style={{
+                  width: `${((currentStep + 1) / Math.max(currentSequence.length, 1)) * 100}%`,
+                }}
+              />
+            </div>
+          </div>
+        </aside>
 
-            return (
-              <div className={`${styles.formGrid} ${!hasImageFields && !isModelStep ? styles.fullWidthGrid : ''}`}>
-                {/* Left Side: Fields */}
-                <div className={styles.fieldsContainer}>
-                  {currentPopup?.fields.map((field, index) => {
-                    const isPricingStep = currentPopup?.title === 'Pricing Details';
-                    // Allow 2 fields per row in pricing step, but make 'waste' full-width 
-                    // to ensure the subsequent toggles (Sales Tax, Estimate) start on a new row together.
-                    const isFullWidth = field.type !== 'toggle' && (!isPricingStep || field.key === 'waste');
-                    
-                    return (
-                      <div
-                        key={field.key || index}
-                        className={`${styles.fieldWrapper} ${isFullWidth ? styles.fieldWrapperFull : ''}`}
-                      >
-                        {renderField(field, () => setActiveFieldKey(field.key))}
-                      </div>
-                    );
-                  })}
+        {/* Right: the current step */}
+        <div className={styles.wizardMain}>
+          <div className={styles.wizardMainHead}>
+            <span className={styles.wizardMainEyebrow}>
+              Step {uiStep + 1} · {steps[uiStep]}
+            </span>
+            <h4>{currentPopup?.title || 'Add New Material'}</h4>
+          </div>
+
+          {/* Form Body Section */}
+          <div className={`${styles.formContentScroll} ${styles.custom_scrollbar}`}>
+            {(() => {
+              const hasImageFields = currentPopup?.fields.some(
+                (field) => field.img || field.type === 'texture-grid'
+              );
+              const isModelStep = currentPopup?.fields.some((field) => field.key === 'model_file');
+
+              return (
+                <div
+                  className={`${styles.formGrid} ${!hasImageFields && !isModelStep ? styles.fullWidthGrid : ''}`}
+                >
+                  {/* Left Side: Fields */}
+                  <div className={styles.fieldsContainer}>
+                    {currentPopup?.fields.map((field, index) => {
+                      const isPricingStep = currentPopup?.title === 'Pricing Details';
+                      // Allow 2 fields per row in pricing step, but make 'waste' full-width
+                      // to ensure the subsequent toggles (Sales Tax, Estimate) start on a new row together.
+                      const isFullWidth =
+                        (field.type !== 'toggle' && (!isPricingStep || field.key === 'waste')) ||
+                        field.type === 'texture-grid';
+
+                      return (
+                        <div
+                          key={field.key || index}
+                          className={`${styles.fieldWrapper} ${isFullWidth ? styles.fieldWrapperFull : ''}`}
+                        >
+                          {renderField(field, () => setActiveFieldKey(field.key))}
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {/* Right Side: Preview (Sticky) */}
+                  {(hasImageFields || isModelStep) && (
+                    <div className={styles.previewArea}>
+                      {(() => {
+                        const activeField = currentPopup?.fields.find(
+                          (f) => f.key === activeFieldKey
+                        );
+                        const modelFieldInStep = currentPopup?.fields.find(
+                          (f) => f.key === 'model_file'
+                        );
+
+                        if (activeFieldKey === 'model_file' && modelFieldInStep) {
+                          return (
+                            <div className={styles.modelViewerContainer}>
+                              <ModelViewer file={(formData.model_file as File) || null} />
+                            </div>
+                          );
+                        }
+
+                        if (
+                          activeFieldKey === 'selectedTexture' ||
+                          currentPopup?.title === 'Finish Details'
+                        ) {
+                          const previewId = hoveredTextureId || formData.selectedTexture;
+                          const selectedTexInLibrary = texturesList.find((t) => t.id === previewId);
+                          let displayImageUrl = null;
+                          if (selectedTexInLibrary?.image) {
+                            displayImageUrl = selectedTexInLibrary.image;
+                          } else if (
+                            !hoveredTextureId &&
+                            Array.isArray(formData.textures) &&
+                            formData.textures.length > 0
+                          ) {
+                            const savedTex = formData.textures[0];
+                            displayImageUrl = savedTex.image || savedTex.texture_detail?.image;
+                          }
+
+                          if (displayImageUrl) {
+                            const imageUrl = `${process.env.NEXT_PUBLIC_PUBLIC_API}${displayImageUrl.startsWith('/') ? '' : '/'}${displayImageUrl}`;
+                            return (
+                              <img
+                                src={imageUrl}
+                                className={styles.previewImage}
+                                alt="Texture Preview"
+                              />
+                            );
+                          } else {
+                            return (
+                              <div className="text-sm text-slate-400 italic">
+                                Select a texture to see preview
+                              </div>
+                            );
+                          }
+                        }
+
+                        if (activeField?.img) {
+                          return (
+                            <img
+                              src={activeField.img}
+                              className={styles.previewImage}
+                              alt="Visual Guide"
+                            />
+                          );
+                        }
+
+                        // Default to model viewer if on model step
+                        if (isModelStep && formData.model_file) {
+                          return (
+                            <div className={styles.modelViewerContainer}>
+                              <ModelViewer file={formData.model_file as File} />
+                            </div>
+                          );
+                        }
+
+                        // If no active field with image, show a placeholder if we have ANY image fields in this step
+                        const firstImgField = currentPopup?.fields.find((f) => f.img);
+                        if (firstImgField?.img) {
+                          return (
+                            <img
+                              src={firstImgField.img}
+                              className={styles.previewImage}
+                              alt="Visual Guide"
+                            />
+                          );
+                        }
+
+                        return (
+                          <div className="text-sm text-slate-400 italic">
+                            Select a field to see visual guide
+                          </div>
+                        );
+                      })()}
+                    </div>
+                  )}
                 </div>
               );
             })()}
           </div>
 
-                {/* Right Side: Preview (Sticky) */}
-                {(hasImageFields || isModelStep) && (
-                  <div className={styles.previewArea}>
-                    {(() => {
-                      const activeField = currentPopup?.fields.find((f) => f.key === activeFieldKey);
-                      const modelFieldInStep = currentPopup?.fields.find(
-                        (f) => f.key === 'model_file'
-                      );
-
-                      if (activeFieldKey === 'model_file' && modelFieldInStep) {
-                        return (
-                          <div className={styles.modelViewerContainer}>
-                            <ModelViewer file={(formData.model_file as File) || null} />
-                          </div>
-                        );
-                      }
-
-                      if (activeField?.img) {
-                        return (
-                          <img
-                            src={activeField.img}
-                            className={styles.previewImage}
-                            alt="Visual Guide"
-                          />
-                        );
-                      }
-
-                      // Default to model viewer if on model step
-                      if (isModelStep && formData.model_file) {
-                        return (
-                          <div className={styles.modelViewerContainer}>
-                            <ModelViewer file={formData.model_file as File} />
-                          </div>
-                        );
-                      }
-
-                      // If no active field with image, show a placeholder if we have ANY image fields in this step
-                      const firstImgField = currentPopup?.fields.find((f) => f.img);
-                      if (firstImgField?.img) {
-                        return (
-                          <img
-                            src={firstImgField.img}
-                            className={styles.previewImage}
-                            alt="Visual Guide"
-                          />
-                        );
-                      }
-
-                      return (
-                        <div className="text-slate-400 italic text-sm">
-                          Select a field to see visual guide
-                        </div>
-                      );
-                    })()}
-                  </div>
-                )}
-              </div>
-            );
-          })()}
-        </div>
-
-        {/* Footer Section */}
-        <div className={styles.formFooter}>
-          <div className={styles.stepProgressText}>
-            Step {currentStep + 1} of {currentSequence.length}
-          </div>
-
-          <div className={styles.buttonGroup}>
-            <button
-              className={styles.btnSecondary}
-              onClick={() => setCreateWorkOrderPopup(false)}
-            >
-              Cancel
-            </button>
-            
-            {!isFirstStep && (
-              <button className={styles.btnSecondary} onClick={handleBack}>
-                Back
-              </button>
-            )}
-
-            {!isLastStep ? (
+          {/* Footer Section */}
+          <div className={styles.formFooter}>
+            <div className={styles.buttonGroup}>
               <button
-                className={styles.btnPrimary}
-                onClick={handleNext}
-                disabled={!formData.name && currentStep === 0}
+                className={styles.btnSecondary}
+                onClick={() => setCreateWorkOrderPopup(false)}
               >
-                Next
+                Cancel
               </button>
-            ) : (
-              <div className="relative">
-                <button
-                  className={`${styles.btnPrimary} ${styles.btnFinish}`}
-                  onClick={handleFinish}
-                >
-                  Finish
+
+              {!isFirstStep && (
+                <button className={styles.btnSecondary} onClick={handleBack}>
+                  Back
                 </button>
-                {errorMessage && (
-                  <div className="absolute bottom-full right-0 mb-4 w-64 bg-red-50 border border-red-200 p-3 rounded-lg shadow-xl animate-bounce">
-                    <p className="text-xs text-red-600 font-medium">{errorMessage}</p>
-                  </div>
-                )}
-              </div>
-            )}
+              )}
+
+              {!isLastStep ? (
+                <button
+                  className={styles.btnPrimary}
+                  onClick={handleNext}
+                  disabled={!formData.name && currentStep === 0}
+                >
+                  Next
+                </button>
+              ) : (
+                <div className="relative">
+                  <button
+                    className={`${styles.btnPrimary} ${styles.btnFinish}`}
+                    onClick={handleFinish}
+                  >
+                    Finish
+                  </button>
+                  {errorMessage && (
+                    <div className="absolute right-0 bottom-full mb-4 w-64 animate-bounce rounded-lg border border-red-200 bg-red-50 p-3 shadow-xl">
+                      <p className="text-xs font-medium text-red-600">{errorMessage}</p>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>

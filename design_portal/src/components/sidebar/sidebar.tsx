@@ -92,9 +92,9 @@ const Sidebar = () => {
           type="button"
           className={styles.brand}
           onClick={() => router.push(REDIRECT.DASHBOARD)}
-          aria-label="Bravento home"
+          aria-label="Phinx home"
         >
-          <img src={assets.Logo} alt="Bravento Logo" />
+          <img src={assets.phinxLogoLight} alt="Phinx" />
         </button>
 
         <nav className={styles.nav} aria-label="Main">

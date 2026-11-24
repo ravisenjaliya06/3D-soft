@@ -18,7 +18,7 @@
   background: var(--bv-ink);
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: var(--bv-radius);
-  box-shadow: 0 0.6rem 1.8rem rgba(20, 20, 10, 0.28);
+  box-shadow: 0 0.6rem 1.8rem rgba(4, 30, 40, 0.28);
   transform: translateX(-50%);
   user-select: none;
 }

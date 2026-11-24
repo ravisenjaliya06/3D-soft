@@ -7,63 +7,65 @@
 @tailwind utilities;
 
 /* ─────────────────────────────────────────────────────────────
-   Bravento redesign tokens — "Olive & Terracotta" (see DESIGN_RULES.md)
+   Phinx theme tokens — teal & green from the Phinx logo (see DESIGN_RULES.md)
    Two brand colours only, on white:
-     Olive      #545333  → brand, dark panels, links, focus, selection
-     Terracotta #C8571B  → main call-to-action, highlights, icons
+     Teal   #065D78  → brand, dark panels, links, focus, selection
+     Green  #1A9F55 (logo green #4CE07E on dark) → call-to-action, highlights
    Everything else is white or neutral grey.
    ───────────────────────────────────────────────────────────── */
 :root {
-  /* brand colour 1 — olive */
-  --bv-primary: #545333;
-  --bv-primary-hover: #3f3e25;
-  --bv-primary-soft: #ecece4;
-  --bv-primary-tint: #f6f6f2;
+  /* brand colour 1 — Phinx teal (logo #065D78) */
+  --bv-primary: #065d78;
+  --bv-primary-hover: #04485d;
+  --bv-primary-soft: #e2eff3;
+  --bv-primary-tint: #f1f7f9;
   --bv-on-primary: #ffffff;
 
-  /* brand colour 2 — terracotta */
-  --bv-accent: #c8571b;
-  --bv-accent-hover: #a94612;
-  --bv-accent-light: #f2914f; /* accent on dark olive surfaces */
-  --bv-accent-soft: #fbe9de;
+  /* brand colour 2 — Phinx green (logo #4CE07E).
+     --bv-accent is a deeper green that stays readable on white;
+     --bv-accent-light is the exact logo green, used on dark teal. */
+  --bv-accent: #1a9f55;
+  --bv-accent-hover: #157f44;
+  --bv-accent-light: #4ce07e;
+  --bv-accent-soft: #e3f8ea;
   --bv-on-accent: #ffffff;
-  --bv-accent-glow: rgba(200, 87, 27, 0.32);
+  --bv-accent-glow: rgba(76, 224, 126, 0.34);
 
   /* illustration materials (tints of the two brand colours) */
-  --bv-wood: #c8571b;
-  --bv-wood-light: #f2914f;
-  --bv-wood-dark: #a94612;
+  --bv-wood: #0e7a99;
+  --bv-wood-light: #5cc3dc;
+  --bv-wood-dark: #065d78;
   --bv-stone: #ffffff;
-  --bv-leaf: #f2914f;
+  --bv-leaf: #4ce07e;
 
   /* surfaces */
-  --bv-ink: #545333;
-  --bv-ink-2: #3f3e25;
+  --bv-ink: #064457;
+  --bv-ink-2: #04313f;
   --bv-on-ink: #ffffff;
-  --bv-on-ink-muted: #dcdbcb;
+  --bv-on-ink-muted: #b6d2db;
   --bv-bg: #ffffff;
   --bv-surface: #ffffff;
-  --bv-surface-2: #f6f6f3;
-  --bv-border: #e4e4de;
-  --bv-border-strong: #cdcdc3;
-  --bv-backdrop: rgba(31, 31, 20, 0.5);
+  --bv-surface-2: #f3f7f8;
+  --bv-border: #dfe8eb;
+  --bv-border-strong: #c3d2d7;
+  --bv-backdrop: rgba(4, 30, 40, 0.5);
   --bv-glass: rgba(255, 255, 255, 0.08);
   --bv-glass-border: rgba(255, 255, 255, 0.18);
 
-  /* text (neutral) */
-  --bv-text: #1f1f14;
-  --bv-text-muted: #5c5c4e;
-  --bv-text-subtle: #8a8a7c;
+  /* text (neutral, cool) */
+  --bv-text: #0e2128;
+  --bv-text-muted: #4a5f66;
+  --bv-text-subtle: #7b8d93;
 
   /* status */
-  --bv-success: #3f7d3a;
-  --bv-success-soft: #e6f1e3;
+  --bv-success: #1a9f55;
+  --bv-success-soft: #e3f8ea;
   --bv-warning: #b07a10;
   --bv-warning-soft: #f8efd8;
   --bv-danger: #c0362c;
   --bv-danger-soft: #fbe5e2;
-  --bv-info: #545333;
-  --bv-info-soft: #ecece4;
+  --bv-info: #065d78;
+  --bv-info-soft: #e2eff3;
 
   /* typography (rem = 1vw, so clamp keeps sizes readable) */
   --bv-font: 'Plus Jakarta Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
@@ -88,10 +90,10 @@
   --bv-space-7: 48px;
 
   /* depth & motion */
-  --bv-shadow-sm: 0 1px 2px rgba(31, 31, 20, 0.06), 0 1px 3px rgba(31, 31, 20, 0.04);
-  --bv-shadow-md: 0 6px 16px rgba(31, 31, 20, 0.08), 0 2px 4px rgba(31, 31, 20, 0.04);
-  --bv-shadow-lg: 0 24px 48px rgba(31, 31, 20, 0.16), 0 8px 16px rgba(31, 31, 20, 0.06);
-  --bv-focus-ring: 0 0 0 3px rgba(84, 83, 51, 0.25);
+  --bv-shadow-sm: 0 1px 2px rgba(4, 30, 40, 0.06), 0 1px 3px rgba(4, 30, 40, 0.04);
+  --bv-shadow-md: 0 6px 16px rgba(4, 30, 40, 0.08), 0 2px 4px rgba(4, 30, 40, 0.04);
+  --bv-shadow-lg: 0 24px 48px rgba(4, 30, 40, 0.16), 0 8px 16px rgba(4, 30, 40, 0.06);
+  --bv-focus-ring: 0 0 0 3px rgba(6, 93, 120, 0.28);
   --bv-ease: 160ms cubic-bezier(0.2, 0, 0, 1);
 }
 
@@ -241,7 +243,7 @@ button {
   overflow: hidden;
   background: var(--bv-surface-2);
   border: 1px solid var(--bv-border);
-  box-shadow: 0 0.8rem 2rem rgba(30, 30, 18, 0.16);
+  box-shadow: 0 0.8rem 2rem rgba(4, 30, 40, 0.16);
   animation: bvInspectorIn 180ms cubic-bezier(0.2, 0, 0, 1);
 }
 
@@ -278,7 +280,7 @@ button {
   bottom: var(--bv-insp-edge);
   height: 2.6rem;
   border-radius: var(--bv-radius-pill);
-  box-shadow: 0 0.6rem 1.6rem rgba(20, 20, 10, 0.3);
+  box-shadow: 0 0.6rem 1.6rem rgba(4, 30, 40, 0.3);
 }
 
 .bv-editor .bv-inspector-heading {
@@ -546,7 +548,7 @@ button {
   background: var(--bv-surface);
   border: 1px solid var(--bv-border);
   border-radius: 1rem;
-  box-shadow: 0 0.8rem 2rem rgba(30, 30, 18, 0.16);
+  box-shadow: 0 0.8rem 2rem rgba(4, 30, 40, 0.16);
 }
 
 .bv-editor .bv-texture-search {

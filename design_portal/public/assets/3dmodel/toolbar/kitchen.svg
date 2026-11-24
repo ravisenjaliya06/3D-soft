@@ -1,17 +1,17 @@
 <svg width="42" height="38" viewBox="0 0 42 38" fill="none" xmlns="http://www.w3.org/2000/svg">
 <rect x="0.25" y="0.25" width="41.5" height="37.5" rx="4.75" fill="white"/>
 <rect x="0.25" y="0.25" width="41.5" height="37.5" rx="4.75" stroke="#D4D8DC" stroke-width="0.5"/>
-<path d="M11 20H31V29H11V20Z" stroke="#545333" stroke-linejoin="round"/>
-<path d="M11 12H15V15H11V12Z" stroke="#545333" stroke-linejoin="round"/>
-<path d="M26 12H31V15H26V12Z" stroke="#545333" stroke-linejoin="round"/>
-<path d="M22.5 24.5V27.5H18.5V24.5H22.5Z" stroke="#545333" stroke-linejoin="round"/>
-<path d="M17 20L17 29" stroke="#545333" stroke-linejoin="round"/>
-<circle cx="18.5" cy="21.5" r="0.5" fill="#545333"/>
-<circle cx="20.5" cy="21.5" r="0.5" fill="#545333"/>
-<circle cx="22.5" cy="21.5" r="0.5" fill="#545333"/>
-<path d="M24 20L24 29" stroke="#545333" stroke-linejoin="round"/>
-<path d="M31 23H24" stroke="#545333" stroke-linejoin="round"/>
-<path d="M17 23H11" stroke="#545333" stroke-linejoin="round"/>
-<path d="M17 26H11" stroke="#545333" stroke-linejoin="round"/>
-<path d="M22.5 9.5V12L24 13.5V15H17V13.5L18.5 12V9.5" stroke="#545333" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M11 20H31V29H11V20Z" stroke="#065D78" stroke-linejoin="round"/>
+<path d="M11 12H15V15H11V12Z" stroke="#065D78" stroke-linejoin="round"/>
+<path d="M26 12H31V15H26V12Z" stroke="#065D78" stroke-linejoin="round"/>
+<path d="M22.5 24.5V27.5H18.5V24.5H22.5Z" stroke="#065D78" stroke-linejoin="round"/>
+<path d="M17 20L17 29" stroke="#065D78" stroke-linejoin="round"/>
+<circle cx="18.5" cy="21.5" r="0.5" fill="#065D78"/>
+<circle cx="20.5" cy="21.5" r="0.5" fill="#065D78"/>
+<circle cx="22.5" cy="21.5" r="0.5" fill="#065D78"/>
+<path d="M24 20L24 29" stroke="#065D78" stroke-linejoin="round"/>
+<path d="M31 23H24" stroke="#065D78" stroke-linejoin="round"/>
+<path d="M17 23H11" stroke="#065D78" stroke-linejoin="round"/>
+<path d="M17 26H11" stroke="#065D78" stroke-linejoin="round"/>
+<path d="M22.5 9.5V12L24 13.5V15H17V13.5L18.5 12V9.5" stroke="#065D78" stroke-linecap="round" stroke-linejoin="round"/>
 </svg>

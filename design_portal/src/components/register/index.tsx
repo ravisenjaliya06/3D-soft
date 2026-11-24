@@ -170,14 +170,14 @@ const Register = () => {
         eyebrow="Free workspace for furniture makers"
         title="Set up your workshop."
         highlight="Start building today."
-        lead="Create your Bravento workspace to design furniture in 3D, generate accurate cut lists and nest every board for less waste."
+        lead="Create your Phinx workspace to design furniture in 3D, generate accurate cut lists and nest every board for less waste."
       />
 
       {/* ── Sign-up form ────────────────────────────────────── */}
       <section className={styles.formPanel}>
         <div className={`${styles.formInner} ${styles.wide}`}>
           <div className={styles.brandRow}>
-            <img src={assets.Logo} alt="Bravento" className={styles.brandLogo} />
+            <img src={assets.phinxLogoLight} alt="Phinx" className={styles.brandLogo} />
           </div>
 
           <h2 className={styles.title}>Create your account</h2>
@@ -290,7 +290,7 @@ const Register = () => {
 
           <p className={styles.legal}>
             <LuShieldCheck aria-hidden="true" />
-            Your data is encrypted · © {new Date().getFullYear()} Bravento Technologies
+            Your data is encrypted · © {new Date().getFullYear()} Phinx
           </p>
         </div>
       </section>

@@ -74,7 +74,7 @@ const Login = () => {
 
     if (errorMessage === 'Account is not verified. Please verify account with Admin.') {
       setError(
-        'Approval Pending: Your account is not yet approved. Please contact the Bravento Administration.'
+        'Approval Pending: Your account is not yet approved. Please contact the Phinx administrator.'
       );
       setIsLoading(false);
       return;
@@ -124,7 +124,7 @@ const Login = () => {
       <section className={styles.formPanel}>
         <div className={styles.formInner}>
           <div className={styles.brandRow}>
-            <img src={assets.Logo} alt="Bravento" className={styles.brandLogo} />
+            <img src={assets.phinxLogoLight} alt="Phinx" className={styles.brandLogo} />
           </div>
 
           <h2 className={styles.title}>Welcome back</h2>
@@ -176,7 +176,7 @@ const Login = () => {
             <div className={styles.linkContainer}>
               <div className={styles.registerLinkContainer}>
                 <p>
-                  New to Bravento?{' '}
+                  New to Phinx?{' '}
                   <span onClick={() => router.push(REDIRECT.REGISTER)}>Create an account</span>
                 </p>
               </div>
@@ -185,7 +185,7 @@ const Login = () => {
 
           <p className={styles.legal}>
             <LuShieldCheck aria-hidden="true" />
-            Secure sign-in · © {new Date().getFullYear()} Bravento Technologies
+            Secure sign-in · © {new Date().getFullYear()} Phinx
           </p>
         </div>
       </section>

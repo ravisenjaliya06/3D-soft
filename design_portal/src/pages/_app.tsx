@@ -1,5 +1,4 @@
 import { store } from '@/components/3dmodel/store';
-import FreeBanner from '@/components/common/FreeBanner';
 import BackendStatusGate from '@/components/maintenance/BackendStatusGate';
 import MaintenanceGate from '@/components/maintenance/MaintenanceGate';
 import { REDIRECT } from '@/services/CommonStatus';
@@ -49,10 +48,6 @@ export default function MyApp({ Component, pageProps }: AppProps) {
 
   return (
     <>
-      {/* Global "100% Free until 31-03-2027" announcement bar. Mounted
-          OUTSIDE the Provider / Maintenance / Backend gates so it's
-          visible during loading, error, and maintenance states too. */}
-      <FreeBanner />
       <Provider store={store}>
         <BackendStatusGate>
           <MaintenanceGate showBannerOnPages={showMaintenanceBanner}>

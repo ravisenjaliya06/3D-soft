@@ -5,7 +5,7 @@ const MaintenanceFullPage = () => {
     <div className="maintenance-wrapper">
       <div className="glow"></div>
       <div className="container">
-        <div className="logo">BRAVENTO</div>
+        <div className="logo">PHINX</div>
         <div className="status-icon">
           <svg
             width="32"
@@ -23,7 +23,7 @@ const MaintenanceFullPage = () => {
         </div>
         <h1>Workshop upgrade in progress</h1>
         <p>
-          We&apos;re fitting new features into Bravento. Your designs and cut lists are safe, and
+          We&apos;re fitting new features into Phinx. Your designs and cut lists are safe, and
           we&apos;ll be back in a few minutes.
         </p>
         <div className="progress-bar">

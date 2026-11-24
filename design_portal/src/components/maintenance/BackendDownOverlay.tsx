@@ -9,7 +9,7 @@ const BackendDownOverlay = () => {
     <div className="backend-down-wrapper">
       <div className="glow"></div>
       <div className="container">
-        <div className="logo">BRAVENTO</div>
+        <div className="logo">PHINX</div>
         <div className="status-icon">
           <svg
             width="32"

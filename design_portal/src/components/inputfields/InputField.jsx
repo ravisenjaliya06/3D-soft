@@ -19,10 +19,10 @@ const InputField = ({
   return (
     <div className={styles.main}>
       {type === 'select' ? (
-        <select 
-          className={styles.selectfielddata} 
+        <select
+          className={styles.selectfielddata}
           style={props.fullWidth ? { width: '100%', maxWidth: 'none' } : {}}
-          onChange={onChange} 
+          onChange={onChange}
           {...props}
         >
           <option value="" disabled selected hidden>
@@ -35,7 +35,10 @@ const InputField = ({
           ))}
         </select>
       ) : type === 'file' ? (
-        <div className={styles.fileInputContainer} style={props.fullWidth ? { maxWidth: 'none' } : {}}>
+        <div
+          className={styles.fileInputContainer}
+          style={props.fullWidth ? { maxWidth: 'none' } : {}}
+        >
           <div className={`${styles.fileInputWrapper} ${props.value ? styles.hasFile : ''}`}>
             <label
               className={styles.fileInputLabel}
@@ -121,7 +124,7 @@ const InputField = ({
                 color: 'var(--bv-text)',
                 padding: '0rem 0.5rem 0rem 0.7rem',
                 height: '2.8rem',
-                fontFamily: 'var(--font-family)',
+                fontFamily: 'var(--bv-font)',
                 fontSize: '0.85rem',
                 borderRadius: '0.4rem !important',
               },
@@ -134,19 +137,21 @@ const InputField = ({
               },
               '& .MuiInputLabel-root.Mui-focused, & .MuiInputLabel-root.MuiFormLabel-filled': {
                 fontSize: '0.9rem',
-                color: error ? 'red' : 'var(--text-gray)',
-                transform: 'translate(0.6rem, -0.65rem) scale(0.7)',
+                color: error ? 'var(--bv-danger)' : 'var(--bv-text-subtle)',
+                transform: 'translate(0.7rem, -0.4rem) scale(0.7)',
+                backgroundColor: 'white',
+                padding: '0 0.25rem',
               },
               '& .MuiInputBase-root': {
-                width: props.fullWidth ? '100% !important' : (
-                  minField === true
+                width: props.fullWidth
+                  ? '100% !important'
+                  : minField === true
                     ? '8.5rem !important'
                     : smallField === true
                       ? '11rem'
                       : mediumField === true
                         ? '18rem'
-                        : '23rem'
-                ),
+                        : '23rem',
                 height: '2.8rem',
                 padding: '0',
               },

@@ -125,7 +125,7 @@ const Otp = () => {
       <section className={styles.formPanel}>
         <div className={styles.formInner}>
           <div className={styles.brandRow}>
-            <img src={assets.Logo} alt="Bravento" className={styles.brandLogo} />
+            <img src={assets.phinxLogoLight} alt="Phinx" className={styles.brandLogo} />
           </div>
 
           <button type="button" className={styles.backLink} onClick={() => router.back()}>

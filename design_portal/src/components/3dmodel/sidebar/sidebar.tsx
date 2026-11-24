@@ -2012,7 +2012,7 @@ const Sidebar: React.FC = () => {
         className={
           isSidebarOpen
             ? `bv-inspector bv-inspector-open absolute top-[3.7rem] right-[0] bottom-[0] z-[10] mt-[0.3rem] flex h-[91vh] w-[15rem] flex-col overflow-hidden rounded-t-[0.6rem] bg-[var(--primary-white)]`
-            : `bv-inspector absolute top-[3.7rem] right-[0] bottom-[0] z-[10] mt-[0.3rem] block h-auto w-[15rem] overflow-y-auto rounded-t-[0.6rem] bg-transparent [&::-webkit-scrollbar]:w-[0.3rem] [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-[rgba(84,83,51,0)] hover:[&::-webkit-scrollbar-thumb]:bg-[rgba(84,83,51,0.25)] [&::-webkit-scrollbar-track]:bg-transparent`
+            : `bv-inspector [&::-webkit-scrollbar-thumb]:bg-[rgba(6, 93, 120,0)] hover:[&::-webkit-scrollbar-thumb]:bg-[rgba(6, 93, 120,0.25)] absolute top-[3.7rem] right-[0] bottom-[0] z-[10] mt-[0.3rem] block h-auto w-[15rem] overflow-y-auto rounded-t-[0.6rem] bg-transparent [&::-webkit-scrollbar]:w-[0.3rem] [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-track]:bg-transparent`
         }
       >
         {/* ================= TITLE ================= */}
@@ -2067,7 +2067,7 @@ const Sidebar: React.FC = () => {
 
             <hr className="my-[0.2rem] shrink-0 opacity-20" />
 
-            <div className="bv-insp-body min-h-0 flex-1 overflow-x-hidden overflow-y-auto pb-[0.5rem] [&::-webkit-scrollbar]:w-[0.3rem] [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-[rgba(84,83,51,0)] hover:[&::-webkit-scrollbar-thumb]:bg-[rgba(84,83,51,0.25)] [&::-webkit-scrollbar-track]:bg-transparent">
+            <div className="bv-insp-body [&::-webkit-scrollbar-thumb]:bg-[rgba(6, 93, 120,0)] hover:[&::-webkit-scrollbar-thumb]:bg-[rgba(6, 93, 120,0.25)] min-h-0 flex-1 overflow-x-hidden overflow-y-auto pb-[0.5rem] [&::-webkit-scrollbar]:w-[0.3rem] [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-track]:bg-transparent">
               {/* ================= NAV IMAGE ================= */}
               {isNavOpen && (
                 <div className="bv-insp-nav mx-auto mt-4 w-[12rem]">
@@ -3372,7 +3372,7 @@ const Sidebar: React.FC = () => {
                             </button>
 
                             {/* Texture Grain Input */}
-                            <div className="relative flex h-[1.2rem] w-[4.5rem] flex-1 appearance-none items-center rounded-[0.1rem] border-[0.1rem] border-[rgba(84,83,51,0.3)] bg-[white] p-[0rem]">
+                            <div className="border-[rgba(6, 93, 120,0.3)] relative flex h-[1.2rem] w-[4.5rem] flex-1 appearance-none items-center rounded-[0.1rem] border-[0.1rem] bg-[white] p-[0rem]">
                               <select
                                 value={textureGrain}
                                 onChange={(e) =>
@@ -3395,16 +3395,16 @@ const Sidebar: React.FC = () => {
                         {isTextureListOpen && (
                           <div className="bv-texture-panel fixed top-[3.7rem] right-[15rem] z-[100] flex h-[85.1vh] w-[11.5rem] flex-col rounded-[0.6rem] border border-[var(--border-color)] bg-[var(--primary-white)] shadow-[-4px_0_10px_rgba(0,0,0,0.05)]">
                             {/* Search Field */}
-                            <div className="bv-texture-search border-b border-[rgba(84,83,51,0.1)] p-[0.6rem]">
+                            <div className="bv-texture-search border-[rgba(6, 93, 120,0.1)] border-b p-[0.6rem]">
                               <input
                                 type="text"
                                 placeholder="Search textures..."
                                 value={textureSearchQuery}
                                 onChange={(e) => setTextureSearchQuery(e.target.value)}
-                                className="w-[9.2rem] rounded-full border border-[rgba(84,83,51,0.2)] px-[0.5rem] py-[0.4rem] font-[comfortaa] text-[0.65rem] font-[500] text-[var(--primary-color)] placeholder:text-[rgba(84,83,51,0.4)] focus:border-[var(--primary-color)] focus:outline-none"
+                                className="border-[rgba(6, 93, 120,0.2)] placeholder:text-[rgba(6, 93, 120,0.4)] w-[9.2rem] rounded-full border px-[0.5rem] py-[0.4rem] font-[comfortaa] text-[0.65rem] font-[500] text-[var(--primary-color)] focus:border-[var(--primary-color)] focus:outline-none"
                               />
                               {textureSearchQuery && (
-                                <div className="mt-[0.3rem] text-[0.55rem] font-[500] text-[rgba(84,83,51,0.6)]">
+                                <div className="text-[rgba(6, 93, 120,0.6)] mt-[0.3rem] text-[0.55rem] font-[500]">
                                   {filteredTextures.length} result
                                   {filteredTextures.length !== 1 ? 's' : ''}
                                 </div>
@@ -3412,7 +3412,7 @@ const Sidebar: React.FC = () => {
                             </div>
                             {/* Scrollable grid area */}
                             <div
-                              className={`flex-1 ${visibleCount > LOAD_MORE_INCREMENT ? 'overflow-y-auto' : 'overflow-y-auto'} p-[0.6rem] [&::-webkit-scrollbar]:w-[0.3rem] [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-[rgba(84,83,51,0.1)] hover:[&::-webkit-scrollbar-thumb]:bg-[rgba(84,83,51,0.25)] [&::-webkit-scrollbar-track]:bg-transparent`}
+                              className={`flex-1 ${visibleCount > LOAD_MORE_INCREMENT ? 'overflow-y-auto' : 'overflow-y-auto'} [&::-webkit-scrollbar-thumb]:bg-[rgba(6, 93, 120,0.1)] hover:[&::-webkit-scrollbar-thumb]:bg-[rgba(6, 93, 120,0.25)] p-[0.6rem] [&::-webkit-scrollbar]:w-[0.3rem] [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-track]:bg-transparent`}
                             >
                               <div className="grid grid-cols-3 gap-[0.2rem] p-[0rem]">
                                 {/* Add New Texture Button */}
@@ -3437,10 +3437,10 @@ const Sidebar: React.FC = () => {
 
                                 {filteredTextures.length === 0 && !isFetchingTextures ? (
                                   <div className="col-span-3 flex flex-col items-center justify-center py-[2rem] text-center">
-                                    <span className="text-[0.7rem] font-[500] text-[rgba(84,83,51,0.6)]">
+                                    <span className="text-[rgba(6, 93, 120,0.6)] text-[0.7rem] font-[500]">
                                       No textures found
                                     </span>
-                                    <span className="mt-[0.3rem] text-[0.6rem] font-[400] text-[rgba(84,83,51,0.4)]">
+                                    <span className="text-[rgba(6, 93, 120,0.4)] mt-[0.3rem] text-[0.6rem] font-[400]">
                                       Try a different search term
                                     </span>
                                   </div>

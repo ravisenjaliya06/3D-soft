@@ -278,7 +278,7 @@ export default function RenderingPage() {
       {/* Top bar: brand, way back, title, image / video switch */}
       <header className={styles.topBar}>
         <div className={styles.topStart}>
-          <img src={assets.logo} alt="Logo" className={styles.logo} />
+          <img src={assets.phinxLogoLight} alt="Phinx" className={styles.logo} />
           <span className={styles.topDivider} aria-hidden="true" />
           <button className={styles.backBtn} onClick={() => router.push(`/design/${designId}`)}>
             <LuArrowLeft aria-hidden="true" />

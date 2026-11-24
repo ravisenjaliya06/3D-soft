@@ -964,7 +964,7 @@
   background: var(--bv-surface);
   border: 1px solid var(--bv-border);
   border-radius: 16px;
-  box-shadow: 0 12px 32px rgba(30, 30, 18, 0.18);
+  box-shadow: 0 12px 32px rgba(4, 30, 40, 0.18);
 }
 
 .panelHeader {
@@ -1220,7 +1220,7 @@
 
 /* Leave-without-saving dialog */
 .modalOverlay {
-  background: rgba(20, 20, 10, 0.55);
+  background: rgba(4, 30, 40, 0.55);
   backdrop-filter: blur(3px);
 }
 
@@ -1231,7 +1231,7 @@
   background: var(--bv-surface);
   border: none;
   border-radius: 18px;
-  box-shadow: 0 24px 60px rgba(10, 10, 4, 0.35);
+  box-shadow: 0 24px 60px rgba(2, 18, 24, 0.35);
 }
 
 .modal::before {
