@@ -1,5 +1,3 @@
-import { CatalogRule } from '../handler/interface';
-
 export interface MaterialResponse {
   id: string;
   name: string;
@@ -22,8 +20,7 @@ export interface RulePartMaterial {
 
 export interface MaterialChangePopupProps {
   onClose: () => void;
-  onSave: (selectedMaterials: string[]) => void;
-  rules?: CatalogRule[];
+  selectedObject: any;
 }
 
 export type Field = 'width' | 'height' | 'depth';
@@ -54,3 +51,5 @@ export interface DistanceInputProps {
   disabled: boolean;
   onChange: (direction: string, value: number) => void;
 }
+
+export type TextureGrain = 'None' | 'Horizontal' | 'Vertical';

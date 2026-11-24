@@ -1,12 +1,13 @@
 .env
 
+**/static/admin*
+**/static/rest*
 .ruff_cache/
 .mypy_cache/
 .pytest_cache/
 .venv/
 .mypy_cache/git config --list
 .umaboy/__pycache__
-Pipfile.lock
 
 **/project/textures/
 **/project/catalog_items/
@@ -16,6 +17,7 @@ celerybeat**
 **/media/profile_pictures/
 **/media/project/catalogs/
 **/media/output/
+**/media/catalog_images/
 **/media/project/
 **/umaboy/media/output/*
 **/umaboy/media/model_files/
@@ -23,4 +25,7 @@ celerybeat**
 /output_sheet_1.svg
 /output_sheet_1.gcode
 /output_sheet**
+/xml*
 
+/nesting_data.json
+/xml*

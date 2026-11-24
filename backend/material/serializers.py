@@ -1,5 +1,9 @@
 # Python imports
-from typing import Dict
+import os
+from typing import Dict, Optional
+
+# Django imports
+from django.core.files.uploadedfile import InMemoryUploadedFile
 
 # External imports
 from rest_framework import serializers
@@ -72,17 +76,16 @@ class BasePropertiesSerializer(serializers.ModelSerializer):
         model = Properties
         fields = [
             "id",
-            "unit_of_issue",
-            "default_cost",
-            "sell_price",
-            "default_markup",
-            "sales_tax",
-            "default_tax_rate",
-            "waste",
-            "estimate",
             "model_file",
+            "waste",
+            "default_cost",
+            "sales_tax",
+            "sell_price",
+            "default_tax_rate",
+            "default_markup",
+            "estimate",
         ]
-        read_only_fields = ["material"]
+        read_only_fields = ["material", "unit_of_issue"]
 
 
 class ValidationMixin:
@@ -93,12 +96,24 @@ class ValidationMixin:
         received_fields = set(data.keys())
 
         has_id = "id" in data
-        optional_fields = {"id", "model_file"}
+        optional_fields = {
+            "id",
+            "model_file",
+            "waste",
+            "default_cost",
+            "sales_tax",
+            "sell_price",
+            "default_tax_rate",
+            "default_markup",
+            "estimate",
+            "model",
+            "thickness",
+        }
 
         if has_id:
             required_fields = allowed_fields - optional_fields
         else:
-            required_fields = allowed_fields - {"id"}
+            required_fields = allowed_fields - optional_fields
 
         missing_fields = required_fields - received_fields
         if missing_fields:
@@ -468,9 +483,11 @@ class FinishTypeSerializer(serializers.ModelSerializer):
 
 
 class TextureSerializer(serializers.ModelSerializer):
+    image_thumbnail = serializers.ReadOnlyField(source="thumbnail_safe_url")
+
     class Meta:
         model = FinishesLibrary
-        fields = ["url", "image", "width", "height", "decal", "tile"]
+        fields = ["url", "image", "image_thumbnail", "width", "height", "decal", "tile"]
 
 
 class FinishesLibrarySerializerFactory:
@@ -486,9 +503,28 @@ class FinishesLibrarySerializerFactory:
 
 
 class FinishesLibrarySerializer(serializers.ModelSerializer):
+    image_thumbnail = serializers.ReadOnlyField(source="thumbnail_safe_url")
+
     class Meta:
         model = FinishesLibrary
-        fields = ["id", "name", "organization", "type", "image"]
+        fields = ["id", "name", "organization", "type", "image", "image_thumbnail"]
+        read_only_fields = ["organization"]
+
+    def validate_image(
+        self: "FinishesLibrarySerializer", value: Optional["InMemoryUploadedFile"]
+    ) -> "InMemoryUploadedFile":
+        if not value:
+            return value
+
+        valid_extensions = [".jpg", ".jpeg", ".png", ".webp", ".gif"]
+
+        ext = os.path.splitext(value.name)[1].lower()
+        if ext not in valid_extensions:
+            raise serializers.ValidationError(
+                "Unsupported file extension. Supported: " + ", ".join(valid_extensions)
+            )
+
+        return value
 
     def to_representation(
         self: "FinishesLibrarySerializer", instance: FinishesLibrary
@@ -551,6 +587,12 @@ class MaterialTextureSerializer(serializers.ModelSerializer):
             "texture": {"required": True},
         }
 
+    def to_representation(self: "MaterialTextureSerializer", instance: MaterialTexture) -> dict:
+        data = super().to_representation(instance)
+        if not data.get("name"):
+            data["name"] = "First"
+        return data
+
 
 class MaterialPropertySerializer(serializers.ModelSerializer):
     class Meta:
@@ -586,9 +628,15 @@ class MaterialSerializer(serializers.ModelSerializer):
     def _validate_properties(self: "MaterialSerializer", attrs: Dict[str, str]) -> None:
         """Validate the dynamic 'properties' field based on material type."""
         properties_data = attrs.get("properties")
-        properties_id = properties_data.get("id", None)
-        if properties_id:
-            properties_data.pop("model_file", None)
+        properties_id = None
+        if properties_data:
+            properties_id = properties_data.get("id", None)
+            # When updating an existing properties object, we must not accept a new file
+            # through the same payload; remove it only when an id is present.
+            if properties_id:
+                properties_data.pop("model_file", None)
+
+            properties_data.pop("unit_of_issue", None)
 
         material_type = attrs.get("type")
         if not properties_data:
@@ -599,7 +647,9 @@ class MaterialSerializer(serializers.ModelSerializer):
         )
         serializer = serializer_class(data=properties_data)
         serializer.is_valid(raise_exception=True)
-        serializer.validated_data["id"] = properties_id
+        # Only include id when it is a real value; avoid injecting None
+        if properties_id:
+            serializer.validated_data["id"] = properties_id
         attrs["properties"] = serializer.validated_data
 
     def to_representation(self: "MaterialSerializer", instance: Material) -> dict:
@@ -611,7 +661,6 @@ class MaterialSerializer(serializers.ModelSerializer):
             serializer_class = MaterialFactorySerializer.get_material_serializer(
                 instance.type
             )
-
             data["properties"] = serializer_class(prop_obj).data
         else:
             data["properties"] = {}
@@ -626,14 +675,27 @@ class MaterialSerializer(serializers.ModelSerializer):
         - ForeignKey with default reverse name (material.properties_set -> manager)
         """
         obj = getattr(instance, "properties", None)
-        if obj is not None and not hasattr(obj, "all") and not hasattr(obj, "first"):
+
+        if obj is not None:
+            # Case 1: RelatedManager/QuerySet (Reverse FK with related_name="properties")
+            if hasattr(obj, "all"):
+                # Use .all() to leverage prefetch_related cache.
+                # .first() would trigger a new DB query with LIMIT 1.
+                all_objs = obj.all()
+                if len(all_objs) > 0:
+                    return all_objs[0]
+                return None
+
+            # Case 2: OneToOneField or direct object (no .all() method)
             return obj
 
-        if hasattr(obj, "first"):
-            return obj.first()
+        # Case 3: Fallback to properties_set (default reverse name)
         mgr = getattr(instance, "properties_set", None)
-        if hasattr(mgr, "first"):
-            return mgr.first()
+        if mgr is not None and hasattr(mgr, "all"):
+            all_objs = mgr.all()
+            if len(all_objs) > 0:
+                return all_objs[0]
+            return None
 
         return None
 
@@ -654,10 +716,10 @@ class MaterialSerializer(serializers.ModelSerializer):
             properties_id = properties_data.pop("id", None)
 
             if properties_id:
-                properties = Properties.objects.get(id=properties_id)
+                properties = Properties.objects.filter(id=properties_id).first()
                 Properties.objects.create(
                     material=material,
-                    model_file=properties.model_file,
+                    model_file=properties.model_file if properties else None,
                     **properties_data,
                 )
             else:
@@ -680,7 +742,7 @@ class MaterialSerializer(serializers.ModelSerializer):
         for t in textures_data:
             MaterialTexture.objects.create(
                 material=material,
-                name=t.get("name", ""),
+                name="First",
                 texture=t["texture"],
             )
 
@@ -703,6 +765,8 @@ class MaterialSerializer(serializers.ModelSerializer):
         # Update properties if properties exist
         if properties_data and hasattr(instance, "properties"):
             material_id = instance.id
+            # Never try to update primary key via .update(); remove id if present
+            properties_data.pop("id", None)
             Properties.objects.filter(material=material_id).update(**properties_data)
 
         # Update finishes
@@ -726,13 +790,24 @@ class MaterialSerializer(serializers.ModelSerializer):
                 )
 
         # Update textures
-        if textures_data:
-            receive_textures = self.initial_data["textures"]
+        if "textures" in self.initial_data and textures_data:
+            receive_textures = self.initial_data.get("textures", [])
+            if receive_textures:
+                ids_to_keep = [t.get("id") for t in receive_textures if t.get("id")]
+                MaterialTexture.objects.filter(material=instance).exclude(
+                    id__in=ids_to_keep
+                ).delete()
+
             for texture in receive_textures:
                 texture_id = texture.get("id")
-                updated_texture = texture.get("texture")
-                MaterialTexture.objects.filter(id=texture_id).update(
-                    texture=updated_texture
+                updated_texture = texture.get("texture") or texture_id
+
+                updated_count = MaterialTexture.objects.filter(id=texture_id).update(
+                    texture=updated_texture, name="First"
                 )
+                if updated_count == 0 and updated_texture:
+                    MaterialTexture.objects.create(
+                        material=instance, texture_id=updated_texture, name="First"
+                    )
         instance.save()
         return instance

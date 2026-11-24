@@ -1,4 +1,5 @@
-import styles from '@/components/forgot/forgot.module.css';
+import AuthShowcase from '@/components/auth/AuthShowcase';
+import styles from '@/components/auth/auth.module.css';
 import { handleForgotAPI } from '@/components/forgot/utils';
 import InputField from '@/components/inputfields/InputField';
 import Loading_style from '@/components/loading.module.css';
@@ -7,6 +8,7 @@ import { assets } from '@/svgPaths';
 import { ForgotForm } from '@/types/formTypes';
 import { useRouter } from 'next/router';
 import { ChangeEvent, FormEvent, useState } from 'react';
+import { LuArrowLeft, LuArrowRight, LuKeyRound, LuMailCheck, LuShieldCheck } from 'react-icons/lu';
 
 const Forgot = () => {
   const router = useRouter();
@@ -35,10 +37,10 @@ const Forgot = () => {
 
   const fields = [
     {
-      label: 'Email',
+      label: 'Email address',
       icon: '',
       type: 'email',
-      placeholder: 'Enter your email',
+      placeholder: 'you@company.com',
       onChange: (e: ChangeEvent<HTMLInputElement>) => setEmail(e.target.value),
       error: emailError,
     },
@@ -52,34 +54,40 @@ const Forgot = () => {
           <p>Loading...</p>
         </div>
       )}
-      <div className={styles.card}>
-        {/* Left Section */}
-        <div className={styles.left_side}>
-          <div className={styles.popup_logo}>
-            <img src={assets.popup_logo} alt="Popup Logo" />
-          </div>
-          <div className={styles.forgot_boy}>
-            <img src={assets.forgot_boy} alt="forgot boy" />
-          </div>
-          <div className={styles.logo}>
-            <img src={assets.Logo} alt="Bravento Logo" />
-          </div>
-        </div>
 
-        {/* Right Section */}
-        <div className={styles.right_side}>
-          <div className={styles.back_button}>
-            <img
-              src={assets.back_login_icon}
-              onClick={() => router.push(REDIRECT.LOGIN)}
-              alt="Logo"
-            />
-            Back to Login
+      {/* ── Showcase panel (decorative) ─────────────────────── */}
+      <AuthShowcase
+        eyebrow="Account recovery"
+        title="Locked out of the workshop?"
+        highlight="We'll get you back in."
+        lead="Enter the email on your Bravento account and we'll send a secure link to reset your password. Your designs and cut lists stay safe."
+      />
+
+      {/* ── Reset form ──────────────────────────────────────── */}
+      <section className={styles.formPanel}>
+        <div className={styles.formInner}>
+          <div className={styles.brandRow}>
+            <img src={assets.Logo} alt="Bravento" className={styles.brandLogo} />
           </div>
-          <h2>Forgot your Password?</h2>
-          <p>
-            Don&apos;t worry, happens to all of us. Enter your email below to recover your password
+
+          <button
+            type="button"
+            className={styles.backLink}
+            onClick={() => router.push(REDIRECT.LOGIN)}
+          >
+            <LuArrowLeft aria-hidden="true" />
+            Back to sign in
+          </button>
+
+          <span className={styles.iconBadge}>
+            <LuKeyRound aria-hidden="true" />
+          </span>
+          <h2 className={styles.title}>Forgot your password?</h2>
+          <p className={styles.subtitle}>
+            No problem. Enter your account email and we&apos;ll send you a link to set a new
+            password.
           </p>
+
           <form className={styles.form} onSubmit={(e) => e.preventDefault()}>
             <div className={styles.inputGroup}>
               {fields.map((field, index) => (
@@ -89,19 +97,34 @@ const Forgot = () => {
                     borderColor="var(--primary-color-grey-2)"
                     {...field}
                   />
-                  {error && <p className={styles.errorMessage}>{error}</p>}
-                  {success && <p className={styles.successMessage}>{success}</p>}
+                  {error && (
+                    <div className={styles.errorContainer}>
+                      <p className={styles.errorMessage}>{error}</p>
+                    </div>
+                  )}
+                  {success && (
+                    <div className={styles.successMessage}>
+                      <LuMailCheck aria-hidden="true" />
+                      <span>{success}</span>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
             <div className={styles.buttonContainer}>
-              <button className={styles.loginButton} onClick={handleForgot} disabled={isLoading}>
-                Send Reset link
+              <button className={styles.primaryButton} onClick={handleForgot} disabled={isLoading}>
+                <span>Send reset link</span>
+                <LuArrowRight aria-hidden="true" />
               </button>
             </div>
           </form>
+
+          <p className={styles.legal}>
+            <LuShieldCheck aria-hidden="true" />
+            Secure reset links · © {new Date().getFullYear()} Bravento Technologies
+          </p>
         </div>
-      </div>
+      </section>
     </div>
   );
 };

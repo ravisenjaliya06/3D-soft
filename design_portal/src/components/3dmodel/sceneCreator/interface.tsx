@@ -3,19 +3,21 @@ import { ThreeDView } from '../design/interface';
 import { MoveHandler } from '../handler/moveHandler';
 import { Dimensions } from '../interface';
 import { MinifixConnection, MinifixHole } from '../minifix/types';
+import { PanelDesignData } from '../panelDesign/types';
 import { Position, Rotation } from '../store/interface';
 
 // type const
 export const FLOOR_PLAN_TYPES = {
   WALL: 'wall',
   CWALL: 'cwall',
+  FLOOR: 'floor',
 };
 
 export const OBJECT_TYPES = {
   CUPBOARD: 'cupboard',
   PLATFORM: 'platform',
   SINK: 'sink',
-  FLOOR: 'floor',
+  MODEL: 'model',
 };
 
 export const PART_TYPES = {
@@ -23,9 +25,11 @@ export const PART_TYPES = {
   BACK_PLANK: 'backPlank',
   DRAWER: 'drawer',
   DOOR: 'door',
+  DOUBLE_DOOR: 'doubleDoor',
   VERTICAL_PLANK: 'verticalPlank',
   HORIZONTAL_PLANK: 'horizontalPlank',
   L_SHAPE_OBJECT: 'lShapeObject',
+  U_SHAPE_OBJECT: 'uShapeObject',
   HANDLE: 'handle',
 };
 
@@ -38,6 +42,11 @@ export const DRAWER_TYPES = {
   OVERLAY: 'overlay',
 };
 
+export const DOOR_TYPES = {
+  INSET: 'inset',
+  OVERLAY: 'overlay',
+};
+
 export const DRAWER_PLANK_TYPES = {
   DRAWER_FACE: 'DRAWER_FACE_PLANK',
   FRONT_DRAWER_PLANK: 'DRAWER_FRONT_PLANK',
@@ -45,6 +54,11 @@ export const DRAWER_PLANK_TYPES = {
   BOTTOM_DRAWER_PLANK: 'DRAWER_BOTTOM_PLANK',
   RIGHT_DRAWER_PLANK: 'DRAWER_RIGHT_PLANK',
   LEFT_DRAWER_PLANK: 'DRAWER_LEFT_PLANK',
+};
+
+export const DOUBLE_DOOR_PLANK_TYPES = {
+  RIGHT_PLANK: 'DOUBLE_DOOR_RIGHT_PLANK',
+  LEFT_PLANK: 'DOUBLE_DOOR_LEFT_PLANK',
 };
 
 export const GEOMETRY = {
@@ -160,6 +174,9 @@ export interface MeshObjectData {
   dimensions: Dimensions;
   position: Position;
   rotation: Rotation;
+  path?: string;
+  unique_id?: string;
+  textureGrain?: TextureGrain;
 
   //optional properties
   description?: string;
@@ -169,12 +186,18 @@ export interface MeshObjectData {
   isMain?: boolean;
   openDirection?: DirectionType;
   connectedTo?: string[];
+  /** +1 / -1: which side of the wall centerline the drawn reference edge lies on (undefined = legacy centerline drawing). */
+  wallOffsetSign?: number;
+  /** Location-line mode used when this wall was drawn (Coohom-style: internal/center/external). */
+  wallLocationLine?: 'internal' | 'center' | 'external';
   thickness?: number;
   selected?: boolean;
   drawerType?: string;
+  doorType?: string;
   minifixHoles?: MinifixHole[];
   minifixConnections?: MinifixConnection[];
   edgeBanding?: EdgeBandingState;
+  compartmentDimensions?: Dimensions;
 
   // Per-cupboard minifix settings (stored when cupboard is created)
   minifixDistance?: number;
@@ -184,12 +207,29 @@ export interface MeshObjectData {
   camHeight?: number;
   handleMode?: 'handle' | 'handleless';
   grooves?: GrooveData[];
+  nailerEnabled?: boolean;
+  nailerModel?: string;
+  noBaseEnabled?: boolean;
+  skirtingEnabled?: boolean;
+  skirtingHeight?: number;
+  skirtingOffset?: number;
 
   // Floor-specific data (when type === OBJECT_TYPES.FLOOR)
   floorData?: {
     points: { id?: string; x: number; y: number }[];
     walls: string[];
   };
+  direction?: string;
+  holes?: HoleData[];
+  image?: string;
+  panelDesign?: PanelDesignData;
+}
+
+export interface HoleData {
+  id: string; // ID of the object creating the hole (e.g., sink ID)
+  position: Position; // Local position relative to the platform
+  dimensions: Dimensions;
+  rotation: Rotation;
 }
 
 export interface GrooveData {
@@ -240,6 +280,7 @@ export interface SceneBuilderConfig {
     enableZoom?: boolean;
     enablePan?: boolean;
   };
+  dispatch?: any;
 }
 
 export interface HelperToolProps {
@@ -261,4 +302,13 @@ export type MeshObjectPatch = Omit<
   rotation?: Partial<Rotation>;
   edgeBanding?: EdgeBandingState;
   material?: Material[];
+  panelDesign?: PanelDesignData;
 };
+
+export const TEXTURE_GRAIN = {
+  NONE: 'None',
+  HORIZONTAL: 'Horizontal',
+  VERTICAL: 'Vertical',
+} as const;
+
+export type TextureGrain = (typeof TEXTURE_GRAIN)[keyof typeof TEXTURE_GRAIN];

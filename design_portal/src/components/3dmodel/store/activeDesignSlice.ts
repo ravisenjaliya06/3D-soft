@@ -8,6 +8,7 @@ interface ActiveDesignState {
   camDepth: number | null;
   camDiameter: number | null;
   camHeight: number | null;
+  isLatestVersion: boolean;
 }
 
 const initialState: ActiveDesignState = {
@@ -16,6 +17,7 @@ const initialState: ActiveDesignState = {
   camDepth: null,
   camDiameter: null,
   camHeight: null,
+  isLatestVersion: true,
 };
 
 const activeDesignSlice = createSlice({
@@ -37,12 +39,19 @@ const activeDesignSlice = createSlice({
     setActiveDesignCamHeight: (state, action: PayloadAction<number>) => {
       state.camHeight = action.payload;
     },
+    setIsLatestVersion: (state, action: PayloadAction<boolean>) => {
+      state.isLatestVersion = action.payload;
+    },
+    restoreActiveDesignState: (state, action: PayloadAction<ActiveDesignState>) => {
+      return { ...state, ...action.payload };
+    },
     clearActiveDesignOverrides: (state) => {
       state.minifixDistance = null;
       state.minifixDiameterHole = null;
       state.camDepth = null;
       state.camDiameter = null;
       state.camHeight = null;
+      state.isLatestVersion = true;
     },
   },
 });
@@ -53,6 +62,8 @@ export const {
   setActiveDesignCamDepth,
   setActiveDesignCamDiameter,
   setActiveDesignCamHeight,
+  setIsLatestVersion,
+  restoreActiveDesignState,
   clearActiveDesignOverrides,
 } = activeDesignSlice.actions;
 

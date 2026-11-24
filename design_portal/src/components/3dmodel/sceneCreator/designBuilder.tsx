@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { hydrateNailers, hydrateSkirting } from '../design/scene';
 import { generateCompartmentsFromMesh, updateMinifixesForCupboard } from '../handler/items';
 import { store } from '../store';
 import {
@@ -15,12 +16,51 @@ export class DesignBuilder {
   private data: MeshObjectData[];
   private meshMap: Map<string, THREE.Mesh>;
   private builderMap: Map<string, MeshBuilder>;
+  private dataMap: Map<string, MeshObjectData>;
 
   constructor(data: MeshObjectData[], scene?: THREE.Scene) {
-    this.data = data;
+    this.data = this._sortDataHierarchically(data);
     this.scene = scene || store.getState().scene?.scene;
     this.meshMap = new Map<string, THREE.Mesh>();
     this.builderMap = new Map<string, MeshBuilder>();
+    this.dataMap = new Map(this.data.map((item) => [item.id, item]));
+    this._propagateHandleMode();
+  }
+
+  private _propagateHandleMode() {
+    this.data.forEach((item) => {
+      if (item.parent) {
+        const parent = this.dataMap.get(item.parent);
+        if (parent && parent.handleMode && !item.handleMode) {
+          item.handleMode = parent.handleMode;
+        }
+      }
+    });
+  }
+
+  private _sortDataHierarchically(data: MeshObjectData[]): MeshObjectData[] {
+    const sorted: MeshObjectData[] = [];
+    const visited = new Set<string>();
+    const visiting = new Set<string>();
+    const localDataMap = new Map(data.map((item) => [item.id, item]));
+
+    const visit = (item: MeshObjectData) => {
+      if (visited.has(item.id)) return;
+      if (visiting.has(item.id)) return;
+
+      visiting.add(item.id);
+
+      if (item.parent && localDataMap.has(item.parent)) {
+        visit(localDataMap.get(item.parent)!);
+      }
+
+      visiting.delete(item.id);
+      visited.add(item.id);
+      sorted.push(item);
+    };
+
+    data.forEach(visit);
+    return sorted;
   }
 
   private _createInitialCompartments(mesh: THREE.Mesh) {
@@ -59,7 +99,7 @@ export class DesignBuilder {
         if (meshData.edgeBanding) {
           promises.push(builder.applyBandingFromState());
         } else if (meshData.parent) {
-          const parentData = this.data.find((d) => d.id === meshData.parent);
+          const parentData = this.dataMap.get(meshData.parent);
           if (!parentData) return;
 
           const parentBandingMaterial = this._findBandingMaterial(parentData.material);
@@ -98,7 +138,7 @@ export class DesignBuilder {
         promises.push(builder.applyBandingFromState());
       } else if (meshData.parent) {
         // Otherwise, check parent for banding material
-        const parentData = this.data.find((d) => d.id === meshData.parent);
+        const parentData = this.dataMap.get(meshData.parent);
         if (!parentData) return;
 
         const parentBandingMaterial = this._findBandingMaterial(parentData.material);
@@ -114,7 +154,7 @@ export class DesignBuilder {
    * Builds all mesh objects, arranges them by parent relationship,
    * and returns one blank mesh containing them.
    */
-  public async createDesign(): Promise<THREE.Mesh> {
+  public async createDesign(): Promise<THREE.Object3D> {
     const meshList: THREE.Mesh[] = [];
 
     this.data.forEach((meshData) => {
@@ -125,11 +165,11 @@ export class DesignBuilder {
       this.builderMap.set(meshData.id, builder);
     });
 
-    let rootMesh: THREE.Mesh | null = null;
+    const rootMeshes: THREE.Object3D[] = [];
     meshList.forEach((mesh, index) => {
       const meshData = this.data[index];
 
-      if (meshData.parent && meshData.isMain !== true) {
+      if (meshData.parent && this.meshMap.has(meshData.parent)) {
         const parentMesh = this.meshMap.get(meshData.parent);
 
         if (parentMesh) {
@@ -140,7 +180,7 @@ export class DesignBuilder {
           }
         }
       } else {
-        rootMesh = mesh;
+        rootMeshes.push(mesh);
       }
     });
 
@@ -157,15 +197,54 @@ export class DesignBuilder {
       }
     });
 
+    // Wait for all geometry and banding to finish building
+    await Promise.all(
+      Array.from(this.builderMap.values())
+        .map((b) => b.geometryPromise)
+        .filter(Boolean)
+    );
+
     // Apply parent's banding material to child planks (async - waits for color extraction)
     await this._applyParentBandingToPlanks();
 
-    if (!rootMesh) {
-      throw new Error('Root mesh not found. Your data must contain one item with no parent.');
+    const nailerPromises: Promise<void>[] = [];
+    this.data.forEach((meshData) => {
+      const mesh = this.meshMap.get(meshData.id);
+      if (mesh && meshData.nailerEnabled) {
+        nailerPromises.push(hydrateNailers(mesh, meshData.nailerModel));
+      }
+      if (mesh && meshData.skirtingEnabled) {
+        hydrateSkirting(mesh);
+      }
+    });
+
+    if (nailerPromises.length > 0) {
+      await Promise.all(nailerPromises);
     }
 
-    this._createInitialCompartments(rootMesh);
-    updateMinifixesForCupboard(rootMesh);
-    return rootMesh;
+    let finalRoot: THREE.Object3D;
+    if (rootMeshes.length === 1) {
+      finalRoot = rootMeshes[0];
+    } else {
+      finalRoot = new THREE.Group();
+      finalRoot.name = 'batch_group';
+      finalRoot.userData.type = 'batch_group';
+      rootMeshes.forEach((m) => finalRoot.add(m));
+    }
+
+    if (finalRoot instanceof THREE.Mesh && finalRoot.userData.isMain) {
+      this._createInitialCompartments(finalRoot);
+      updateMinifixesForCupboard(finalRoot);
+    }
+    // Recompute minifix for nested main assemblies (e.g. drawer groups) in
+    // their own reference frame after full hierarchy rebuild.
+    finalRoot.traverse((obj) => {
+      if (!(obj instanceof THREE.Mesh) || !obj.userData?.isMain) return;
+      if (obj.userData?.type === PART_TYPES.DRAWER) {
+        updateMinifixesForCupboard(obj);
+      }
+    });
+    finalRoot.updateMatrixWorld(true);
+    return finalRoot;
   }
 }

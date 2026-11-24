@@ -21,7 +21,8 @@ const App: React.FC<AppProps> = ({ router }) => {
   };
 
   return (
-    <div className="h-screen w-screen overflow-hidden">
+    <div className="bv-editor h-screen w-screen overflow-hidden">
+      <Footer viewMode={viewMode} onViewModeChange={handleViewModeChange} />
       {viewMode === '3d' ? <Design setDesign3D={setDesign3D} /> : <PlannerGrid />}
       <Header router={router} design3D={design3D} />
       <Toolbar
@@ -29,8 +30,7 @@ const App: React.FC<AppProps> = ({ router }) => {
         onViewModeChange={handleViewModeChange}
         viewMode={viewMode}
       />
-      <Sidebar />
-      <Footer viewMode={viewMode} onViewModeChange={handleViewModeChange} />
+      {viewMode === '3d' && <Sidebar />}
       <ToastContainer position="top-right" theme="dark" style={{ marginTop: '60px' }} />
     </div>
   );

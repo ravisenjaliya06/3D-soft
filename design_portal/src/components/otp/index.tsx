@@ -1,8 +1,19 @@
-import styles from '@/components/otp/otp.module.css';
+import AuthShowcase from '@/components/auth/AuthShowcase';
+import styles from '@/components/auth/auth.module.css';
 import { handleResendOtp, handleVerify } from '@/components/otp/utils';
+import { REDIRECT } from '@/services/CommonStatus';
 import { assets } from '@/svgPaths';
 import { useRouter } from 'next/router';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import {
+  LuArrowLeft,
+  LuArrowRight,
+  LuClock,
+  LuMailCheck,
+  LuMailOpen,
+  LuRotateCw,
+  LuShieldCheck,
+} from 'react-icons/lu';
 
 const Otp = () => {
   const otpLength = 5;
@@ -17,7 +28,6 @@ const Otp = () => {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>, index: number) => {
     const value = e.target.value;
-
     if (!/^\d?$/.test(value)) return;
 
     const newOtp = [...otp];
@@ -29,24 +39,33 @@ const Otp = () => {
     }
   };
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (timer > 0) {
-      const countdown = setInterval(() => {
-        setTimer((prev) => prev - 1);
-      }, 1000);
-
+      const countdown = setInterval(() => setTimer((prev) => prev - 1), 1000);
       return () => clearInterval(countdown);
     }
-    if (timer === 0) {
-      setSetResend(false);
-    }
+    if (timer === 0) setSetResend(false);
   }, [timer]);
 
-  React.useEffect(() => {
-    if (message) {
-      setError(message as string);
-    }
+  useEffect(() => {
+    if (message) setError(message as string);
   }, []);
+
+  // Redirect after success message
+  useEffect(() => {
+    if (success) {
+      const timeout = setTimeout(() => {
+        router.push({
+          pathname: REDIRECT.LOGIN,
+          query: {
+            message: 'Your Account has been verified. To access login now.',
+          },
+        });
+      }, 4000);
+
+      return () => clearTimeout(timeout);
+    }
+  }, [success]);
 
   const handleOTPVerify = async () => {
     if (otp.includes('')) {
@@ -59,7 +78,11 @@ const Otp = () => {
       email: email as string,
     };
 
-    await handleVerify(otppayload, setError, router, setIsLoading);
+    await handleVerify(otppayload, setError, router, setIsLoading, () =>
+      setSuccessMessage(
+        'Registration successful! Your request has been sent to the administrator for approval.'
+      )
+    );
   };
 
   const handleResend = async () => {
@@ -79,50 +102,48 @@ const Otp = () => {
     e.preventDefault();
 
     const pastedData = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, otpLength);
-
     if (!pastedData) return;
 
     const newOtp = [...otp];
-
-    pastedData.split('').forEach((digit, index) => {
-      newOtp[index] = digit;
-    });
-
+    pastedData.split('').forEach((digit, index) => (newOtp[index] = digit));
     setOtp(newOtp);
 
-    // Focus last filled input
     document.getElementById(`otp-${pastedData.length - 1}`)?.focus();
   };
 
   return (
     <div className={styles.container}>
-      <div className={styles.card}>
-        {/* Left Section */}
-        <div className={styles.left_side}>
-          <div className={styles.popup_logo}>
-            <img src={assets.popup_logo} alt="Popup Logo" />
-          </div>
-          <div className={styles.forgot_boy}>
-            <img src={assets.otp_computer} alt="forgot boy" />
-          </div>
-          <div className={styles.logo}>
-            <img src={assets.Logo} alt="Bravento Logo" />
-          </div>
-        </div>
+      {/* ── Showcase panel (decorative) ─────────────────────── */}
+      <AuthShowcase
+        eyebrow="Email verification"
+        title="One quick check."
+        highlight="Then your workshop is ready."
+        lead="We've emailed you a verification code to keep your account, designs and production data secure."
+      />
 
-        {/* Right Section */}
-        <div className={styles.right_side}>
-          <div className={styles.back_button}>
-            <img src={assets.back_login_icon} onClick={() => router.back()} alt="Logo" />
-            Back
+      {/* ── Verification form ───────────────────────────────── */}
+      <section className={styles.formPanel}>
+        <div className={styles.formInner}>
+          <div className={styles.brandRow}>
+            <img src={assets.Logo} alt="Bravento" className={styles.brandLogo} />
           </div>
-          <h2>Verification</h2>
-          <p>
-            Please enter the 6-digit code sent to your registered email <a>{email}</a> for
-            verification.
+
+          <button type="button" className={styles.backLink} onClick={() => router.back()}>
+            <LuArrowLeft aria-hidden="true" />
+            Back
+          </button>
+
+          <span className={styles.iconBadge}>
+            <LuMailOpen aria-hidden="true" />
+          </span>
+          <h2 className={styles.title}>Verify your email</h2>
+          <p className={styles.subtitle}>
+            Enter the {otpLength}-digit code we sent to{' '}
+            <strong className={styles.emphasis}>{email}</strong>
           </p>
+
           <form className={styles.form} onSubmit={(e) => e.preventDefault()}>
-            <div className={styles.otpContainer}>
+            <div className={styles.otpRow}>
               {otp.map((value, index) => (
                 <input
                   key={index}
@@ -134,36 +155,62 @@ const Otp = () => {
                   onChange={(e) => handleChange(e, index)}
                   onPaste={handlePaste}
                   onFocus={(e) => e.target.select()}
-                  className={styles.otpInput}
+                  className={`${styles.otpInput} ${value ? styles.otpFilled : ''}`}
+                  aria-label={`Digit ${index + 1}`}
                 />
               ))}
             </div>
-            <div className={styles.timerText}>
-              {Math.floor(timer / 60)
-                .toString()
-                .padStart(2, '0')}
-              :{(timer % 60).toString().padStart(2, '0')}
-            </div>{' '}
-            <div className={styles.otpError}>
-              {error && <p className={styles.otpErrorMessage}>{error}</p>}
-              {success && <p className={styles.otpSuccessMessage}>{success}</p>}
+
+            <div className={styles.resendRow}>
+              <span className={styles.timerPill}>
+                <LuClock aria-hidden="true" />
+                {Math.floor(timer / 60)
+                  .toString()
+                  .padStart(2, '0')}
+                :{(timer % 60).toString().padStart(2, '0')}
+              </span>
+              <span className={styles.resendHint}>Didn&apos;t get the code?</span>
+              <button
+                type="button"
+                disabled={setResend}
+                className={styles.resendButton}
+                onClick={handleResend}
+              >
+                <LuRotateCw aria-hidden="true" />
+                Resend
+              </button>
             </div>
+
+            {error && (
+              <div className={styles.errorContainer}>
+                <p className={styles.errorMessage}>{error}</p>
+              </div>
+            )}
+            {success && (
+              <div className={styles.successMessage}>
+                <LuMailCheck aria-hidden="true" />
+                <span>{success}</span>
+              </div>
+            )}
+
             <div className={styles.buttonContainer}>
-              <button className={styles.otpButton} onClick={handleOTPVerify} disabled={isLoading}>
-                CONTINUE
+              <button
+                className={styles.primaryButton}
+                onClick={handleOTPVerify}
+                disabled={isLoading}
+              >
+                <span>Verify &amp; continue</span>
+                <LuArrowRight aria-hidden="true" />
               </button>
             </div>
           </form>
-          <div className={styles.resendText}>If you didn&apos;t receive a code!</div>
-          <button
-            disabled={setResend}
-            className={setResend ? styles.disabledButton : styles.resendButton}
-            onClick={handleResend}
-          >
-            Resend
-          </button>
+
+          <p className={styles.legal}>
+            <LuShieldCheck aria-hidden="true" />
+            Check your spam folder if the email hasn&apos;t arrived
+          </p>
         </div>
-      </div>
+      </section>
     </div>
   );
 };

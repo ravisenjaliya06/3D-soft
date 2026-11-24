@@ -1,206 +1,166 @@
-name: Deploy to Server
+# name: Deploy to Server
 
-on:
-  push:
-    branches: [main]
+# on:
+#   schedule:
+#     - cron: '30 13 * * 3,5'
 
-jobs:
-  deploy-backend:
-    name: Deploy Backend
-    runs-on: ubuntu-latest
-    if: github.event_name == 'push'
-    outputs:
-      backend_changed: ${{ steps.backend_changes.outputs.changed }}
-    defaults:
-      run:
-        shell: bash
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
+# jobs:
+#   deploy-production:
+#     name: Production Deployment
+#     runs-on: ubuntu-latest
+#     if: github.event_name == 'schedule'
+#     defaults:
+#       run:
+#         shell: bash
+    
+#     steps:
+#       - name: Checkout Code
+#         uses: actions/checkout@v3
+#         with:
+#           fetch-depth: 0
 
-      # Install and setup WireGuard
-      - name: Install WireGuard
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y wireguard
+#       - name: Install & Configure WireGuard
+#         run: |
+#           sudo apt-get update && sudo apt-get install -y wireguard
+#           echo "${{ secrets.WIREGUARD_CONF }}" > wg0.conf
+#           sudo chmod 600 wg0.conf
+#           sudo wg-quick up ./wg0.conf
 
-      - name: Create WireGuard config
-        run: |
-          echo "${{ secrets.WIREGUARD_CONF }}" > wg0.conf
-          sudo chmod 600 wg0.conf
+#       - name: Setup SSH
+#         uses: webfactory/ssh-agent@v0.5.3
+#         with:
+#           ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
 
-      - name: Start WireGuard VPN
-        run: sudo wg-quick up ./wg0.conf
+#       - name: Add server to known_hosts
+#         run: ssh-keyscan -H ${{ secrets.SERVER_IP }} >> ~/.ssh/known_hosts
 
-      # Only run if backend/ folder has changes
-      - name: Check backend folder changes
-        id: backend_changes
-        run: |
-          if git diff --name-only HEAD^ HEAD | grep -q '^backend/'; then
-            echo "changed=true" >> $GITHUB_OUTPUT
-          else
-            echo "changed=" >> $GITHUB_OUTPUT
-          fi
+#       - name: Check which folders changed
+#         id: changes
+#         run: |
+#           # Use a safer fallback for the "before" commit to handle new branches/force pushes
+#           BEFORE=${{ github.event.before }}
+#           if [ "$BEFORE" == "0000000000000000000000000000000000000000" ]; then BEFORE="HEAD^"; fi
 
-      - name: Skip backend deploy if no changes
-        if: steps.backend_changes.outputs.changed == ''
-        run: |
-          echo "No backend changes, skipping deploy."
+#           # Check Backend
+#           if git diff --name-only $BEFORE ${{ github.event.after }} | grep -q '^backend/'; then
+#             echo "BACKEND_CHANGED=true" >> $GITHUB_ENV
+#             echo "Backend changes detected."
+#           else
+#             echo "BACKEND_CHANGED=false" >> $GITHUB_ENV
+#           fi
 
-      - name: Setup SSH
-        uses: webfactory/ssh-agent@v0.5.3
-        with:
-          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+#           # Check Frontend
+#           if git diff --name-only $BEFORE ${{ github.event.after }} | grep -q '^design_portal/'; then
+#             echo "FRONTEND_CHANGED=true" >> $GITHUB_ENV
+#             echo "Frontend changes detected."
+#           else
+#             echo "FRONTEND_CHANGED=false" >> $GITHUB_ENV
+#           fi
 
-      - name: Add server to known_hosts
-        run: ssh-keyscan -H ${{ secrets.SERVER_IP }} >> ~/.ssh/known_hosts
+#       - name: Execute Deployment on Server
+#         run: |
+#           ssh -A -o StrictHostKeyChecking=no root@${{ secrets.SERVER_IP }} << 'EOF'
+#             set -euo pipefail
 
-      - name: Deploy Backend via SSH
-        if: steps.backend_changes.outputs.changed != ''
+#             # Maintenance Mode: Enable and ensure it's disabled on exit (success or failure)
+#             echo "🚧 Enabling maintenance mode..."
+#             touch /tmp/maintenance.enable
+#             trap 'echo "🏁 Disabling maintenance mode..."; rm -f /tmp/maintenance.enable' EXIT
 
-        run: |
-          ssh -o StrictHostKeyChecking=no root@${{ secrets.SERVER_IP }} << 'EOF'
-            set -euo pipefail
-            export DEBIAN_FRONTEND=noninteractive
+#             # This runs every time so the folder is always fresh
+#             echo "⬇️ Syncing latest code..."
+#             cd /root/bravento
+#             git fetch origin main
+#             git reset --hard origin/main
 
-            cd /root/bravento
-            git fetch origin main --depth=1
-            git reset --hard origin/main
+#             # Ensure maintenance page is in web root
+#             cp /root/bravento/maintenance.html /var/www/html/maintenance.html
+#             chmod 644 /var/www/html/maintenance.html
 
-            cd backend/
-            pipenv install --deploy --ignore-pipfile --python 3.11
-            pipenv run python manage.py migrate --noinput --settings=umaboy.settings.production
-            pipenv run python manage.py collectstatic --noinput --settings=umaboy.settings.production
-            pipenv run python scripts/add_material_data.py --settings=umaboy.settings.production
+#             if [ "${{ env.BACKEND_CHANGED }}" == "true" ]; then
+#               echo "🚀 Deploying Backend..."
+#               cd backend/
+#               pipenv install --deploy --ignore-pipfile --python 3.11
+#               pipenv run python manage.py migrate --noinput --settings=umaboy.settings.production
+#               pipenv run python manage.py collectstatic --noinput --settings=umaboy.settings.production
+              
+#               # Optional: Run scripts if needed
+#               # pipenv run python scripts/add_material_data.py --settings=umaboy.settings.production
 
-            systemctl restart gunicorn
-          EOF
+#               # Use reload instead of restart for zero-downtime
+#               systemctl restart gunicorn
+#               echo "✅ Backend deployed."
+#               cd .. 
+#             else
+#               echo "⏭️ Skipping Backend Deploy (No changes)"
+#             fi
 
-      - name: Verify Gunicorn
-        if: steps.backend_changes.outputs.changed != ''
+#             if [ "${{ env.FRONTEND_CHANGED }}" == "true" ]; then
+#               echo "🎨 Deploying Frontend..."
+#               cd design_portal/
+#               npm install --legacy-peer-deps
+              
+#               # Ensure env file exists
+#               cp .env.production .env
+              
+#               npm run build
+              
+#               # Restart PM2
+#               cd ..
+#               pm2 restart ecosystem.config.js --update-env || pm2 restart design-portal
+#               pm2 save
+#               echo "✅ Frontend deployed."
+#             else
+#                echo "⏭️ Skipping Frontend Deploy (No changes)"
+#             fi
 
-        run: |
-          ssh -o StrictHostKeyChecking=no root@${{ secrets.SERVER_IP }} << 'EOF'
-            if ! systemctl is-active --quiet gunicorn; then
-              echo "❌ Gunicorn failed to start"
-              sudo journalctl -u gunicorn --no-pager -n 50
-              exit 1
-            else
-              echo "✅ Gunicorn running"
-            fi
-          EOF
+#           EOF
 
-      - name: Notify Google Chat
-        if: always() && steps.backend_changes.outputs.changed != '' # run even if previous steps failed, but only if we tried to deploy
-        run: |
-          STATUS="SUCCESS"
-          if [ "${{ job.status }}" != "success" ]; then
-            STATUS="FAILED"
-          fi
-      
-          curl -X POST -H "Content-Type: application/json" \
-               -d "{\"text\":\"Backend Deployment $STATUS: ${{ github.workflow }} - ${{ github.ref }}\"}" \
-               ${{ secrets.GOOGLE_CHAT_WEBHOOK }}
+#       - name: Verify Services
+#         if: always()
+#         run: |
+#            ssh -o StrictHostKeyChecking=no root@${{ secrets.SERVER_IP }} << 'EOF'
+#              echo "--- STATUS CHECK ---"
+#              systemctl is-active gunicorn && echo "Gunicorn: OK" || echo "Gunicorn: FAILED"
+#              pm2 status | grep design || true
+#            EOF
 
-  deploy-frontend:
-    name: Deploy Frontend
-    runs-on: ubuntu-latest
-    if: github.event_name == 'push'
-    defaults:
-      run:
-        shell: bash
-    needs: deploy-backend
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
+#       - name: Notify Google Chat
+#         if: always()
+#         run: |
+#           # 1. Determine Status Emoji
+#           if [ "${{ job.status }}" == "success" ]; then
+#             STATUS_ICON="✅"
+#             STATUS_TEXT="Deployment Successful"
+#           else
+#             STATUS_ICON="❌"
+#             STATUS_TEXT="Deployment Failed"
+#           fi
 
-      - name: Install WireGuard
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y wireguard
+#           # 2. Get Git Details
+#           # Using git log to get the last commit message
+#           COMMIT_MSG=$(git log -1 --pretty=format:"%s")
+#           AUTHOR=$(git log -1 --pretty=format:"%an")
+#           REPO="${{ github.repository }}"
+#           BRANCH="${{ github.ref_name }}"
 
-      - name: Create WireGuard config
-        run: |
-          echo "${{ secrets.WIREGUARD_CONF }}" > wg0.conf
-          sudo chmod 600 wg0.conf
+#           # 3. Create Status Tags for Backend/Frontend
+#           # We use emojis to show what was updated vs skipped
+#           BE_STATUS=$([[ "${{ env.BACKEND_CHANGED }}" == "true" ]] && echo "🚀 Updated" || echo "⏭️ Skipped")
+#           FE_STATUS=$([[ "${{ env.FRONTEND_CHANGED }}" == "true" ]] && echo "🎨 Updated" || echo "⏭️ Skipped")
 
-      - name: Start WireGuard VPN
-        run: sudo wg-quick up ./wg0.conf
+#           # 4. Construct the Payload
+#           # We use \n for newlines
+#           TEXT="*$STATUS_ICON $STATUS_TEXT*\n\n"
+#           TEXT+="📦 *Repo:* $REPO ($BRANCH)\n"
+#           TEXT+="👤 *Author:* $AUTHOR\n"
+#           TEXT+="📝 *Commit:* $COMMIT_MSG\n\n"
+#           TEXT+="--- *Changes* ---\n"
+#           TEXT+="🔹 *Backend:* $BE_STATUS\n"
+#           TEXT+="🔸 *Frontend:* $FE_STATUS\n\n"
+#           TEXT+="🔗 <https://github.com/$REPO/commit/${{ github.sha }}|View Commit Details>"
 
-      # Only run if design_portal/ folder has changes
-      - name: Check frontend folder changes
-        id: frontend_changes
-        run: |
-          if git diff --name-only HEAD^ HEAD | grep -q '^design_portal/'; then
-            echo "changed=true" >> $GITHUB_OUTPUT
-          else
-            echo "changed=" >> $GITHUB_OUTPUT
-          fi
-
-      - name: Skip frontend deploy if no changes
-        if: steps.frontend_changes.outputs.changed == ''
-        run: |
-          echo "No frontend changes, skipping deploy."
-
-      - name: Setup SSH
-        uses: webfactory/ssh-agent@v0.5.3
-        with:
-          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
-
-      - name: Add server to known_hosts
-        run: ssh-keyscan -H ${{ secrets.SERVER_IP }} >> ~/.ssh/known_hosts
-
-      - name: Deploy Frontend via SSH
-        if: steps.frontend_changes.outputs.changed != ''
-
-        run: |
-          ssh -o StrictHostKeyChecking=no root@${{ secrets.SERVER_IP }} << 'EOF'
-            set -euo pipefail
-
-            cd /root/bravento/design_portal/
-            npm install --legacy-peer-deps
-            cp .env.production .env
-            npm run build
-
-            cd ..
-            pm2 restart ecosystem.config.js --update-env
-            pm2 save
-          EOF
-
-      - name: Verify Frontend
-        if: steps.frontend_changes.outputs.changed != ''
-
-        run: |
-          ssh -o StrictHostKeyChecking=no root@${{ secrets.SERVER_IP }} << 'EOF'
-            sleep 5
-            if curl -fs http://localhost:3000 >/dev/null; then
-              echo "✅ Frontend running"
-            else
-              echo "❌ Frontend not running"
-              pm2 logs design-portal --lines 50 --nostream || true
-              exit 1
-            fi
-          EOF
-
-      - name: Notify Google Chat
-        if: always() && steps.frontend_changes.outputs.changed != '' # run even if previous steps failed, but only if we tried to deploy
-        run: |
-          STATUS="SUCCESS"
-          if [ "${{ job.status }}" != "success" ]; then
-            STATUS="FAILED"
-          fi
-      
-          curl -X POST -H "Content-Type: application/json" \
-               -d "{\"text\":\"Frontend Design Portal Deployment $STATUS: ${{ github.workflow }} - ${{ github.ref }}\"}" \
-               ${{ secrets.GOOGLE_CHAT_WEBHOOK }}
-
-      - name: Notify No Changes
-        if: needs.deploy-backend.outputs.backend_changed == '' && steps.frontend_changes.outputs.changed == ''
-        run: |
-          curl -X POST -H "Content-Type: application/json" \
-               -d "{\"text\":\"No backend or frontend changes detected. Skipping deployment: ${{ github.workflow }} - ${{ github.ref }}\"}" \
-               ${{ secrets.GOOGLE_CHAT_WEBHOOK }}
+#           # 5. Send Notification
+#           curl -X POST -H "Content-Type: application/json" \
+#                -d "{\"text\":\"$TEXT\"}" \
+#                '${{ secrets.GOOGLE_CHAT_WEBHOOK }}'

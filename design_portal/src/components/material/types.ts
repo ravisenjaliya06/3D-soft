@@ -45,6 +45,8 @@ export interface MaterialState {
   contextMaterialMenu: MaterialContextMenu | null;
   createCompanyPopup: boolean;
   companyName: string;
+  editingMaterial: TableRow | null;
+  deletingMaterial: TableRow | null;
   error: string | null;
 }
 
@@ -187,6 +189,10 @@ export interface MaterialPropertiesInput {
   name?: string;
   description?: string;
   type?: string;
+  selectedTexture?: string;
+  textures?: any[];
+  finishes?: any[];
+  finish_types?: any[];
 
   unitOfIssue?: string;
   defaultCost?: number;

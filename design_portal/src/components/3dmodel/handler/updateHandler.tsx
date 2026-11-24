@@ -1,7 +1,7 @@
 import { Dispatch } from '@reduxjs/toolkit';
 import * as THREE from 'three';
 import { Dimensions } from '../interface';
-import { MeshObjectData, PART_TYPES } from '../sceneCreator/interface';
+import { MeshObjectData, PART_TYPES, TEXTURE_GRAIN } from '../sceneCreator/interface';
 import { MeshBuilder } from '../sceneCreator/meshBuilder';
 import { BandingTool } from '../sceneCreator/tools/bandingTool';
 import { MATERIAL_TYPES as SIDEBAR_MATERIAL_TYPES } from '../sidebar/interface';
@@ -10,7 +10,7 @@ import { updateObject } from '../store/dataSlice';
 import { Position } from '../store/interface';
 import { updateOrRefreshOutline } from '../utils/outlineHelpers';
 import { UpdateDimensionsParams, UpdatePayload } from './interface';
-import { updateMinifixesForCupboard } from './items';
+import { generateCompartmentsFromMesh, updateMinifixesForCupboard } from './items';
 
 export class UpdateObjectInScene {
   private readonly scene: THREE.Scene;
@@ -47,6 +47,30 @@ export class UpdateObjectInScene {
     this.updateMeshMaterial(mesh, updates);
     if (updates.textureRotation !== undefined) {
       this.updateTextureRotation(mesh, updates.textureRotation);
+    }
+    if (updates.textureGrain !== undefined) {
+      mesh.userData.textureGrain = updates.textureGrain;
+      const rotationDeg = updates.textureGrain === TEXTURE_GRAIN.VERTICAL ? 90 : 0;
+      this.updateTextureRotation(mesh, rotationDeg);
+    }
+    if (updates.openDirection) {
+      mesh.userData.openDirection = updates.openDirection;
+      if (currentObject) {
+        // We need to re-initialize MeshBuilder to update hinges
+        // Create a temporary MeshObjectData with updated direction
+        const updatedData = {
+          ...currentObject,
+          openDirection: updates.openDirection as any,
+          material: Array.isArray(updates.material)
+            ? updates.material
+            : updates.material
+              ? [updates.material as any]
+              : currentObject.material,
+        } as any;
+        const builder = new MeshBuilder(updatedData, this.scene);
+        builder.updateHinges(mesh);
+        builder.updateHandle(mesh);
+      }
     }
 
     if (currentObject) {
@@ -155,6 +179,13 @@ export class UpdateObjectInScene {
       updateParams.newDepth
     );
 
+    // update userData dimensions
+    mesh.userData.dimensions = {
+      width: updateParams.newWidth,
+      height: updateParams.newHeight,
+      depth: updateParams.newDepth,
+    };
+
     if (mesh.userData.isMain === true) {
       this.updateChildrenDynamic(mesh, updateParams);
     }
@@ -172,6 +203,7 @@ export class UpdateObjectInScene {
     if (mesh.userData.isMain) {
       this.updateChildrenDynamic(mesh, updateParams);
       updateMinifixesForCupboard(mesh);
+      generateCompartmentsFromMesh(mesh);
     }
 
     updateOrRefreshOutline(this.scene, mesh);
@@ -242,6 +274,13 @@ export class UpdateObjectInScene {
       child.geometry = new THREE.BoxGeometry(nextWidth, nextHeight, nextDepth);
 
       child.position.set(nextX, nextY, nextZ);
+
+      // update userData dimensions
+      child.userData.dimensions = {
+        width: nextWidth,
+        height: nextHeight,
+        depth: nextDepth,
+      };
 
       if (
         child.userData.type &&
@@ -420,6 +459,13 @@ export class UpdateObjectInScene {
 
         //@ts-ignore
         material: updates.material ?? currentObject.material,
+
+        openDirection: updates.openDirection
+          ? (updates.openDirection as any)
+          : currentObject.openDirection,
+
+        textureGrain:
+          updates.textureGrain !== undefined ? updates.textureGrain : currentObject.textureGrain,
       })
     );
   }

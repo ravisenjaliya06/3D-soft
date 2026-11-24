@@ -2,7 +2,9 @@
 import uuid
 
 # Django imports
-from django.db import models
+from django.db import IntegrityError, models
+from django.db.models import Max
+from django.utils import timezone
 
 # App imports
 from umaboy.models import Organization, User
@@ -43,6 +45,13 @@ class CatalogTypeChoices(models.TextChoices):
     PLATFORM = "platform"
     INVISIBLE_COMPARTMENT = "invisiblecompartment"
     WALL = "wall"
+    MODEL = "model"
+    DRAWER_FACE = "DRAWER_FACE_PLANK"
+    FRONT_DRAWER_PLANK = "DRAWER_FRONT_PLANK"
+    BACK_DRAWER_PLANK = "DRAWER_BACK_PLANK"
+    BOTTOM_DRAWER_PLANK = "DRAWER_BOTTOM_PLANK"
+    RIGHT_DRAWER_PLANK = "DRAWER_RIGHT_PLANK"
+    LEFT_DRAWER_PLANK = "DRAWER_LEFT_PLANK"
 
     UNKNOWN = "unknown"
 
@@ -78,8 +87,58 @@ class Design(models.Model):
         upload_to="project/custom_designs", null=True
     )
     is_custom = models.BooleanField(default=False)
+    rendering_project_id = models.CharField(max_length=255, null=True, blank=True)
+    customer_name = models.CharField(max_length=255, null=True, blank=True)
+    customer_company = models.CharField(max_length=255, null=True, blank=True)
+    customer_address = models.TextField(null=True, blank=True)
+    customer_gstin = models.CharField(max_length=50, null=True, blank=True)
+    customer_contact = models.CharField(max_length=50, null=True, blank=True)
+    customer_email = models.EmailField(max_length=255, null=True, blank=True)
+    order_number = models.CharField(max_length=100, null=True, blank=True)
+    project_type = models.CharField(max_length=255, null=True, blank=True)
+    project_code = models.CharField(
+        max_length=20,
+        null=True,
+        blank=True,
+        unique=True,
+        help_text="Auto-generated readable project ID, e.g. BRV-2026-0001",
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+    def save(self: "Design", *args, **kwargs) -> None:
+        is_new = self._state.adding
+
+        if not self.project_code:
+            year = timezone.now().year
+
+            for _ in range(10):
+                last_code = (
+                    Design.objects.filter(project_code__startswith=f"BRV-{year}-")
+                    .aggregate(max_code=Max("project_code"))
+                    .get("max_code")
+                )
+
+                next_number = 1
+                if last_code:
+                    next_number = int(last_code.split("-")[-1]) + 1
+
+                self.project_code = f"BRV-{year}-{next_number:04d}"
+
+                try:
+                    super().save(*args, **kwargs)
+                    break
+                except IntegrityError:
+                    continue
+            else:
+                raise IntegrityError("Could not generate unique project code")
+        else:
+            super().save(*args, **kwargs)
+
+        if is_new:
+            DesignVersion.objects.create(
+                design=self, name=self.design_name or "Untitled Version"
+            )
 
     def __str__(self: "Design") -> str:
         return self.design_name
@@ -141,6 +200,18 @@ class DesignScreenshot(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
 
+class RenderImage(models.Model):
+    id = models.UUIDField(
+        default=uuid.uuid4, editable=False, primary_key=True, unique=True
+    )
+    design = models.ForeignKey(
+        Design, on_delete=models.CASCADE, related_name="render_images"
+    )
+    image = models.ImageField(upload_to="project/render_images")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+
 class DesignVersion(models.Model):
     id = models.UUIDField(
         default=uuid.uuid4, editable=False, primary_key=True, unique=True
@@ -169,6 +240,8 @@ class DesignCatalog(models.Model):
     type = models.CharField(max_length=100, choices=CatalogTypeChoices.choices)
     name = models.CharField(max_length=100)
     description = models.TextField(null=True, blank=True)
+    image = models.ImageField(upload_to="catalog_images", null=True, blank=True)
+    model_file = models.FileField(upload_to="model_files", null=True, blank=True)
     parent = models.ForeignKey("self", on_delete=models.CASCADE, null=True, blank=True)
     is_library = models.BooleanField(default=False)
     script_parent = models.UUIDField(null=True, blank=True)

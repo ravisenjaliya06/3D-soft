@@ -12,12 +12,14 @@ export const createLineObjects = (obj: THREE.Mesh, color: number): THREE.LineSeg
   const size = new THREE.Vector3();
   box.getSize(size);
 
-  const geo = new THREE.BoxGeometry(size.x, size.y, size.z);
+  const geo = new THREE.BoxGeometry(size.x + 0.001, size.y + 0.001, size.z + 0.001);
   const edges = new THREE.EdgesGeometry(geo);
   const mat = new THREE.LineBasicMaterial({
     color: color,
-    linewidth: 2,
-    depthTest: false,
+    linewidth: 4,
+    depthTest: true,
+    opacity: 1,
+    transparent: true,
   });
   const outline = new THREE.LineSegments(edges, mat);
 
@@ -66,7 +68,7 @@ export const updateOrRefreshOutline = (scene: THREE.Scene, mesh: THREE.Mesh): vo
     solid.geometry.dispose();
     (solid.material as THREE.Material).dispose();
 
-    const tempSolid = createLineObjects(mesh, 0xffff00);
+    const tempSolid = createLineObjects(mesh, 0x1f7aff);
 
     solid.geometry = tempSolid.geometry;
     solid.material = tempSolid.material;
@@ -80,5 +82,40 @@ export const updateOrRefreshOutline = (scene: THREE.Scene, mesh: THREE.Mesh): vo
     // Reset transforms since center is in world space
     solid.quaternion.set(0, 0, 0, 1);
     solid.scale.set(1, 1, 1);
+  }
+
+  // Box Selection Outline
+  const boxName = `outline_box-${mesh.userData.objectId}`;
+  const boxOutline = scene.getObjectByName(boxName) as THREE.Mesh;
+
+  if (boxOutline) {
+    boxOutline.geometry.dispose();
+
+    let box: THREE.Box3;
+    if (mesh.geometry) {
+      if (!mesh.geometry.boundingBox) {
+        mesh.geometry.computeBoundingBox();
+      }
+      box = mesh.geometry.boundingBox!.clone();
+    } else {
+      box = new THREE.Box3().setFromObject(mesh);
+    }
+
+    const size = new THREE.Vector3();
+    const center = new THREE.Vector3();
+    box.getSize(size);
+    box.getCenter(center);
+
+    const geometry = new THREE.BoxGeometry(size.x, size.y, size.z);
+    geometry.translate(center.x, center.y, center.z);
+    boxOutline.geometry = geometry;
+
+    if (mesh.geometry) {
+      boxOutline.matrixAutoUpdate = false;
+      boxOutline.matrix.copy(mesh.matrixWorld);
+    } else {
+      boxOutline.matrixAutoUpdate = true;
+      boxOutline.position.copy(center);
+    }
   }
 };

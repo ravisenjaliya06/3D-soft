@@ -2,12 +2,13 @@
 from typing import cast
 
 # External imports
+from rest_framework.exceptions import PermissionDenied
 from rest_framework.permissions import BasePermission, IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.viewsets import ModelViewSet
 
 # App imports
-from umaboy.models import User, UserOrganizationPermission
+from umaboy.models import Organization, User, UserOrganizationPermission
 
 # Local imports
 from .constant import (
@@ -30,6 +31,65 @@ from .constant import (
 )
 
 
+def _get_requested_org_id(request: Request) -> str | None:
+    org_id = (
+        request.headers.get("X-Organization-Id")
+        or request.headers.get("x-organization-id")
+        or request.query_params.get("organization_id")
+        or request.META.get("HTTP_X_ORGANIZATION_ID")
+    )
+    if not org_id or org_id in {"null", "undefined"}:
+        return None
+    return str(org_id)
+
+
+def _is_impersonating_other_org(user: User, requested_org: Organization | None) -> bool:
+    if not requested_org:
+        return False
+    return not user.organizations.filter(id=requested_org.id).exists()
+
+
+def is_ghost_authorized(request: Request) -> bool | None:
+    """
+    Ghost access rules apply ONLY when the ghost user is impersonating an organization
+    they are NOT a member of.
+
+    Returns:
+        True: Authorized as ghost for impersonated org
+        False: Ghost but unauthorized for impersonated org (e.g. view-only trying to write)
+        None: Not a ghost, or ghost acting within their own organization (normal checks)
+    """
+    user = cast(User, request.user)
+    if not getattr(user, "is_ghost", False):
+        return None
+
+    org_id = _get_requested_org_id(request)
+    requested_org: Organization | None = None
+
+    if org_id:
+        requested_org = Organization.objects.filter(id=org_id).first()
+    elif getattr(user, "selected_organization", None):
+        requested_org = user.selected_organization
+
+    # If the requested org is one of the user's own orgs, do NOT apply ghost bypass.
+    if requested_org and not _is_impersonating_other_org(user, requested_org):
+        return None
+
+    # If ghost user isn't targeting any org, treat as unauthorized.
+    if not requested_org:
+        return False
+
+    # Impersonating another org: read-only for GET/HEAD/OPTIONS; write requires full access.
+    if request.method in [GET, "HEAD", "OPTIONS"]:
+        return True
+
+    if getattr(user, "ghost_access_type", "view") == "full":
+        return True
+
+    # View-only ghost attempting a write while impersonating.
+    raise PermissionDenied("You have read-only access as a ghost user.")
+
+
 class AccountManager(IsAuthenticated):
     """
     Custom permission to allow access only to Account Managers for a specific organization.
@@ -38,6 +98,10 @@ class AccountManager(IsAuthenticated):
     def has_permission(
         self: "AccountManager", request: Request, view: ModelViewSet
     ) -> bool:
+        ghost_auth = is_ghost_authorized(request)
+        if ghost_auth is not None:
+            return ghost_auth
+
         user = cast(User, request.user)
         if not hasattr(user, "selected_organization") or not user.selected_organization:
             return False
@@ -71,7 +135,11 @@ class CatalogManager(BasePermission):
     def has_permission(
         self: "CatalogManager", request: Request, view: ModelViewSet
     ) -> bool:
-        user = User.objects.filter(id=request.user.id).first()
+        ghost_auth = is_ghost_authorized(request)
+        if ghost_auth is not None:
+            return ghost_auth
+
+        user = cast(User, request.user)
         if not user.selected_organization:
             return False
         user_permission = UserOrganizationPermission.objects.get(
@@ -101,7 +169,11 @@ class Designer(BasePermission):
     """
 
     def has_permission(self: "Designer", request: Request, view: ModelViewSet) -> bool:
-        user = User.objects.filter(id=request.user.id).first()
+        ghost_auth = is_ghost_authorized(request)
+        if ghost_auth is not None:
+            return ghost_auth
+
+        user = cast(User, request.user)
         if not user.selected_organization:
             return False
         user_permission = UserOrganizationPermission.objects.get(
@@ -131,7 +203,11 @@ class MesEditor(BasePermission):
     """
 
     def has_permission(self: "MesEditor", request: Request, view: ModelViewSet) -> bool:
-        user = User.objects.filter(id=request.user.id).first()
+        ghost_auth = is_ghost_authorized(request)
+        if ghost_auth is not None:
+            return ghost_auth
+
+        user = cast(User, request.user)
         if not user.selected_organization:
             return False
         user_permission = UserOrganizationPermission.objects.get(

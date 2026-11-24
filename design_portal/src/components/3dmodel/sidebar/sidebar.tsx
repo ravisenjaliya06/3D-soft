@@ -2,30 +2,41 @@ import { _3DMODEL, assets } from '@/svgPaths';
 import gsap from 'gsap';
 import Image from 'next/image';
 import React, { useEffect, useRef, useState } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
+import { useDispatch, useSelector, useStore } from 'react-redux';
 import { toast } from 'react-toastify';
 import * as THREE from 'three';
 import { itemType } from '../design/interface';
 import {
-  addLShapeToDrawersAndDoors,
+  addLShapeInDirection,
+  addNailers,
   addSkirtingPlanks,
-  removeLShapeObjects,
+  applyNoBase,
+  hasExtendedSidePlanks,
+  removeLShapeForSingleDrawerOrDoor,
+  removeNailers,
   removeSkirtingPlanks,
+  updateDoorType,
   updateDrawerType,
 } from '../design/scene';
-import { updateMinifixesForCupboard } from '../handler/items';
+import { generateCompartmentsFromMesh, updateMinifixesForCupboard } from '../handler/items';
 import { UpdateObjectInScene } from '../handler/updateHandler';
 import { Dimensions } from '../interface';
 import {
+  DOOR_TYPES,
+  DOUBLE_DOOR_PLANK_TYPES,
   DRAWER_PLANK_TYPES,
   DRAWER_TYPES,
+  FLOOR_PLAN_TYPES,
+  INVISIBLE_BOXES,
   Material,
   MeshObjectData,
   MeshObjectPatch,
+  OBJECT_TYPES,
   PART_TYPES,
   MATERIAL_TYPES as SCENE_MATERIAL_TYPES,
   TextureDetails,
 } from '../sceneCreator/interface';
+
 import { SyncManager } from '../sceneCreator/syncState';
 import { CabinetMotionController } from '../sceneCreator/tools/openCloseTool';
 import { RootState } from '../store';
@@ -39,6 +50,7 @@ import {
 } from '../store/activeItemSlice';
 import { updateObject } from '../store/dataSlice';
 import {
+  selectIsLatestVersion,
   selectResolvedCamDepth,
   selectResolvedCamDiameter,
   selectResolvedCamHeight,
@@ -53,10 +65,12 @@ import { DistanceTool } from '../design/distance/distance';
 import { getActiveUnit, unitToMeters } from '../handler/unitConversion';
 import { LOAD_MORE_INCREMENT } from '../sceneCreator/constants';
 import { BandingTool } from '../sceneCreator/tools/bandingTool';
-import { findMeshById, formatEnumLabel } from '../sceneCreator/utils';
+import { findMesh, formatEnumLabel } from '../sceneCreator/utils';
 import { DistanceInput } from './DistanceInput';
-import { Axis, Field } from './interface';
+import { Axis, Field, TextureGrain } from './interface';
 import { MaterialChangePopup } from './MaterialChangePopup';
+import SidebarInputWithSuffix from './SidebarInputWithSuffix';
+import { TextureAddPopup } from './TextureAddPopup';
 
 const Sidebar: React.FC = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
@@ -65,7 +79,7 @@ const Sidebar: React.FC = () => {
   const [doorPosition, setDoorPosition] = useState('None');
   const [showMaterialPopup, setShowMaterialPopup] = useState(false);
   const [isTextureListOpen, setIsTextureListOpen] = useState(false);
-  const [textureRotation, setTextureRotation] = useState(0);
+  const [textureGrain, setTextureGrain] = useState<TextureGrain>('None');
   const [handlePos, setHandlePos] = useState({ x: 0, y: 0, z: 0 });
   const [handleRot, setHandleRot] = useState({ x: 0, y: 0, z: 0 });
   const [shelvesInnerDistance, setShelvesInnerDistance] = useState(0);
@@ -81,24 +95,31 @@ const Sidebar: React.FC = () => {
   const [widthSide, setWidthSide] = useState<'left' | 'right' | null>(null);
   const [heightSide, setHeightSide] = useState<'bottom' | 'top' | null>(null);
   const [depthSide, setDepthSide] = useState<'back' | 'front' | null>(null);
+  const [isInvisibleBox, setIsIncisibleBox] = useState<boolean>(false);
   const [textureData, setTextureData] = useState<any[]>([]);
-  const [visibleCount, setVisibleCount] = useState(40);
+  const [nextPageUrl, setNextPageUrl] = useState<string | null>(null);
+  const [isFetchingTextures, setIsFetchingTextures] = useState<boolean>(false);
   const [textureSearchQuery, setTextureSearchQuery] = useState('');
+  const [visibleCount, setVisibleCount] = useState(LOAD_MORE_INCREMENT);
+  const [isMainObject, setIsMainObject] = useState<boolean>(false);
+
+  const [isAddTexturePopupOpen, setIsAddTexturePopupOpen] = useState(false);
 
   const updateObjectRef = useRef<UpdateObjectInScene | null>(null);
   const bandingToolRef = useRef<BandingTool | null>(null);
   const distanceToolRef = useRef<DistanceTool | null>(null);
-  const isUpdatingTextureRotationRef = useRef(false);
   const isUpdatingShelvesDistanceRef = useRef(false);
   const previousPlankIdRef = useRef<string | null>(null);
   const isUpdatingPositionRef = useRef(false);
+  // Ref for intersection observer to handle infinite scroll
+  const observerTarget = useRef<HTMLDivElement>(null);
   //temporarily disabled
   const sidebarRef = useRef<HTMLDivElement | null>(null);
 
   const dispatch = useDispatch();
+  const store = useStore<RootState>();
   const selectedObjectId = useSelector((state: RootState) => state.data.selectedObject);
   const selectedChildObjectId = useSelector((state: RootState) => state.data.selectedChildObject);
-  const selectedInvisibleBoxId = useSelector((state: RootState) => state.data.selectedInvisibleBox);
   const objects = useSelector((state: RootState) => state.data.objects);
   const scene = useSelector((state: RootState) => state.scene.scene);
   const isQuickHideActive = useSelector((state: RootState) => state.data.isQuickHideActive);
@@ -109,8 +130,8 @@ const Sidebar: React.FC = () => {
   const resolvedCamDepth = useSelector(selectResolvedCamDepth);
   const resolvedCamDiameter = useSelector(selectResolvedCamDiameter);
   const resolvedCamHeight = useSelector(selectResolvedCamHeight);
-
-  const isDisabled = isQuickHideActive;
+  const isLatestVersion = useSelector(selectIsLatestVersion);
+  const isDisabled = isQuickHideActive || !isLatestVersion;
 
   let selectedObject: MeshObjectData | null | undefined;
   const targetId = selectedChildObjectId || selectedObjectId;
@@ -125,19 +146,56 @@ const Sidebar: React.FC = () => {
 
   const isHorizontalPlank = selectedObject?.name?.includes(itemType.HORIZONTAL_PLANK) ?? false;
   const isVerticalPlank = selectedObject?.name?.includes(itemType.VERTICAL_PLANK) ?? false;
+  // const isDoorSelected = selectedObject?.type === PART_TYPES.DOOR;
+  // const isDrawerSelected = selectedObject?.type === PART_TYPES.DRAWER || selectedObject?.name === 'Drawer';
 
   useEffect(() => {
     if (selectedObjectId || selectedChildObjectId) {
-      setSettingOpen(true);
-      setNavOpen(false);
+      if (selectedObject?.type === OBJECT_TYPES.MODEL) {
+        setSettingOpen(false);
+        setNavOpen(true);
+      } else {
+        setSettingOpen(true);
+        setNavOpen(false);
+      }
+
+      scene.traverse((child) => {
+        if (child instanceof THREE.Mesh || child.userData.type === INVISIBLE_BOXES.INVISIBLE_BOX) {
+          setIsIncisibleBox(true);
+        } else {
+          setIsIncisibleBox(false);
+        }
+      });
     } else {
       setSettingOpen(false);
       setNavOpen(true);
     }
+
+    if (selectedObject && selectedObject.type === PART_TYPES.DOOR) {
+      if (selectedObject.openDirection) {
+        const dir = selectedObject.openDirection;
+        setDoorPosition(dir.charAt(0).toUpperCase() + dir.slice(1).toLowerCase());
+      } else {
+        setDoorPosition('None');
+      }
+    }
+
+    if (selectedObject) {
+      // @ts-ignore
+      setTextureGrain(
+        (selectedObject.textureGrain as 'None' | 'Horizontal' | 'Vertical') || 'None'
+      );
+      // Initialize handle mode from per-object state
+      setHandleMode(((selectedObject as any).handleMode as 'handle' | 'handleless') || 'handle');
+    } else {
+      setTextureGrain('None');
+      setHandleMode('handle');
+    }
+
     setWidthSide(null);
     setHeightSide(null);
     setDepthSide(null);
-  }, [selectedObjectId, selectedChildObjectId]);
+  }, [selectedObjectId, selectedChildObjectId, isLatestVersion]);
 
   useEffect(() => {
     if (isQuickHideActive) {
@@ -186,6 +244,7 @@ const Sidebar: React.FC = () => {
 
   useEffect(() => {
     if (selectedObject && scene) {
+      if (isUpdatingPositionRef.current) return;
       let targetMesh: THREE.Mesh | null = null;
       scene.traverse((obj) => {
         if (obj instanceof THREE.Mesh && obj.userData.objectId === selectedObject?.id) {
@@ -193,10 +252,21 @@ const Sidebar: React.FC = () => {
         }
       });
       if (targetMesh) {
-        const hasSkirting = (targetMesh as THREE.Mesh).children.some(
-          (child: THREE.Object3D) => child.name && child.name.includes('SKIRTING_PLANK')
-        );
-        setFrontpanelEnabled(hasSkirting);
+        setIsMainObject(selectedObject.isMain === true ? true : false);
+
+        if (
+          selectedObject.type === OBJECT_TYPES.CUPBOARD &&
+          selectedObject.noBaseEnabled === undefined
+        ) {
+          if (!hasExtendedSidePlanks(targetMesh)) {
+            applyObjectUpdate(selectedObject, { noBaseEnabled: true });
+          }
+        }
+
+        // Disable front panel toggle if there are natively no extended side planks
+        // OR if "No Base" is enabled
+        // OR if "Nailer" is enabled
+        // legacy front panel disable/enabled no longer used in UI
 
         // Calculate distances for position fields
         if (distanceToolRef.current) {
@@ -204,26 +274,71 @@ const Sidebar: React.FC = () => {
           setPositionDistances(distances);
         }
       } else {
+        setIsMainObject(false);
         setPositionDistances({ left: null, right: null, top: null, bottom: null });
       }
     } else {
+      setIsMainObject(false);
       setPositionDistances({ left: null, right: null, top: null, bottom: null });
     }
   }, [selectedObject, scene]);
 
-  const getTextures = async () => {
-    const response = await commonService.get(API_ENDPOINT.GET_TEXTURES);
-    if (response.status === 200) {
-      setTextureData(response.data);
+  const getTextures = async (url?: string, search?: string) => {
+    setIsFetchingTextures(true);
+    let fetchUrl = url || API_ENDPOINT.GET_TEXTURES;
+
+    // If starting a fresh search from page 1
+    if (!url && search) {
+      // API_ENDPOINT.GET_TEXTURES already has a '?' for type=Texture
+      fetchUrl = `${API_ENDPOINT.GET_TEXTURES}&search=${encodeURIComponent(search)}`;
+    }
+
+    try {
+      const response = await commonService.get(fetchUrl);
+      if (response.status === 200) {
+        const results = response.data.results || response.data;
+        if (url) {
+          setTextureData((prev) => [...prev, ...results]);
+        } else {
+          setTextureData(results);
+        }
+        setNextPageUrl(response.data.next || null);
+      }
+    } catch (error) {
+      console.error('Error fetching textures:', error);
+    } finally {
+      setIsFetchingTextures(false);
     }
   };
+
+  // When the observerTarget becomes visible, load more results if they exist
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && nextPageUrl && !isFetchingTextures) {
+          getTextures(nextPageUrl);
+        }
+      },
+      { threshold: 0.1 }
+    );
+
+    const currentTarget = observerTarget.current;
+    if (currentTarget) {
+      observer.observe(currentTarget);
+    }
+
+    return () => {
+      if (currentTarget) {
+        observer.unobserve(currentTarget);
+      }
+    };
+  }, [nextPageUrl, isFetchingTextures, isTextureListOpen]);
 
   useEffect(() => {
     getTextures();
   }, []);
 
-  // let handleObject = objects.find((obj) => obj.id === targetId);
-  const handleObject = findMeshById(scene, targetId ? targetId : '', true);
+  const handleObject = findMesh(scene, targetId ? targetId : '', true);
   useEffect(() => {
     if (!handleObject) return;
 
@@ -299,19 +414,13 @@ const Sidebar: React.FC = () => {
     );
   });
 
-  const handleLoadMore = () => {
-    setVisibleCount((prev) => {
-      const newCount = prev + LOAD_MORE_INCREMENT;
-      return Math.min(newCount, filteredTextures.length);
-    });
-  };
-
-  // Check if there are more textures to load
-  const hasMoreTextures = visibleCount < filteredTextures.length;
-
   // Reset visible count when search query changes
   useEffect(() => {
-    setVisibleCount(LOAD_MORE_INCREMENT);
+    const timer = setTimeout(() => {
+      // Only search from backend if not empty, otherwise load first page
+      getTextures(undefined, textureSearchQuery);
+    }, 500); // Debounce
+    return () => clearTimeout(timer);
   }, [textureSearchQuery]);
 
   const updateHandleRotState = (axis: Axis, value: number) => {
@@ -353,7 +462,7 @@ const Sidebar: React.FC = () => {
   };
 
   const handleOpenCloseChange = () => {
-    if (!scene) return;
+    if (!scene || !isLatestVersion) return;
 
     const targetId = selectedChildObjectId ?? selectedObjectId;
     if (!targetId) return;
@@ -377,57 +486,86 @@ const Sidebar: React.FC = () => {
     });
   };
 
+  /**
+   * Find the parent cupboard mesh for a given child mesh (drawer/door).
+   * First tries Redux parent ID, then walks up the scene graph as fallback.
+   */
+  const findParentCupboardMesh = (childMesh: THREE.Mesh): THREE.Mesh | null => {
+    // Try via Redux parent ID
+    if (selectedObject?.parent) {
+      const parentMesh = findMesh(scene, selectedObject.parent);
+      if (parentMesh) return parentMesh;
+    }
+    // Fallback: walk up the scene graph
+    let parent: THREE.Object3D | null = childMesh.parent;
+    while (parent) {
+      if (parent instanceof THREE.Mesh && parent.userData.isMain) {
+        return parent;
+      }
+      parent = parent.parent;
+    }
+    return null;
+  };
+
   const handleHandleModeChange = async (mode: 'handle' | 'handleless') => {
-    if (!scene || !selectedObject) return;
+    if (!scene || !selectedObject || !isLatestVersion || !isDoorOrDrawerSelected) return;
 
     setHandleMode(mode);
 
-    // Find the cupboard mesh
-    let cupboardMesh: THREE.Mesh | null = null;
-    scene.traverse((obj) => {
-      if (obj instanceof THREE.Mesh && obj.userData.objectId === selectedObject.id) {
-        cupboardMesh = obj;
-      }
-    });
-
-    if (!cupboardMesh) return;
+    const mesh = findMesh(scene, selectedObject.id);
+    if (!mesh) return;
 
     if (mode === 'handleless') {
-      // Handleless mode: add l-shape objects for visualization only (no modifications to drawer/door sizes)
-      await addLShapeToDrawersAndDoors(scene, cupboardMesh);
-      // Hide handles
-      scene.traverse((obj: THREE.Object3D) => {
-        if (obj instanceof THREE.Mesh && obj.userData.objectId === selectedObject.id) {
-          obj.traverse((child: THREE.Object3D) => {
-            if (child.userData.type === 'handle') {
-              child.visible = false;
-            }
-          });
+      // Just hide handles — L-shape will be applied when user clicks Up/Down buttons
+      mesh.traverse((child: THREE.Object3D) => {
+        if (child.userData.type === 'handle') {
+          child.visible = false;
         }
       });
     } else {
-      // Handle mode: remove l-shape objects and restore original heights, show handles
-      await removeLShapeObjects(cupboardMesh);
-      // Show handles
-      scene.traverse((obj: THREE.Object3D) => {
-        if (obj instanceof THREE.Mesh && obj.userData.objectId === selectedObject.id) {
-          obj.traverse((child: THREE.Object3D) => {
-            if (child.userData.type === 'handle') {
-              child.visible = true;
-            }
-          });
+      // Switching back to handle mode: remove L-shapes + restore + show handles
+      const cupboardMesh = findParentCupboardMesh(mesh);
+      if (cupboardMesh) {
+        await removeLShapeForSingleDrawerOrDoor(mesh, cupboardMesh);
+      }
+      mesh.traverse((child: THREE.Object3D) => {
+        if (child.userData.type === 'handle') {
+          child.visible = true;
         }
       });
     }
+
+    // Store handleMode per-object in Redux
+    applyObjectUpdate(selectedObject, {
+      handleMode: mode,
+    } as any);
   };
 
-  function applyObjectUpdate(
+  /**
+   * Handle L-shape direction button click (Up Side / Down Side)
+   * Called when user manually chooses where to place the L-shape
+   */
+  const handleLShapeDirection = async (direction: 'up' | 'down') => {
+    if (!scene || !selectedObject || !isLatestVersion || !isDoorOrDrawerSelected) return;
+
+    const mesh = findMesh(scene, selectedObject.id);
+    if (!mesh) return;
+
+    const cupboardMesh = findParentCupboardMesh(mesh);
+    if (!cupboardMesh) return;
+
+    await addLShapeInDirection(scene, mesh, cupboardMesh, direction);
+  };
+
+  async function applyObjectUpdate(
     selectedObject: MeshObjectData | null | undefined,
     patch: MeshObjectPatch
-  ): void {
+  ): Promise<void> {
     if (!selectedObject) return;
+
     const updatedObject: MeshObjectData = {
       ...selectedObject,
+      ...patch,
 
       dimensions: patch.dimensions
         ? { ...selectedObject.dimensions, ...patch.dimensions }
@@ -448,10 +586,9 @@ const Sidebar: React.FC = () => {
         : selectedObject.edgeBanding,
     };
 
-    // Use SyncManager for all objects including floor
-    // MeshBuilder now supports floor material updates
+    // 2. Use SyncManager for 3D scene synchronization
     const syncManager = new SyncManager(updatedObject);
-    syncManager.syncData();
+    await syncManager.syncData();
   }
 
   const handleSetting = () => {
@@ -483,27 +620,88 @@ const Sidebar: React.FC = () => {
   const handleDoorPositionChange = (position: string) => {
     /** Updates the door’s open direction (left, right, top, bottom) in the 3D scene. */
 
-    if (selectedObject) {
+    if (selectedObject && isLatestVersion) {
+      const newPos = position.toLowerCase();
+      const materialArray = Array.isArray(selectedObject.material)
+        ? [...selectedObject.material]
+        : selectedObject.material
+          ? [selectedObject.material]
+          : [];
+
+      const updatedMaterials = materialArray.map((mat) => {
+        if (mat?.type !== SCENE_MATERIAL_TYPES.PULL) return mat;
+
+        let h = mat.properties?.horizontalInset ?? 50;
+        let v = mat.properties?.verticalInset ?? 50;
+        let r = mat.properties?.rotation ?? 90;
+
+        if (newPos === 'left') {
+          h = 90;
+          v = 50;
+          r = 90;
+        } else if (newPos === 'right') {
+          h = 10;
+          v = 50;
+          r = 90;
+        } else if (newPos === 'top') {
+          h = 50;
+          v = 90;
+          r = 0;
+        } else if (newPos === 'bottom') {
+          h = 50;
+          v = 10;
+          r = 0;
+        }
+
+        return {
+          ...mat,
+          properties: {
+            ...mat.properties,
+            horizontalInset: h,
+            verticalInset: v,
+            rotation: r,
+          },
+        };
+      });
+
+      // Close the door BEFORE updating the object so MeshBuilder calculations use closed coordinates
+      let wasOpen = false;
       scene.traverse((child) => {
         if (!(child instanceof THREE.Mesh)) return;
         if (child.userData.objectId === selectedObject.id) {
-          const controller = new CabinetMotionController();
-          const wasOpen = child.userData.isClosed === false;
-
+          wasOpen = child.userData.isClosed === false;
           if (wasOpen) {
+            const controller = new CabinetMotionController();
             controller.toggleDoor(child);
-
             const pivotGroup = child.parent;
             if (pivotGroup?.userData.isPivotGroup) {
               gsap.killTweensOf(pivotGroup.rotation);
               pivotGroup.rotation.set(0, 0, 0);
+              pivotGroup.updateMatrixWorld(true);
             }
           }
+        }
+      });
 
+      if (updateObjectRef.current) {
+        updateObjectRef.current.update(
+          selectedObject.id,
+          {
+            openDirection: position.toLowerCase(),
+            material: updatedMaterials as any,
+          },
+          selectedObject
+        );
+      }
+
+      scene.traverse((child) => {
+        if (!(child instanceof THREE.Mesh)) return;
+        if (child.userData.objectId === selectedObject.id) {
           child.userData.openDirection = position.toLowerCase();
 
           // for re-open
           if (wasOpen) {
+            const controller = new CabinetMotionController();
             controller.toggleDoor(child);
           }
         }
@@ -512,7 +710,13 @@ const Sidebar: React.FC = () => {
   };
 
   const handlePositionDistanceChange = async (side: string, value: number) => {
-    if (!selectedObject || !scene || isUpdatingPositionRef.current || !distanceToolRef.current)
+    if (
+      !selectedObject ||
+      !scene ||
+      isUpdatingPositionRef.current ||
+      !distanceToolRef.current ||
+      !isLatestVersion
+    )
       return;
 
     isUpdatingPositionRef.current = true;
@@ -540,12 +744,15 @@ const Sidebar: React.FC = () => {
     let currentDistanceM = 0;
     let axis: 'x' | 'y' | 'z' = 'x';
 
+    const tMesh = targetMesh as THREE.Mesh;
+    const isThinZ = distanceToolRef.current?.analyzePlankGeometry(tMesh).isThinZ;
+
     if (side === 'left' && currentDistances.left !== null) {
       currentDistanceM = currentDistances.left;
-      axis = 'x';
+      axis = isThinZ ? 'z' : 'x';
     } else if (side === 'right' && currentDistances.right !== null) {
       currentDistanceM = currentDistances.right;
-      axis = 'x';
+      axis = isThinZ ? 'z' : 'x';
     } else if (side === 'top' && currentDistances.top !== null) {
       currentDistanceM = currentDistances.top;
       axis = 'y';
@@ -558,16 +765,29 @@ const Sidebar: React.FC = () => {
     }
 
     // Calculate delta (how much to move)
-    const delta = newDistanceM - currentDistanceM;
+    let delta = 0;
+    if (side === 'left' || side === 'bottom') {
+      delta = newDistanceM - currentDistanceM;
+    } else if (side === 'right' || side === 'top') {
+      delta = currentDistanceM - newDistanceM;
+    }
 
     // Apply position change using DistanceTool's method
-    distanceToolRef.current.applyPositionDelta(targetMesh, axis, delta);
+    distanceToolRef.current.applyPositionDelta(tMesh, axis, delta);
+
+    // Regenerate internal logic
+    if (typeof generateCompartmentsFromMesh === 'function' && tMesh.parent instanceof THREE.Mesh) {
+      generateCompartmentsFromMesh(tMesh.parent);
+    }
+    if (tMesh.parent instanceof THREE.Mesh) {
+      updateMinifixesForCupboard(tMesh.parent);
+    }
 
     // Update Redux store
     const newPosition = {
-      x: (targetMesh as THREE.Mesh).position.x,
-      y: (targetMesh as THREE.Mesh).position.y,
-      z: (targetMesh as THREE.Mesh).position.z,
+      x: tMesh.position.x,
+      y: tMesh.position.y,
+      z: tMesh.position.z,
     };
 
     dispatch(
@@ -576,10 +796,6 @@ const Sidebar: React.FC = () => {
         position: newPosition,
       })
     );
-
-    // Recalculate distances after position change
-    const updatedDistances = distanceToolRef.current.getDistances(targetMesh);
-    setPositionDistances(updatedDistances);
 
     // Sync to scene
     if (updateObjectRef.current) {
@@ -592,29 +808,43 @@ const Sidebar: React.FC = () => {
       ).syncData();
     }
 
+    // Recalculate distances after position change
+    const updatedDistances = distanceToolRef.current.getDistances(tMesh);
+    setPositionDistances(updatedDistances);
+
+    // Also redraw the visual 3D distance lines
+    distanceToolRef.current.showDistances(tMesh);
+
     isUpdatingPositionRef.current = false;
+  };
+
+  const handleMainObjectPositionChange = (axis: 'x' | 'y' | 'z', value: number) => {
+    if (!selectedObject || isDisabled || isUpdatingPositionRef.current) return;
+
+    isUpdatingPositionRef.current = true;
+    const currentPos = selectedObject.position ?? { x: 0, y: 0, z: 0 };
+    const newPosition = { ...currentPos, [axis]: value };
+
+    dispatch(
+      updateObject({
+        id: selectedObject.id,
+        position: newPosition,
+      })
+    );
+
+    if (updateObjectRef.current) {
+      updateObjectRef.current.update(selectedObject.id, { position: newPosition }, selectedObject);
+    }
+
+    setTimeout(() => {
+      isUpdatingPositionRef.current = false;
+    }, 100);
   };
 
   const handleMaterialChange = () => {
     /** Opens the material selection popup for the selected object. */
-
+    if (!isLatestVersion) return;
     setShowMaterialPopup(true);
-  };
-
-  // Helper function to get texture from Material array
-  const getTextureFromMaterial = (materialArray?: Material[]): string | null => {
-    if (!materialArray || !Array.isArray(materialArray)) return null;
-    // Support both Panel Stock and Floor material types
-    const material = materialArray.find(
-      (mat) => mat.type === 'Panel Stock' || mat.type === 'Floor'
-    );
-    if (material?.textures && material.textures.length > 0) {
-      const texture = material.textures[0];
-      if (texture?.textureDetail?.image) {
-        return texture.textureDetail.image;
-      }
-    }
-    return null;
   };
 
   // Helper function to check if material has texture
@@ -637,7 +867,7 @@ const Sidebar: React.FC = () => {
       return !prev;
     });
   };
-  const handleDimensionChange = (field: Field, value: number) => {
+  const handleDimensionChange = async (field: Field, value: number) => {
     if (!selectedObject || isDisabled) return;
 
     // Round the value to ensure it's a whole number
@@ -673,36 +903,61 @@ const Sidebar: React.FC = () => {
     const config = axisConfig[field];
 
     if (config) {
-      if (config.side === config.negative) {
-        positionShift[config.axis] = -delta / 2;
-      } else if (config.side === config.positive) {
-        positionShift[config.axis] = delta / 2;
+      const scaleValue = selectedObject.scale?.[config.axis] ?? 1;
+      let side = config.side;
+
+      // Force walls to only grow "upward" (maintaining the bottom at floor level)
+      if (selectedObject.type === FLOOR_PLAN_TYPES.WALL && field === 'height') {
+        side = config.positive; // 'top'
+      }
+
+      if (side === config.negative) {
+        positionShift[config.axis] = -(delta / 2) * scaleValue;
+      } else if (side === config.positive) {
+        positionShift[config.axis] = (delta / 2) * scaleValue;
       }
     }
 
     const currentPos = selectedObject.position ?? { x: 0, y: 0, z: 0 };
-    applyObjectUpdate(selectedObject, {
+    const currentRot = selectedObject.rotation ?? { x: 0, y: 0, z: 0 };
+
+    // Apply rotation to the shift vector to ensure it moves along the local axis
+    const shiftVector = new THREE.Vector3(positionShift.x, positionShift.y, positionShift.z);
+    const euler = new THREE.Euler(currentRot.x, currentRot.y, currentRot.z);
+    shiftVector.applyEuler(euler);
+
+    await applyObjectUpdate(selectedObject, {
       dimensions: { [field]: roundedValue },
       position: {
-        x: currentPos.x + positionShift.x,
-        y: currentPos.y + positionShift.y,
-        z: currentPos.z + positionShift.z,
+        x: currentPos.x + shiftVector.x,
+        y: currentPos.y + shiftVector.y,
+        z: currentPos.z + shiftVector.z,
       },
     });
+
+    // Mark the mesh as edited so SnapManager preserves dimensions on re-snap
+    if (selectedObject.type === OBJECT_TYPES.PLATFORM && scene) {
+      scene.traverse((child: THREE.Object3D) => {
+        if (child instanceof THREE.Mesh && child.userData.objectId === selectedObject.id) {
+          child.userData.isEdited = true;
+        }
+      });
+    }
 
     // Regenerate minifixes
     if (scene) {
       requestAnimationFrame(() => {
         let cupboardMesh: THREE.Mesh | null = null;
         if (isFullCupboard) {
-          cupboardMesh = findMeshById(scene, selectedObject.id);
+          cupboardMesh = findMesh(scene, selectedObject.id);
         } else if (selectedObject.parent) {
           // If it's a child (plank), find the parent cupboard
-          cupboardMesh = findMeshById(scene, selectedObject.parent);
+          cupboardMesh = findMesh(scene, selectedObject.parent);
         }
 
         if (cupboardMesh && cupboardMesh.userData.isMain) {
           updateMinifixesForCupboard(cupboardMesh);
+          generateCompartmentsFromMesh(cupboardMesh);
         }
       });
     }
@@ -711,59 +966,92 @@ const Sidebar: React.FC = () => {
   const handleTextureSelect = (textureData: TextureDetails) => {
     if (!selectedObject) return;
 
-    const material = selectedObject.material;
-    const materialArray = Array.isArray(material) ? material : [material];
+    // Helper to create updated material
+    const getUpdatedMaterial = (material: Material | Material[], textureData: TextureDetails) => {
+      const materialArray = Array.isArray(material) ? material : [material];
 
-    //@ts-ignore
-    const updatedMaterials: Material[] = materialArray.map((mat) => {
-      // Support both Panel Stock (for cupboards/planks) and Floor (for floor objects)
-      if (mat?.type === SCENE_MATERIAL_TYPES.PANEL_STOCK || mat?.type === 'Floor') {
-        return {
-          ...mat,
-          textures: [
-            {
-              id: mat?.textures?.[0].id,
-              name: mat?.textures?.[0].name,
-              texture: textureData.id,
-              textureDetail: textureData,
-            },
-          ],
-        };
-      }
-      return mat;
-    });
+      //@ts-ignore
+      const updatedMaterials: Material[] = materialArray.map((mat) => {
+        // Support both Panel Stock (for cupboards/planks) and Floor (for floor objects) and Wall
+        if (
+          mat?.type === SCENE_MATERIAL_TYPES.PANEL_STOCK ||
+          mat?.type === SCENE_MATERIAL_TYPES.MISCELLANEOUS ||
+          mat?.type === SCENE_MATERIAL_TYPES.WALL
+        ) {
+          return {
+            ...mat,
+            textures: [
+              {
+                id: mat?.textures?.[0]?.id || crypto.randomUUID(),
+                name: mat?.textures?.[0]?.name || 'Texture',
+                texture: textureData.id,
+                textureDetail: textureData,
+              },
+            ],
+          };
+        }
+        return mat;
+      });
+      return Array.isArray(material) ? updatedMaterials : updatedMaterials[0];
+    };
 
-    // Preserve original structure (array vs single object)
+    // Update selected Object
     applyObjectUpdate(selectedObject, {
       //@ts-ignore
-      material: Array.isArray(material) ? updatedMaterials : updatedMaterials[0],
+      material: getUpdatedMaterial(selectedObject.material, textureData),
     });
+
+    if (isFullCupboard) {
+      // Find all child planks that should share the texture
+      const childPlanks = objects.filter((obj) => {
+        if (obj.parent !== selectedObject.id) return false;
+
+        if (
+          selectedObject.type === PART_TYPES.DOUBLE_DOOR ||
+          selectedObject.name === 'DOUBLE_DOOR'
+        ) {
+          return (
+            obj.type === PART_TYPES.DOOR ||
+            obj.type === PART_TYPES.DOUBLE_DOOR ||
+            obj.name === DOUBLE_DOOR_PLANK_TYPES.LEFT_PLANK ||
+            obj.name === DOUBLE_DOOR_PLANK_TYPES.RIGHT_PLANK
+          );
+        }
+
+        // Check if it's a plank type
+        return (
+          obj.type === PART_TYPES.PLANK ||
+          obj.type === PART_TYPES.VERTICAL_PLANK ||
+          obj.type === PART_TYPES.HORIZONTAL_PLANK ||
+          obj.type === PART_TYPES.BACK_PLANK
+        );
+      });
+
+      childPlanks.forEach((child) => {
+        applyObjectUpdate(child, {
+          //@ts-ignore
+          material: getUpdatedMaterial(child.material, textureData),
+        });
+      });
+    }
 
     setIsTextureListOpen(false);
   };
 
-  const handleTextureRotationChange = (value: number) => {
+  const handleTextureGrainChange = (value: TextureGrain) => {
     if (!selectedObject || isDisabled) return;
-    const clampedValue = Math.max(0, Math.min(180, value));
-    if (isUpdatingTextureRotationRef.current) return;
-    if (Math.abs(clampedValue - textureRotation) < 0.01) return;
-    isUpdatingTextureRotationRef.current = true;
-    setTextureRotation(clampedValue);
+    const typedValue = value;
+    if (textureGrain === typedValue) return;
+    setTextureGrain(typedValue);
 
-    // Check if material has texture
-    if (hasTextureMaterial(selectedObject.material)) {
-      // Update texture rotation via UpdateHandler
-      const texturePath = getTextureFromMaterial(selectedObject.material);
-      if (texturePath && updateObjectRef.current) {
-        updateObjectRef.current.update(selectedObject.id, {
-          textureRotation: clampedValue,
-        });
-      }
+    if (updateObjectRef.current) {
+      // Pass selectedObject as currentObject so updateRedux is triggered and Redux is updated
+      updateObjectRef.current.update(
+        selectedObject.id,
+        { textureGrain: typedValue },
+        selectedObject
+      );
     }
-
-    setTimeout(() => {
-      isUpdatingTextureRotationRef.current = false;
-    }, 100);
   };
 
   const handleShelvesInnerDistanceChange = (value: number) => {
@@ -803,6 +1091,8 @@ const Sidebar: React.FC = () => {
     depth: ['/icons/front.svg', '/icons/back.svg'],
   };
 
+  const isPlatformSelected = selectedObject?.type === OBJECT_TYPES.PLATFORM;
+
   const sideBarMenuConfig = [
     {
       subMenu: 'layout',
@@ -811,22 +1101,22 @@ const Sidebar: React.FC = () => {
         {
           label: isVerticalPlank ? 'Thickness' : 'Width',
           name: 'width',
-          type: isVerticalPlank ? 'select' : 'number',
+          type: 'number',
           options: isVerticalPlank ? [8, 10, 12, 18] : undefined,
           min: 1,
           value: dimensionsUI.width,
-          disabled: isVerticalPlank ? false : isHorizontalPlank || isDisabled,
+          disabled: true,
           onValueChange: (value: number) => handleDimensionChange('width', value),
           controls: isVerticalPlank ? null : ['Left', 'Right'],
         },
         {
           label: isHorizontalPlank ? 'Thickness' : 'Height',
           name: 'height',
-          type: isHorizontalPlank ? 'select' : 'number',
+          type: 'number',
           options: isHorizontalPlank ? [8, 10, 12, 18] : undefined,
           min: 1,
           value: dimensionsUI.height,
-          disabled: isHorizontalPlank ? false : isVerticalPlank || isDisabled,
+          disabled: true,
           onValueChange: (value: number) => handleDimensionChange('height', value),
           controls: isHorizontalPlank ? null : ['Top', 'Bottom'],
         },
@@ -851,7 +1141,7 @@ const Sidebar: React.FC = () => {
       type: 'number',
       icon: _3DMODEL.topIcon,
       value: handlePos.y,
-      disabled: isQuickHideActive,
+      disabled: isDisabled,
       onChange: (e: React.ChangeEvent<HTMLInputElement>) =>
         updateHandlePosState('y', Number(e.target.value)),
     },
@@ -862,7 +1152,7 @@ const Sidebar: React.FC = () => {
       type: 'number',
       icon: _3DMODEL.leftIcon,
       value: handlePos.x,
-      disabled: isQuickHideActive,
+      disabled: isDisabled,
       onChange: (e: React.ChangeEvent<HTMLInputElement>) =>
         updateHandlePosState('x', Number(e.target.value)),
     },
@@ -873,7 +1163,7 @@ const Sidebar: React.FC = () => {
       type: 'number',
       icon: _3DMODEL.rotateIcon,
       value: handleRot.y,
-      disabled: isQuickHideActive,
+      disabled: isDisabled,
       onChange: (e: React.ChangeEvent<HTMLInputElement>) =>
         updateHandleRotState('y', Number(e.target.value)),
     },
@@ -897,8 +1187,6 @@ const Sidebar: React.FC = () => {
     selectedObject?.type === PART_TYPES.HORIZONTAL_PLANK ||
     selectedObject?.type === PART_TYPES.BACK_PLANK ||
     Object.values(DRAWER_PLANK_TYPES).includes(selectedObject?.type || '');
-  selectedObject?.name?.toLowerCase().includes('planks');
-  //TODO :- SMIT / HARSH :- Temporary create this for design parpose
 
   const getTopPlank = () => {
     if (!selectedObject) return undefined;
@@ -923,26 +1211,30 @@ const Sidebar: React.FC = () => {
       PART_TYPES.VERTICAL_PLANK,
       PART_TYPES.HORIZONTAL_PLANK,
       ...Object.values(DRAWER_PLANK_TYPES),
-      'floor', // Exclude floor objects - they should have texture change enabled
+      'floor',
+      FLOOR_PLAN_TYPES.WALL,
+      FLOOR_PLAN_TYPES.CWALL,
     ].includes(selectedObject.type);
   //TODO :- SMIT / HARSH :- Temporary create this for design parpose
 
-  const isFullCupboardorPlankSelected = isFullCupboard || isPlankSelected;
+  const isFullCupboardorPlankSelected = isFullCupboard || isPlankSelected || isPlatformSelected;
   //TODO :- SMIT / HARSH :- Temporary create this for design parpose
 
   const isDoorOrDrawerSelected = isDoorSelected || isDrawerSelected;
 
   // Check if invisible box is selected
   const isInvisibleBoxSelected =
-    !!selectedInvisibleBoxId ||
     selectedObject?.type === 'INVISIBLEBOX' ||
     selectedObject?.name?.toLowerCase().includes('invisiblebox') ||
     selectedObject?.name?.toLowerCase().includes('invisible_box') ||
     selectedObject?.name?.toLowerCase().includes('invisible_full_compartment');
 
-  // Disable texture change for cupboards and invisible boxes
-  const isTextureChangeDisabled =
-    isFullCupboard || (isInvisibleBoxSelected && !isPlankSelected) || isQuickHideActive;
+  // Wall selected flag
+  const isWallSelected = selectedObject?.type === FLOOR_PLAN_TYPES.WALL;
+
+  // Disable texture change for invisible boxes (unless it's a plank which is handled separately)
+  // We allow Full Cupboards to change texture now.
+  const isTextureChangeDisabled = (isInvisibleBoxSelected && !isPlankSelected) || isDisabled;
 
   useEffect(() => {
     if (isUpdatingShelvesDistanceRef.current) return;
@@ -1028,10 +1320,7 @@ const Sidebar: React.FC = () => {
   const [minifixDisabled, setMinifixDisabled] = useState(false);
   const [topPlankEnabled, setTopPlankEnabled] = useState(true);
   const [topPlankDisabled, setTopPlankDisabled] = useState(false);
-  const [baseheightEnabled, setBaseheightEnabled] = useState(true);
-  const [baseheightDisabled, setBaseheightDisabled] = useState(false);
-  const [frontpanelEnabled, setFrontpanelEnabled] = useState(true);
-  const [frontpanelDisabled, setFrontpanelDisabled] = useState(false);
+  // legacy front panel state removed
 
   // Local state for minifix settings inputs
   const [minifixDistanceInput, setMinifixDistanceInput] = useState(resolvedMinifixDistance);
@@ -1045,7 +1334,7 @@ const Sidebar: React.FC = () => {
   //TODO :- SMIT / HARSH :- Temporary create this for design parpose
 
   const handleMinifixToggle = () => {
-    if (minifixDisabled) return;
+    if (minifixDisabled || !isLatestVersion) return;
     setMinifixEnabled((prev) => !prev);
   };
   //TODO :- SMIT / HARSH :- Temporary create this for design parpose
@@ -1060,8 +1349,6 @@ const Sidebar: React.FC = () => {
   useEffect(() => {
     setMinifixDisabled(false);
     setTopPlankDisabled(false);
-    setBaseheightDisabled(false);
-    setFrontpanelDisabled(false);
   }, []);
 
   // Load cupboard-specific minifix values when object is selected
@@ -1150,7 +1437,7 @@ const Sidebar: React.FC = () => {
     };
 
     // Find the cupboard mesh using utility function
-    const cupboardMesh = findMeshById(scene, selectedObject.id);
+    const cupboardMesh = findMesh(scene, selectedObject.id);
 
     // Regenerate minifixes with the new settings
     if (cupboardMesh && cupboardMesh.userData.isMain) {
@@ -1185,7 +1472,7 @@ const Sidebar: React.FC = () => {
   }, [selectedObject, objects, isFullCupboard, isQuickHideActive]);
 
   const handleTopPlankToggle = () => {
-    if (topPlankDisabled) return;
+    if (topPlankDisabled || !isLatestVersion) return;
 
     const topPlank = getTopPlank();
     if (!topPlank) return;
@@ -1220,33 +1507,271 @@ const Sidebar: React.FC = () => {
     });
   };
 
-  const handleBaseheightToggle = () => {
-    if (baseheightDisabled) return;
-    setBaseheightEnabled((prev) => !prev);
+  type BaseMode = 'noBase' | 'nailer' | 'skirting';
+
+  const getSelectedCupboardFromStore = (): MeshObjectData | null => {
+    const state = store.getState();
+    const targetId = state.data.selectedChildObject || state.data.selectedObject;
+    if (!targetId) return null;
+    return state.data.objects.find((o) => o.id === targetId) ?? null;
   };
 
-  const handleFrontpanelToggle = () => {
-    if (frontpanelDisabled) return;
-
-    const isEnabled = !frontpanelEnabled;
-    setFrontpanelEnabled(isEnabled);
-
-    if (!scene || !selectedObject) return;
-
-    // Find the actual mesh in the scene
+  const findCupboardMesh = (objectId: string): THREE.Mesh | null => {
+    if (!scene) return null;
     let targetMesh: THREE.Mesh | null = null;
     scene.traverse((obj) => {
-      if (obj instanceof THREE.Mesh && obj.userData.objectId === selectedObject?.id) {
+      if (obj instanceof THREE.Mesh && obj.userData.objectId === objectId) {
+        targetMesh = obj;
+      }
+    });
+    return targetMesh;
+  };
+
+  const getBaseMode = (obj: MeshObjectData | null | undefined): BaseMode => {
+    if (!obj) return 'noBase';
+    if (obj.skirtingEnabled) return 'skirting';
+    if (obj.nailerEnabled) return 'nailer';
+    return 'noBase';
+  };
+
+  /** True when the cupboard is already in the given base mode (no redundant work). */
+  const isAtBaseMode = (obj: MeshObjectData, target: BaseMode): boolean => {
+    if (target === 'skirting') return !!obj.skirtingEnabled;
+    if (target === 'nailer') return !!obj.nailerEnabled;
+    return !obj.skirtingEnabled && !obj.nailerEnabled && !!obj.noBaseEnabled;
+  };
+
+  const turnSkirtingOff = async () => {
+    const cupboard = getSelectedCupboardFromStore();
+    if (!cupboard?.skirtingEnabled || !scene || isDisabled || !isLatestVersion) return;
+    const targetMesh = findCupboardMesh(cupboard.id);
+    if (!targetMesh) return;
+    try {
+      const updatePatch: any = {
+        skirtingEnabled: false,
+        skirtingOffset: cupboard.skirtingOffset ?? 10,
+        skirtingHeight: cupboard.skirtingHeight ?? 75,
+      };
+      removeSkirtingPlanks(targetMesh);
+      if (!cupboard.noBaseEnabled) {
+        await applyNoBase(scene, targetMesh, false);
+      }
+      await applyObjectUpdate(cupboard, updatePatch);
+    } catch (error) {
+      console.error('Error turning skirting off:', error);
+    }
+  };
+
+  const turnSkirtingOn = async () => {
+    const c = getSelectedCupboardFromStore();
+    if (!c || c.skirtingEnabled || !scene || isDisabled || !isLatestVersion) return;
+    const targetMesh = findCupboardMesh(c.id);
+    if (!targetMesh) return;
+    try {
+      const defaultOffset = c.skirtingOffset ?? 10;
+      const defaultHeight = c.skirtingHeight ?? 75;
+      const updatePatch: any = {
+        skirtingEnabled: true,
+        skirtingOffset: defaultOffset,
+        skirtingHeight: defaultHeight,
+      };
+      if (c.nailerEnabled) {
+        updatePatch.nailerEnabled = false;
+        await removeNailers(scene, targetMesh);
+      }
+      if (!c.noBaseEnabled) {
+        await applyNoBase(scene, targetMesh, true);
+      }
+      await applyObjectUpdate(c, updatePatch);
+      addSkirtingPlanks(targetMesh, { height: defaultHeight, offset: defaultOffset });
+    } catch (error) {
+      console.error('Error turning skirting on:', error);
+    }
+  };
+
+  const turnNailerOff = async () => {
+    const cupboard = getSelectedCupboardFromStore();
+    if (
+      !cupboard?.nailerEnabled ||
+      !scene ||
+      !isFullCupboard ||
+      isQuickHideActive ||
+      !isLatestVersion
+    )
+      return;
+    const targetMesh = findCupboardMesh(cupboard.id);
+    if (!targetMesh) return;
+    try {
+      const updatePatch: any = { nailerEnabled: false };
+      if (!hasExtendedSidePlanks(targetMesh)) {
+        updatePatch.noBaseEnabled = true;
+      }
+      await applyObjectUpdate(cupboard, updatePatch);
+      if (updatePatch.noBaseEnabled === false) {
+        await applyNoBase(scene, targetMesh, false);
+      } else if (updatePatch.noBaseEnabled === true) {
+        await applyNoBase(scene, targetMesh, true);
+      }
+      await removeNailers(scene, targetMesh);
+    } catch (error) {
+      console.error('Error turning nailer off:', error);
+    }
+  };
+
+  const turnNailerOn = async () => {
+    const cupboard = getSelectedCupboardFromStore();
+    if (
+      !cupboard ||
+      cupboard.nailerEnabled ||
+      !scene ||
+      !isFullCupboard ||
+      isQuickHideActive ||
+      !isLatestVersion
+    )
+      return;
+    const targetMesh = findCupboardMesh(cupboard.id);
+    if (!targetMesh) return;
+    try {
+      const updatePatch: any = { nailerEnabled: true };
+      removeSkirtingPlanks(targetMesh);
+      updatePatch.skirtingEnabled = false;
+      if (cupboard.noBaseEnabled) {
+        updatePatch.noBaseEnabled = false;
+      }
+      await applyObjectUpdate(cupboard, updatePatch);
+      if (updatePatch.noBaseEnabled === false) {
+        await applyNoBase(scene, targetMesh, false);
+      } else if (updatePatch.noBaseEnabled === true) {
+        await applyNoBase(scene, targetMesh, true);
+      }
+      const defaultModel = cupboard.nailerModel || 'stand_1';
+      await addNailers(scene, targetMesh, defaultModel);
+    } catch (error) {
+      console.error('Error turning nailer on:', error);
+    }
+  };
+
+  const turnNoBaseOn = async () => {
+    const cupboard = getSelectedCupboardFromStore();
+    if (!cupboard || cupboard.noBaseEnabled || !scene || !isFullCupboard || isDisabled) return;
+    const targetMesh = findCupboardMesh(cupboard.id);
+    if (!targetMesh) return;
+    try {
+      const updatePatch: any = { noBaseEnabled: true };
+      removeSkirtingPlanks(targetMesh);
+      updatePatch.skirtingEnabled = false;
+      if (cupboard.nailerEnabled) {
+        updatePatch.nailerEnabled = false;
+      }
+      await applyObjectUpdate(cupboard, updatePatch);
+      if (cupboard.nailerEnabled) {
+        await removeNailers(scene, targetMesh);
+      }
+      await applyNoBase(scene, targetMesh, true);
+    } catch (error) {
+      console.error('Error turning no base on:', error);
+    }
+  };
+
+  const handleBaseModeSelect = async (target: BaseMode) => {
+    if (!isFullCupboard || isQuickHideActive || isDisabled || !scene) return;
+    const cupboard = getSelectedCupboardFromStore();
+    if (!cupboard) return;
+    if (isAtBaseMode(cupboard, target)) return;
+
+    try {
+      if (target === 'noBase') {
+        await turnSkirtingOff();
+        await turnNailerOff();
+        const after = getSelectedCupboardFromStore();
+        if (after && !after.noBaseEnabled) {
+          await turnNoBaseOn();
+        }
+      } else if (target === 'nailer') {
+        await turnSkirtingOff();
+        const after = getSelectedCupboardFromStore();
+        if (after && !isAtBaseMode(after, 'nailer')) {
+          await turnNailerOn();
+        }
+      } else {
+        await turnNailerOff();
+        const after = getSelectedCupboardFromStore();
+        if (after && !after.skirtingEnabled) {
+          await turnSkirtingOn();
+        }
+      }
+    } catch (error) {
+      console.error('Error selecting base mode:', error);
+    }
+  };
+
+  // Skirting dynamic inputs
+  const handleSkirtingOffsetChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!selectedObject || !scene || !selectedObject.skirtingEnabled || isDisabled) return;
+    const value = Number(e.target.value);
+    if (Number.isNaN(value)) return;
+
+    let targetMesh: THREE.Mesh | null = null;
+    scene.traverse((obj) => {
+      if (obj instanceof THREE.Mesh && obj.userData.objectId === selectedObject.id) {
+        targetMesh = obj;
+      }
+    });
+    if (!targetMesh) return;
+
+    const newOffset = value;
+    const newHeight = selectedObject.skirtingHeight ?? 75;
+
+    // Persist to store first
+    await applyObjectUpdate(selectedObject, {
+      skirtingOffset: newOffset,
+      skirtingHeight: newHeight,
+    });
+
+    // Rebuild skirting
+    removeSkirtingPlanks(targetMesh);
+    addSkirtingPlanks(targetMesh, { height: newHeight, offset: newOffset });
+  };
+
+  const handleSkirtingHeightChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!selectedObject || !scene || !selectedObject.skirtingEnabled || isDisabled) return;
+    const value = Number(e.target.value);
+    if (Number.isNaN(value)) return;
+
+    let targetMesh: THREE.Mesh | null = null;
+    scene.traverse((obj) => {
+      if (obj instanceof THREE.Mesh && obj.userData.objectId === selectedObject.id) {
+        targetMesh = obj;
+      }
+    });
+    if (!targetMesh) return;
+
+    const newHeight = value;
+    const newOffset = selectedObject.skirtingOffset ?? 10;
+
+    // Persist to store first
+    await applyObjectUpdate(selectedObject, {
+      skirtingOffset: newOffset,
+      skirtingHeight: newHeight,
+    });
+
+    // Rebuild skirting
+    removeSkirtingPlanks(targetMesh);
+    addSkirtingPlanks(targetMesh, { height: newHeight, offset: newOffset });
+  };
+
+  const handleNailerModelChange = async (model: string) => {
+    if (!scene || !selectedObject || !isFullCupboard || !isLatestVersion) return;
+
+    let targetMesh: THREE.Mesh | null = null;
+    scene.traverse((obj) => {
+      if (obj instanceof THREE.Mesh && obj.userData.objectId === selectedObject.id) {
         targetMesh = obj;
       }
     });
 
-    if (targetMesh) {
-      if (isEnabled) {
-        addSkirtingPlanks(targetMesh);
-      } else {
-        removeSkirtingPlanks(targetMesh);
-      }
+    if (targetMesh && selectedObject.nailerEnabled) {
+      await addNailers(scene, targetMesh, model);
     }
   };
 
@@ -1388,6 +1913,7 @@ const Sidebar: React.FC = () => {
     layout: false,
     shelfs: false,
     positionMove: false,
+    mainPosition: false,
     topPlank: false,
     base: false,
     plankBanding: false,
@@ -1447,7 +1973,7 @@ const Sidebar: React.FC = () => {
       rotate: 'rotate-[-90deg]',
       width: 'w-[5.1rem]',
       value: positionDistances.left,
-      disabled: isQuickHideActive,
+      disabled: isDisabled,
       onChange: handlePositionDistanceChange,
     },
     {
@@ -1456,7 +1982,7 @@ const Sidebar: React.FC = () => {
       rotate: 'rotate-[-90deg]',
       width: 'w-[5.1rem]',
       value: positionDistances.right,
-      disabled: isQuickHideActive,
+      disabled: isDisabled,
       onChange: handlePositionDistanceChange,
     },
     {
@@ -1465,7 +1991,7 @@ const Sidebar: React.FC = () => {
       rotate: '',
       width: 'w-[5.1rem]',
       value: positionDistances.top,
-      disabled: isQuickHideActive,
+      disabled: isDisabled,
       onChange: handlePositionDistanceChange,
     },
     {
@@ -1474,484 +2000,1153 @@ const Sidebar: React.FC = () => {
       rotate: 'rotate-[180deg]',
       width: 'w-[5.1rem]',
       value: positionDistances.bottom,
-      disabled: isQuickHideActive,
+      disabled: isDisabled,
       onChange: handlePositionDistanceChange,
     },
   ];
 
   return (
-    <div
-      ref={sidebarRef}
-      className={
-        isSidebarOpen
-          ? `absolute top-[3.7rem] right-[0] bottom-[0] z-[10] mt-[0.3rem] block h-[91vh] w-[15rem] overflow-x-hidden overflow-y-auto rounded-t-[0.6rem] bg-[var(--primary-white)] pb-[0.5rem] [&::-webkit-scrollbar]:w-[0.3rem] [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-[rgba(57,37,121,0)] hover:[&::-webkit-scrollbar-thumb]:bg-[rgba(57,37,121,0.25)] [&::-webkit-scrollbar-track]:bg-transparent`
-          : `absolute top-[3.7rem] right-[0] bottom-[0] z-[10] mt-[0.3rem] block h-auto w-[15rem] overflow-y-auto rounded-t-[0.6rem] bg-transparent [&::-webkit-scrollbar]:w-[0.3rem] [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-[rgba(57,37,121,0)] hover:[&::-webkit-scrollbar-thumb]:bg-[rgba(57,37,121,0.25)] [&::-webkit-scrollbar-track]:bg-transparent`
-      }
-    >
-      {/* ================= TITLE ================= */}
+    <>
       <div
-        onClick={toggleSidebar}
-        className={`fixed right-[0] z-[20] mt-[0.3rem] flex h-[1.8rem] w-[15rem] cursor-pointer items-center justify-around gap-[1rem] rounded-t-[0.6rem] bg-[var(--primary-color)] ${isSidebarOpen ? 'top-[3.7rem] right-[0]' : 'right-[0] bottom-[0]'} `}
+        ref={sidebarRef}
+        className={
+          isSidebarOpen
+            ? `bv-inspector bv-inspector-open absolute top-[3.7rem] right-[0] bottom-[0] z-[10] mt-[0.3rem] flex h-[91vh] w-[15rem] flex-col overflow-hidden rounded-t-[0.6rem] bg-[var(--primary-white)]`
+            : `bv-inspector absolute top-[3.7rem] right-[0] bottom-[0] z-[10] mt-[0.3rem] block h-auto w-[15rem] overflow-y-auto rounded-t-[0.6rem] bg-transparent [&::-webkit-scrollbar]:w-[0.3rem] [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-[rgba(84,83,51,0)] hover:[&::-webkit-scrollbar-thumb]:bg-[rgba(84,83,51,0.25)] [&::-webkit-scrollbar-track]:bg-transparent`
+        }
       >
-        <p className="ml-[0rem] text-center text-[0.7rem] leading-[10px] font-[700] tracking-normal text-[var(--primary-white)]">
-          {getSidebarTitle()}
-        </p>
+        {/* ================= TITLE ================= */}
+        <div
+          onClick={toggleSidebar}
+          className={`bv-inspector-title ${isSidebarOpen ? 'bv-inspector-title-open' : ''} fixed right-[0] z-[20] mt-[0.3rem] flex h-[1.8rem] w-[15rem] cursor-pointer items-center justify-around gap-[1rem] rounded-t-[0.6rem] bg-[var(--primary-color)] ${isSidebarOpen ? 'top-[3.7rem] right-[0]' : 'right-[0] bottom-[0]'} `}
+        >
+          <span className="bv-inspector-heading">
+            <span className="bv-inspector-eyebrow">Inspector</span>
+            <p className="ml-[0rem] text-center text-[0.7rem] leading-[10px] font-[700] tracking-normal text-[var(--primary-white)]">
+              {getSidebarTitle()}
+            </p>
+          </span>
 
-        <img
-          src={assets.up_arrow}
-          className={`h-[1rem] w-[1rem] transition-transform duration-200 ${isSidebarOpen ? 'rotate-180' : 'rotate-0'} `}
-          alt="Toggle sidebar"
-        />
-      </div>
+          <img
+            src={assets.up_arrow}
+            className={`h-[1rem] w-[1rem] transition-transform duration-200 ${isSidebarOpen ? 'rotate-180' : 'rotate-0'} `}
+            alt="Toggle sidebar"
+          />
+        </div>
 
-      {!isSidebarOpen && null}
+        {!isSidebarOpen && null}
 
-      {isSidebarOpen && (
-        <>
-          {/* ================= SWITCH ================= */}
-          <div className="mt-[2.1rem] ml-[0.8rem] flex h-[1.5rem] gap-[0.5rem]">
-            <button
-              onClick={handleSetting}
-              className={`w-[4rem] border-[0rem] p-[0rem] font-[comfortaa] text-[0.7rem] active:bg-[var(--toolbarhover-color)] ${isSettingOpen
-                  ? 'rounded-[0.1rem] bg-[var(--toolbarhover-color)] px-4 py-2 text-[var(--primary-color)]'
-                  : 'bg-transparent text-[rgba(160,174,192,1)] hover:text-[var(--primary-color)]'
+        {isSidebarOpen && (
+          <>
+            {/* ================= SWITCH ================= */}
+            <div className="bv-insp-switch mt-[2.1rem] ml-[0.8rem] flex h-[1.5rem] shrink-0 gap-[0.5rem]">
+              {selectedObject?.type !== OBJECT_TYPES.MODEL && (
+                <button
+                  onClick={handleSetting}
+                  className={`bv-insp-tab ${isSettingOpen ? 'bv-insp-tab-active' : ''} w-[4rem] border-[0rem] p-[0rem] font-[comfortaa] text-[0.7rem] active:bg-[var(--toolbarhover-color)] ${
+                    isSettingOpen
+                      ? 'rounded-[0.1rem] bg-[var(--toolbarhover-color)] px-4 py-2 text-[var(--primary-color)]'
+                      : 'bg-transparent text-[rgba(160,174,192,1)] hover:text-[var(--primary-color)]'
+                  } `}
+                >
+                  Setting
+                </button>
+              )}
+
+              <button
+                onClick={handleNavigation}
+                className={`bv-insp-tab ${isNavOpen ? 'bv-insp-tab-active' : ''} w-[4.5rem] border-[0rem] p-[0rem] font-[poppins] text-[0.7rem] active:bg-[var(--toolbarhover-color)] ${
+                  isNavOpen
+                    ? 'rounded-[0.1rem] bg-[var(--toolbarhover-color)] px-4 py-2 text-[var(--primary-color)]'
+                    : 'bg-transparent text-[rgba(160,174,192,1)] hover:text-[var(--primary-color)]'
                 } `}
-            >
-              Setting
-            </button>
-
-            <button
-              onClick={handleNavigation}
-              className={`w-[4.5rem] border-[0rem] p-[0rem] font-[poppins] text-[0.7rem] active:bg-[var(--toolbarhover-color)] ${isNavOpen
-                  ? 'rounded-[0.1rem] bg-[var(--toolbarhover-color)] px-4 py-2 text-[var(--primary-color)]'
-                  : 'bg-transparent text-[rgba(160,174,192,1)] hover:text-[var(--primary-color)]'
-                } `}
-            >
-              Navigation
-            </button>
-          </div>
-
-          <hr className="my-[0.2rem] opacity-20" />
-
-          {/* ================= NAV IMAGE ================= */}
-          {isNavOpen && (
-            <div className="mx-auto mt-4 w-[12rem]">
-              <img src={assets.navigationdetail} className="w-full" />
+              >
+                Navigation
+              </button>
             </div>
-          )}
 
-          {/* ================= NO SELECTION ================= */}
-          {isSettingOpen && !selectedObject && (
-            <p className="mt-8 text-center text-[0.8rem] text-[#392579]">No Item Selected</p>
-          )}
+            <hr className="my-[0.2rem] shrink-0 opacity-20" />
 
-          {/* ================= SETTINGS ================= */}
-          {isSettingOpen && selectedObject && (
-            <>
-              {/* your existing code – NO CHANGES inside */}
-              <div className="w-[15rem] bg-white p-3 shadow-sm">
-                {/* ================= Minifix & Grooving ================= */}
-                <div className="mb-[0rem] ml-[1rem] pb-[0rem]">
-                  {/* Header */}
-                  <div className="mb-[0rem] flex items-center justify-between">
-                    <p className="text-[0.7rem] font-[600] text-[var(--primary-color)]">
-                      Minifix & Grooving
-                    </p>
-                    <button
-                      onClick={() => toggleSection('minifix')}
-                      className="boredr-[0rem] mr-[1rem] border-0 bg-[var(--primary-white)] text-[0.9rem] text-[var(--primary-color)]"
-                    >
-                      {collapsed.minifix ? '+' : '−'}
-                    </button>
-                  </div>
-                  {!collapsed.minifix && (
-                    <>
-                      {/* ================= Split Inputs ================= */}
-                      <div className="flex gap-[0.75rem]">
-                        {/* -------- LEFT PART -------- */}
-                        <div className="flex w-[6rem] flex-col">
-                          {/* Toggle */}
-                          <div className="ml-[0rem] flex items-center gap-[1rem]">
-                            <div
-                              onClick={handleMinifixToggle}
-                              className={`relative h-[1rem] w-[2rem] cursor-pointer rounded-full border-[0.1rem] border-[var(--toggle-border-color)] p-[0rem] transition-colors duration-300 ${minifixEnabled ? 'bg-[var(--primary-color)]' : 'bg-[var(--primary-white)]'} ${minifixDisabled ? 'pointer-events-none opacity-50' : ''}`}
-                            >
-                              {/* Knob */}
-                              <div
-                                className={`absolute top-[0.15rem] left-[0.1rem] h-[0.6rem] w-[0.6rem] rounded-full border-[0.1rem] border-[var(--toggle-button-border-color)] p-[0rem] ring-[0.1rem] transition-transform duration-300 ease-in-out ${minifixEnabled
-                                    ? 'translate-x-[1rem] bg-[var(--primary-white)] ring-[var(--primary-color)]'
-                                    : 'translate-x-0 bg-[var(--primary-color)] ring-[var(--primary-white)]'
-                                  }`}
-                              />
-                            </div>
-                            <p className="mb-[1remrem] text-[0.6rem] font-[700] text-[var(--primary-color)]">
-                              Minifix
-                            </p>
-                          </div>
-
-                          {/* Distance */}
-                          <div className="mt-[0rem]">
-                            <p className="mt-[0.2rem] mb-[0.2rem] text-[0.6rem] font-[700] text-[var(--primary-color)]">
-                              Distance
-                            </p>
-                            <input
-                              type="number"
-                              disabled={!minifixEnabled}
-                              value={minifixDistanceInput}
-                              onChange={(e) => {
-                                const value = Number(e.target.value);
-                                setMinifixDistanceInput(value);
-
-                                if (value % 32 !== 0) {
-                                  toast(
-                                    ({ closeToast }) => (
-                                      <CustomToast
-                                        appearance="error"
-                                        message="Distance must be in multiple of 32"
-                                        closeToast={closeToast}
-                                      />
-                                    ),
-                                    {
-                                      position: 'top-right',
-                                      autoClose: 3000,
-                                      hideProgressBar: true, // as per user pref or default
-                                      closeButton: false,
-                                      icon: false,
-                                      className: '!p-0 !bg-transparent !shadow-none !mb-2',
-                                    }
-                                  );
-                                  // We allow setting the state so user can type, but maybe we shouldn't dispatch update?
-                                  // User Request: "if minifix distance is 32 so i can only add miniifx ditance 64 other wise 128"
-                                  // "i cnat add" implies blocking or reverting.
-                                  // But user needs to type "6" then "4". If I block "6", they can't type "64".
-                                  // So I should probably allow typing but warn.
-                                  // AND NOT dispatch updateObject?
-                                  return;
-                                }
-
-                                // Save to cupboard object if it's a full cupboard
-                                if (selectedObject && isFullCupboard) {
-                                  dispatch(
-                                    updateObject({ id: selectedObject.id, minifixDistance: value })
-                                  );
-                                } else {
-                                  dispatch(setActiveItemMinifixDistance(value));
-                                }
-                              }}
-                              className="h-[1.2rem] w-[5rem] [appearance:textfield] appearance-none rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-                            />
-                            <p className="mt-[0rem] items-center text-center text-[0.4rem] font-[700] text-[var(--primary-color)]">
-                              in multiple of 32
-                            </p>
-                          </div>
-
-                          {/* Diameter Hole */}
-                          <div className="">
-                            <p className="mt-[0rem] mb-[0.2rem] text-[0.6rem] font-[700] text-[var(--primary-color)]">
-                              Diameter Hole
-                            </p>
-                            <input
-                              type="number"
-                              disabled={!minifixEnabled}
-                              value={minifixDiameterHoleInput}
-                              onChange={(e) => {
-                                const value = Number(e.target.value);
-                                setMinifixDiameterHoleInput(value);
-                                // Save to cupboard object if it's a full cupboard
-                                if (selectedObject && isFullCupboard) {
-                                  dispatch(
-                                    updateObject({
-                                      id: selectedObject.id,
-                                      minifixDiameterHole: value,
-                                    })
-                                  );
-                                } else {
-                                  dispatch(setActiveItemMinifixDiameterHole(value));
-                                }
-                              }}
-                              className="h-[1.2rem] w-[5rem] [appearance:textfield] appearance-none rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-                            />
-                          </div>
-                        </div>
-
-                        {/* -------- VERTICAL DIVIDER -------- */}
-                        <hr className="mr-[0.3rem] ml-[0.2rem] h-[7rem] w-[0.2px] border-[0rem] bg-[var(--table-title-border-color)] p-[0rem]" />
-
-                        {/* -------- RIGHT PART -------- */}
-                        <div className="disabled mr-[0.7rem] flex w-[6rem] flex-col">
-                          {/* Toggle */}
-                          <div className="flex items-center gap-[0.5rem]">
-                            <div
-                              className={`pointer-events-none relative h-[1rem] w-[2rem] cursor-not-allowed rounded-full border-[0.1rem] border-[var(--toggle-border-color)] bg-[var(--primary-white)] opacity-50`}
-                            >
-                              {/* Knob */}
-                              <div className="absolute top-[0.15rem] left-[0.1rem] h-[0.6rem] w-[0.6rem] rounded-full border-[0.1rem] border-[var(--border-color)] bg-[var(--primary-color)]" />
-                            </div>
-
-                            <p className="text-[0.6rem] font-[700] text-[var(--primary-color)] opacity-50">
-                              Grooving
-                            </p>
-                          </div>
-
-                          {/* Inside */}
-                          <div>
-                            <p className="mt-[0.2rem] mb-[0.2rem] text-[0.6rem] font-[700] text-[var(--primary-color)]">
-                              Inside
-                            </p>
-                            <input
-                              type="number"
-                              disabled={true}
-                              // value={inside}
-                              // onChange={(e) => setInside(Number(e.target.value))}
-                              className="h-[1.2rem] w-[5rem] [appearance:textfield] appearance-none rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-                            />
-                          </div>
-
-                          {/* Edge to End */}
-                          <div>
-                            <p className="mt-[0.8rem] mb-[0.2rem] text-[0.6rem] font-[500] text-[var(--primary-color)]">
-                              Edge to End
-                            </p>
-                            <input
-                              type="number"
-                              disabled={true}
-                              // value={edgeToEnd}
-                              // onChange={(e) => setEdgeToEnd(Number(e.target.value))}
-                              className="h-[1.2rem] w-[5rem] [appearance:textfield] appearance-none rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-                            />
-                          </div>
-                        </div>
-                      </div>
-                    </>
-                  )}
-                </div>
-                <hr className="mx-[0.2rem] my-[0.2rem] ml-[0rem] w-[15rem] pl-[0rem] opacity-20" />
-
-                {/* ================= Camlock Screw Hole ================= */}
-                <div className="mt-[0] mb-[0.7rem] ml-[1rem] flex flex-col">
-                  <div className="flex items-center justify-between gap-[0.5rem]">
-                    <p className="mb-[0] flex flex-1 text-[0.7rem] font-[700] text-[var(--primary-color)]">
-                      Camlock Screw Hole
-                    </p>
-                    <button
-                      onClick={() => toggleSection('camlock')}
-                      className="mr-[1rem] flex h-[0.8rem] w-[0.8rem] flex-shrink-0 items-center justify-center border-0 bg-[var(--primary-white)] p-0"
-                    >
-                      <img
-                        src={collapsed.camlock ? assets.plusIcon : assets.minusIcon}
-                        alt={collapsed.camlock ? 'Expand' : 'Collapse'}
-                        className="h-[0.8rem] w-[0.8rem]"
-                      />
-                    </button>
-                  </div>
-                  {!collapsed.camlock && (
-                    <>
-                      <div className="mt-[1rem] mb-[0rem] flex gap-[0.5rem] font-[700]">
-                        <div>
-                          <p className="mt-[0rem] mb-[0.2rem] text-[0.5rem] text-[var(--primary-color)]">
-                            Diameter
-                          </p>
-                          <div className="flex items-center gap-1">
-                            <input
-                              type="number"
-                              disabled={!minifixEnabled}
-                              value={camDiameterInput}
-                              onChange={(e) => {
-                                const value = Number(e.target.value);
-                                setCamDiameterInput(value);
-                                // Save to cupboard object if it's a full cupboard
-                                if (selectedObject && isFullCupboard) {
-                                  dispatch(
-                                    updateObject({ id: selectedObject.id, camDiameter: value })
-                                  );
-                                } else {
-                                  dispatch(setActiveItemCamDiameter(value));
-                                }
-                              }}
-                              className="h-[1.2rem] w-[3.57rem] [appearance:textfield] appearance-none rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-                            />
-                          </div>
-                        </div>
-
-                        <div>
-                          <p className="mt-[0rem] mb-[0.2rem] text-[0.5rem] text-[var(--primary-color)]">
-                            Depth
-                          </p>
-                          <div className="flex items-center gap-1">
-                            <input
-                              type="number"
-                              disabled={!minifixEnabled}
-                              value={camDepthInput}
-                              onChange={(e) => {
-                                const value = Number(e.target.value);
-                                setCamDepthInput(value);
-                                // Save to cupboard object if it's a full cupboard
-                                if (selectedObject && isFullCupboard) {
-                                  dispatch(
-                                    updateObject({ id: selectedObject.id, camDepth: value })
-                                  );
-                                } else {
-                                  dispatch(setActiveItemCamDepth(value));
-                                }
-                              }}
-                              className="h-[1.2rem] w-[3.57rem] [appearance:textfield] appearance-none rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-                            />
-                          </div>
-                        </div>
-
-                        <div>
-                          <p className="mt-[0rem] mb-[0.2rem] text-[0.5rem] text-[var(--primary-color)]">
-                            Height
-                          </p>
-                          <div className="flex items-center gap-1">
-                            <input
-                              type="number"
-                              disabled={!minifixEnabled}
-                              value={camHeightInput}
-                              onChange={(e) => {
-                                const value = Number(e.target.value);
-                                setCamHeightInput(value);
-                                // Save to cupboard object if it's a full cupboard
-                                if (selectedObject && isFullCupboard) {
-                                  dispatch(
-                                    updateObject({ id: selectedObject.id, camHeight: value })
-                                  );
-                                } else {
-                                  dispatch(setActiveItemCamHeight(value));
-                                }
-                              }}
-                              className="h-[1.2rem] w-[3.57rem] [appearance:textfield] appearance-none rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-                            />
-                          </div>
-                        </div>
-                      </div>
-                    </>
-                  )}
-                </div>
-              </div>
-              <hr className="mx-[0.2rem] my-[0.2rem] ml-[0rem] w-[15rem] pl-[0rem] opacity-20" />
-              {!isQuickHideActive && isSettingOpen && isPlankSelected && (
-                <>
-                  <div className="mt-[0] mb-[0.7rem] ml-[1rem] flex flex-col gap-[0.5rem]">
-                    <div className="flex items-center justify-between gap-[0.5rem]">
-                      <p className="mb-[0] flex flex-1 text-[0.7rem] font-[700] text-[var(--primary-color)]">
-                        Shelf
+            <div className="bv-insp-body min-h-0 flex-1 overflow-x-hidden overflow-y-auto pb-[0.5rem] [&::-webkit-scrollbar]:w-[0.3rem] [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-[rgba(84,83,51,0)] hover:[&::-webkit-scrollbar-thumb]:bg-[rgba(84,83,51,0.25)] [&::-webkit-scrollbar-track]:bg-transparent">
+              {/* ================= NAV IMAGE ================= */}
+              {isNavOpen && (
+                <div className="bv-insp-nav mx-auto mt-4 w-[12rem]">
+                  {selectedObject?.type === OBJECT_TYPES.MODEL ? (
+                    <div className="rounded-[0.4rem] border-[0.1rem] border-[var(--primary-color)] bg-[var(--primary-white)] p-[0.6rem] shadow-sm">
+                      <p className="mb-[0.6rem] text-center text-[0.75rem] font-[700] text-[var(--primary-color)]">
+                        Model Tools
                       </p>
-                      <button
-                        onClick={() => toggleSection('shelf')}
-                        className="mr-[0.75rem] flex h-[0.8rem] w-[0.8rem] flex-shrink-0 items-center justify-center border-0 bg-[var(--primary-white)] p-0"
-                      >
-                        <img
-                          src={collapsed.shelf ? assets.plusIcon : assets.minusIcon}
-                          alt={collapsed.shelf ? 'Expand' : 'Collapse'}
-                          className="h-[0.8rem] w-[0.8rem]"
-                        />
-                      </button>
+                      <ul className="space-y-[0.4rem] pl-[0.3rem] text-[0.65rem] text-[var(--primary-color)]">
+                        <li className="flex gap-[0.4rem]">
+                          <b className="w-[3.5rem] text-right">Ctrl + G</b> <span>Position</span>
+                        </li>
+                        <li className="flex gap-[0.4rem]">
+                          <b className="w-[3.5rem] text-right">Ctrl + E</b> <span>Rotation</span>
+                        </li>
+                        <li className="flex gap-[0.4rem]">
+                          <b className="w-[3.5rem] text-right">Ctrl + S</b> <span>Scale</span>
+                        </li>
+                      </ul>
                     </div>
-                    {!collapsed.shelf && (
+                  ) : (
+                    <img src={assets.navigationdetail} className="w-full" />
+                  )}
+                </div>
+              )}
+
+              {/* ================= NO SELECTION ================= */}
+              {isSettingOpen && !selectedObject && !isInvisibleBox && (
+                <p className="mt-8 text-center text-[0.8rem] text-[var(--bv-text-muted)]">
+                  No Item Selected
+                </p>
+              )}
+
+              {/* ================= INVISIBLE BOX ================= */}
+              {isSettingOpen && isInvisibleBox && (
+                <p className="mt-8 text-center text-[0.8rem] text-[var(--bv-text-muted)]">
+                  Add parts to see properties
+                </p>
+              )}
+
+              {/* ================= SETTINGS ================= */}
+              {isSettingOpen && selectedObject && (
+                <>
+                  {/* your existing code – NO CHANGES inside */}
+                  <div className="bv-insp-card w-[15rem] bg-white p-3 shadow-sm">
+                    {/* ================= WALL PROPERTIES ================= */}
+                    {isWallSelected && (
                       <>
-                        <div className="flex items-center gap-[1.8rem]">
-                          <p className="mt-[0px] mb-[0px] text-[0.56rem] font-[700] text-[var(--primary-color)]">
-                            Shelves Inner Distance
-                          </p>
-                          <div className="flex items-center gap-[1rem]">
-                            <input
-                              type="number"
-                              min={0}
-                              max={25}
-                              value={shelvesInnerDistance.toFixed(2)}
-                              onChange={(e) =>
-                                handleShelvesInnerDistanceChange(Number(e.target.value))
-                              }
-                              disabled={isDisabled}
-                              className="h-[1.2rem] w-[4rem] [appearance:textfield] appearance-none rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none disabled:opacity-50 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-                            />
+                        {/* Wall – Layout (Dimensions) */}
+                        <div className="bv-insp-section mb-[0rem] ml-[1rem] pb-[0rem]">
+                          <div className="bv-insp-head mb-[0rem] flex items-center justify-between">
+                            <p className="text-[0.7rem] font-[700] text-[var(--primary-color)]">
+                              Wall Layout
+                            </p>
+                            <button
+                              onClick={() => toggleSection('layout')}
+                              className="bv-insp-toggle mr-[0.75rem] flex h-[0.8rem] w-[0.8rem] flex-shrink-0 items-center justify-center border-0 bg-[var(--primary-white)] p-0"
+                            >
+                              <img
+                                src={collapsed.layout ? assets.plusIcon : assets.minusIcon}
+                                alt={collapsed.layout ? 'Expand' : 'Collapse'}
+                                className="h-[0.8rem] w-[0.8rem]"
+                              />
+                            </button>
                           </div>
+
+                          {!collapsed.layout && (
+                            <div className="mt-[0rem] mr-[0rem] grid grid-cols-2 gap-[0.4rem]">
+                              {/* Height only for wall */}
+                              <div className="flex flex-col gap-[0.2rem]">
+                                <p className="mb-[0rem] text-[0.6rem] font-[700] text-[var(--primary-color)]">
+                                  Height
+                                </p>
+                                <SidebarInputWithSuffix
+                                  wrapperClassName="relative w-[5rem]"
+                                  inputStyleCSS="h-[1.2rem] w-[5rem] [appearance:textfield] rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                                  suffix="MM"
+                                  type="number"
+                                  min={1}
+                                  step="1"
+                                  value={dimensionsUI.height ?? ''}
+                                  onChange={(e) =>
+                                    handleDimensionChange(
+                                      'height',
+                                      Math.max(1, Number(e.target.value))
+                                    )
+                                  }
+                                  disabled={isDisabled}
+                                />
+                              </div>
+                            </div>
+                          )}
                         </div>
+
+                        <hr className="mx-[0.2rem] my-[0.3rem] ml-[0rem] w-[15rem] pl-[0rem] opacity-20" />
+                      </>
+                    )}
+                    {/* ================= Minifix & Grooving ================= */}
+                    {!isWallSelected && (
+                      <>
+                        <div className="bv-insp-section mb-[0rem] ml-[1rem] pb-[0rem]">
+                          {/* Header */}
+                          <div className="bv-insp-head relative mb-[0rem] flex items-center justify-between">
+                            <p className="flex-1 text-[0.7rem] font-[600] text-[var(--primary-color)]">
+                              Minifix & Grooving
+                            </p>
+                            <button
+                              onClick={() => toggleSection('minifix')}
+                              className="bv-insp-toggle absolute top-1/2 right-[0.75rem] flex h-[0.8rem] w-[0.8rem] -translate-y-1/2 items-center justify-center border-0 bg-[var(--primary-white)] p-0"
+                            >
+                              <img
+                                src={collapsed.minifix ? assets.plusIcon : assets.minusIcon}
+                                alt={collapsed.minifix ? 'Expand' : 'Collapse'}
+                                className="h-[0.8rem] w-[0.8rem]"
+                              />
+                            </button>
+                          </div>
+                          {!collapsed.minifix && (
+                            <>
+                              {/* ================= Split Inputs ================= */}
+                              <div className="flex gap-[0.75rem]">
+                                {/* -------- LEFT PART -------- */}
+                                <div className="flex w-[6rem] flex-col">
+                                  {/* Toggle */}
+                                  <div className="ml-[0rem] flex items-center gap-[1rem]">
+                                    <div
+                                      onClick={handleMinifixToggle}
+                                      className={`relative h-[1rem] w-[2rem] cursor-pointer rounded-full border-[0.1rem] border-[var(--toggle-border-color)] p-[0rem] transition-colors duration-300 ${minifixEnabled ? 'bg-[var(--primary-color)]' : 'bg-[var(--primary-white)]'} ${minifixDisabled ? 'pointer-events-none opacity-50' : ''}`}
+                                    >
+                                      {/* Knob */}
+                                      <div
+                                        className={`absolute top-[0.15rem] left-[0.1rem] h-[0.6rem] w-[0.6rem] rounded-full border-[0.1rem] border-[var(--toggle-button-border-color)] p-[0rem] ring-[0.1rem] transition-transform duration-300 ease-in-out ${
+                                          minifixEnabled
+                                            ? 'translate-x-[1rem] bg-[var(--primary-white)] ring-[var(--primary-color)]'
+                                            : 'translate-x-0 bg-[var(--primary-color)] ring-[var(--primary-white)]'
+                                        }`}
+                                      />
+                                    </div>
+                                    <p className="mb-[1remrem] text-[0.6rem] font-[700] text-[var(--primary-color)]">
+                                      Minifix
+                                    </p>
+                                  </div>
+
+                                  {/* Distance */}
+                                  <div className="mt-[0rem]">
+                                    <p className="mt-[0.2rem] mb-[0.2rem] text-[0.6rem] font-[700] text-[var(--primary-color)]">
+                                      Distance
+                                    </p>
+                                    <SidebarInputWithSuffix
+                                      wrapperClassName="relative w-[5rem]"
+                                      inputStyleCSS="h-[1.2rem] w-[5rem] [appearance:textfield] appearance-none rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                                      suffix="MM"
+                                      type="number"
+                                      disabled={isDisabled}
+                                      value={minifixDistanceInput}
+                                      onChange={(e) => {
+                                        const value = Number(e.target.value);
+                                        setMinifixDistanceInput(value);
+
+                                        if (value % 32 !== 0) {
+                                          toast(
+                                            ({ closeToast }) => (
+                                              <CustomToast
+                                                appearance="error"
+                                                message="Distance must be in multiple of 32"
+                                                closeToast={closeToast}
+                                              />
+                                            ),
+                                            {
+                                              position: 'top-center',
+                                              autoClose: 3000,
+                                              hideProgressBar: true, // as per user pref or default
+                                              closeButton: false,
+                                              icon: false,
+                                              className:
+                                                '!overflow-hidden !rounded-[0.75rem] !border !border-[var(--primary-color)] !bg-white !p-0',
+                                              style: { padding: 0, minHeight: 'auto' },
+                                            }
+                                          );
+                                          return;
+                                        }
+
+                                        // Save to cupboard object if it's a full cupboard
+                                        if (selectedObject && isFullCupboard) {
+                                          dispatch(
+                                            updateObject({
+                                              id: selectedObject.id,
+                                              minifixDistance: value,
+                                            })
+                                          );
+                                        } else {
+                                          dispatch(setActiveItemMinifixDistance(value));
+                                        }
+                                      }}
+                                    />
+                                    <p className="mt-[0rem] items-center text-center text-[0.4rem] font-[700] text-[var(--primary-color)]">
+                                      in multiple of 32
+                                    </p>
+                                  </div>
+
+                                  {/* Diameter Hole */}
+                                  <div className="">
+                                    <p className="mt-[0rem] mb-[0.2rem] text-[0.6rem] font-[700] text-[var(--primary-color)]">
+                                      Diameter Hole
+                                    </p>
+                                    <SidebarInputWithSuffix
+                                      wrapperClassName="relative w-[5rem]"
+                                      inputStyleCSS="h-[1.2rem] w-[5rem] [appearance:textfield] appearance-none rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                                      suffix="MM"
+                                      type="number"
+                                      disabled={!minifixEnabled || isDisabled}
+                                      value={minifixDiameterHoleInput}
+                                      onChange={(e) => {
+                                        const value = Number(e.target.value);
+                                        setMinifixDiameterHoleInput(value);
+                                        // Save to cupboard object if it's a full cupboard
+                                        if (selectedObject && isFullCupboard) {
+                                          dispatch(
+                                            updateObject({
+                                              id: selectedObject.id,
+                                              minifixDiameterHole: value,
+                                            })
+                                          );
+                                        } else {
+                                          dispatch(setActiveItemMinifixDiameterHole(value));
+                                        }
+                                      }}
+                                    />
+                                  </div>
+                                </div>
+
+                                {/* -------- VERTICAL DIVIDER -------- */}
+                                <hr className="mr-[0.3rem] ml-[0.2rem] h-[7rem] w-[0.2px] border-[0rem] bg-[var(--table-title-border-color)] p-[0rem]" />
+
+                                {/* -------- RIGHT PART -------- */}
+                                <div className="disabled mr-[0.7rem] flex w-[6rem] flex-col">
+                                  {/* Toggle */}
+                                  <div className="flex items-center gap-[0.5rem]">
+                                    <div
+                                      className={`pointer-events-none relative h-[1rem] w-[2rem] cursor-not-allowed rounded-full border-[0.1rem] border-[var(--toggle-border-color)] bg-[var(--primary-white)] opacity-50`}
+                                    >
+                                      {/* Knob */}
+                                      <div className="absolute top-[0.15rem] left-[0.1rem] h-[0.6rem] w-[0.6rem] rounded-full border-[0.1rem] border-[var(--border-color)] bg-[var(--primary-color)]" />
+                                    </div>
+
+                                    <p className="text-[0.6rem] font-[700] text-[var(--primary-color)] opacity-50">
+                                      Grooving
+                                    </p>
+                                  </div>
+
+                                  {/* Inside */}
+                                  <div>
+                                    <p className="mt-[0.2rem] mb-[0.2rem] text-[0.6rem] font-[700] text-[var(--primary-color)]">
+                                      Inside
+                                    </p>
+                                    <SidebarInputWithSuffix
+                                      wrapperClassName="relative w-[5rem]"
+                                      inputStyleCSS="h-[1.2rem] w-[5rem] [appearance:textfield] appearance-none rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                                      suffix="MM"
+                                      type="number"
+                                      disabled={true}
+                                      // value={inside}
+                                      // onChange={(e) => setInside(Number(e.target.value))}
+                                    />
+                                  </div>
+
+                                  {/* Edge to End */}
+                                  <div>
+                                    <p className="mt-[0.8rem] mb-[0.2rem] text-[0.6rem] font-[500] text-[var(--primary-color)]">
+                                      Edge to End
+                                    </p>
+                                    <SidebarInputWithSuffix
+                                      wrapperClassName="relative w-[5rem]"
+                                      inputStyleCSS="h-[1.2rem] w-[5rem] [appearance:textfield] appearance-none rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                                      suffix="MM"
+                                      type="number"
+                                      disabled={true}
+                                      // value={edgeToEnd}
+                                      // onChange={(e) => setEdgeToEnd(Number(e.target.value))}
+                                    />
+                                  </div>
+                                </div>
+                              </div>
+                            </>
+                          )}
+                        </div>
+                        <hr className="mx-[0.2rem] my-[0.2rem] ml-[0rem] w-[15rem] pl-[0rem] opacity-20" />
+
+                        {/* ================= Camlock Screw Hole ================= */}
+                        <div className="bv-insp-section mt-[0] mb-[0.7rem] ml-[1rem] flex flex-col">
+                          <div className="bv-insp-head relative flex items-center justify-between gap-[0.5rem]">
+                            <p className="mb-[0] flex flex-1 text-[0.7rem] font-[700] text-[var(--primary-color)]">
+                              Camlock Screw Hole
+                            </p>
+                            <button
+                              onClick={() => toggleSection('camlock')}
+                              className="bv-insp-toggle absolute top-1/2 right-[0.75rem] flex h-[0.8rem] w-[0.8rem] -translate-y-1/2 items-center justify-center border-0 bg-[var(--primary-white)] p-0"
+                            >
+                              <img
+                                src={collapsed.camlock ? assets.plusIcon : assets.minusIcon}
+                                alt={collapsed.camlock ? 'Expand' : 'Collapse'}
+                                className="h-[0.8rem] w-[0.8rem]"
+                              />
+                            </button>
+                          </div>
+                          {!collapsed.camlock && (
+                            <>
+                              <div className="mt-[1rem] mb-[0rem] flex gap-[0.75rem] font-[700]">
+                                {/* Left Column */}
+                                <div className="flex w-[6rem] flex-col">
+                                  <p className="mt-[0rem] mb-[0.2rem] text-[0.6rem] font-[700] text-[var(--primary-color)]">
+                                    Diameter
+                                  </p>
+                                  <SidebarInputWithSuffix
+                                    wrapperClassName="relative w-[5rem]"
+                                    inputStyleCSS="h-[1.2rem] w-[5rem] [appearance:textfield] appearance-none rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                                    suffix="MM"
+                                    type="number"
+                                    disabled={!minifixEnabled || isDisabled}
+                                    value={camDiameterInput}
+                                    onChange={(e) => {
+                                      const value = Number(e.target.value);
+                                      setCamDiameterInput(value);
+                                      if (selectedObject && isFullCupboard) {
+                                        dispatch(
+                                          updateObject({
+                                            id: selectedObject.id,
+                                            camDiameter: value,
+                                          })
+                                        );
+                                      } else {
+                                        dispatch(setActiveItemCamDiameter(value));
+                                      }
+                                    }}
+                                  />
+
+                                  <p className="mt-[0.6rem] mb-[0.2rem] text-[0.6rem] text-[var(--primary-color)]">
+                                    Height
+                                  </p>
+                                  <SidebarInputWithSuffix
+                                    wrapperClassName="relative w-[5rem]"
+                                    inputStyleCSS="h-[1.2rem] w-[5rem] [appearance:textfield] appearance-none rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                                    suffix="MM"
+                                    type="number"
+                                    disabled={!minifixEnabled || isDisabled}
+                                    value={camHeightInput}
+                                    onChange={(e) => {
+                                      const value = Number(e.target.value);
+                                      setCamHeightInput(value);
+                                      if (selectedObject && isFullCupboard) {
+                                        dispatch(
+                                          updateObject({ id: selectedObject.id, camHeight: value })
+                                        );
+                                      } else {
+                                        dispatch(setActiveItemCamHeight(value));
+                                      }
+                                    }}
+                                  />
+                                </div>
+
+                                {/* Divider */}
+                                <div className="mr-[0.3rem] ml-[0.2rem] w-[0.2px] self-stretch bg-[var(--table-title-border-color)]" />
+
+                                {/* Right Column */}
+                                <div className="mr-[0.7rem] flex w-[6rem] flex-col">
+                                  <p className="mt-[0rem] mb-[0.2rem] text-[0.6rem] font-[700] text-[var(--primary-color)]">
+                                    Depth
+                                  </p>
+                                  <SidebarInputWithSuffix
+                                    wrapperClassName="relative w-[5rem]"
+                                    inputStyleCSS="h-[1.2rem] w-[5rem] [appearance:textfield] appearance-none rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                                    suffix="MM"
+                                    type="number"
+                                    disabled={!minifixEnabled || isDisabled}
+                                    value={camDepthInput}
+                                    onChange={(e) => {
+                                      const value = Number(e.target.value);
+                                      setCamDepthInput(value);
+                                      if (selectedObject && isFullCupboard) {
+                                        dispatch(
+                                          updateObject({ id: selectedObject.id, camDepth: value })
+                                        );
+                                      } else {
+                                        dispatch(setActiveItemCamDepth(value));
+                                      }
+                                    }}
+                                  />
+                                </div>
+                              </div>
+                            </>
+                          )}
+                        </div>
+                        <hr className="mx-[0.2rem] my-[0.2rem] ml-[0rem] w-[15rem] pl-[0rem] opacity-20" />
                       </>
                     )}
                   </div>
-                  <hr className="mx-[0.2rem] my-[0.2rem] ml-[0rem] w-[15rem] pl-[0rem] opacity-20" />
-                </>
-              )}
+                  {!isQuickHideActive && isSettingOpen && isPlankSelected && !isWallSelected && (
+                    <>
+                      <div className="bv-insp-section mt-[0] mb-[0.7rem] ml-[1rem] flex flex-col gap-[0.5rem]">
+                        <div className="bv-insp-head flex items-center justify-between gap-[0.5rem]">
+                          <p className="mb-[0] flex flex-1 text-[0.7rem] font-[700] text-[var(--primary-color)]">
+                            Shelf
+                          </p>
+                          <button
+                            onClick={() => toggleSection('shelf')}
+                            className="bv-insp-toggle mr-[0.75rem] flex h-[0.8rem] w-[0.8rem] flex-shrink-0 items-center justify-center border-0 bg-[var(--primary-white)] p-0"
+                          >
+                            <img
+                              src={collapsed.shelf ? assets.plusIcon : assets.minusIcon}
+                              alt={collapsed.shelf ? 'Expand' : 'Collapse'}
+                              className="h-[0.8rem] w-[0.8rem]"
+                            />
+                          </button>
+                        </div>
+                        {!collapsed.shelf && (
+                          <>
+                            <div className="mr-[1.1rem] flex items-start justify-between gap-[0.75rem]">
+                              <p className="mt-[0rem] mb-[0.2rem] w-[6rem] text-[0.6rem] leading-[1.1] font-[700] text-[var(--primary-color)]">
+                                Shelves Inner Distance
+                              </p>
+                              <SidebarInputWithSuffix
+                                wrapperClassName="relative w-[5rem]"
+                                inputStyleCSS="h-[1.2rem] w-[5rem] [appearance:textfield] appearance-none rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none disabled:opacity-50 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                                suffix="MM"
+                                type="number"
+                                min={0}
+                                max={25}
+                                value={shelvesInnerDistance.toFixed(2)}
+                                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                                  handleShelvesInnerDistanceChange(Number(e.target.value))
+                                }
+                                disabled={isDisabled}
+                              />
+                            </div>
+                          </>
+                        )}
+                      </div>
+                      <hr className="mx-[0.2rem] my-[0.2rem] ml-[0rem] w-[15rem] pl-[0rem] opacity-20" />
+                    </>
+                  )}
 
-              {/* Edge Banding Controls for Planks */}
-              {!isQuickHideActive && isSettingOpen && isPlankSelected && (
-                <>
-                  <div className="mt-[0] mb-[0.7rem] ml-[1rem] flex flex-col gap-[0.5rem]">
-                    <div className="flex items-center justify-between gap-[0.5rem]">
-                      <p className="mb-[0] flex flex-1 text-[0.7rem] font-[700] text-[var(--primary-color)]">
-                        Edge Banding
-                      </p>
-                      <button
-                        onClick={() => toggleSection('plankBanding')}
-                        className="mr-[0.75rem] flex h-[0.8rem] w-[0.8rem] flex-shrink-0 items-center justify-center border-0 bg-[var(--primary-white)] p-0"
-                      >
-                        <img
-                          src={collapsed.plankBanding ? assets.plusIcon : assets.minusIcon}
-                          alt={collapsed.plankBanding ? 'Expand' : 'Collapse'}
-                          className="h-[0.8rem] w-[0.8rem]"
-                        />
-                      </button>
-                    </div>
-                    {!collapsed.plankBanding && (
-                      <>
-                        <div className="flex flex-col gap-[0.4rem]">
-                          {edgeBandingOptions.map((row, rowIndex) => (
-                            <div key={rowIndex} className="flex items-center justify-between">
-                              {row.map((item) => (
-                                <div
-                                  key={item.key}
-                                  className="flex w-[4rem] items-center gap-[0.1rem]"
-                                >
-                                  <input
-                                    type="checkbox"
-                                    checked={item.checked}
-                                    onChange={(e) =>
-                                      handleBandingToggle(
-                                        item.key as
-                                        | 'top'
-                                        | 'bottom'
-                                        | 'left'
-                                        | 'right'
-                                        | 'front'
-                                        | 'back',
-                                        e.target.checked
-                                      )
-                                    }
-                                    disabled={isDisabled || item.disabled}
-                                    className="h-[0.9rem] w-[0.9rem] cursor-pointer rounded border-[0.1rem] border-[var(--border-color)] accent-[var(--primary-color)] disabled:opacity-50"
-                                  />
-                                  <p
-                                    className={`text-[0.6rem] font-[700] ${item.disabled ? 'text-[var(--border-color)] opacity-50' : 'text-[var(--primary-color)]'}`}
-                                  >
-                                    {item.label}
-                                  </p>
+                  {/* Edge Banding Controls for Planks */}
+                  {!isQuickHideActive && isSettingOpen && isPlankSelected && !isWallSelected && (
+                    <>
+                      <div className="bv-insp-section mt-[0] mb-[0.7rem] ml-[1rem] flex flex-col gap-[0.5rem]">
+                        <div className="bv-insp-head flex items-center justify-between gap-[0.5rem]">
+                          <p className="mb-[0] flex flex-1 text-[0.7rem] font-[700] text-[var(--primary-color)]">
+                            Edge Banding
+                          </p>
+                          <button
+                            onClick={() => toggleSection('plankBanding')}
+                            className="bv-insp-toggle mr-[0.75rem] flex h-[0.8rem] w-[0.8rem] flex-shrink-0 items-center justify-center border-0 bg-[var(--primary-white)] p-0"
+                          >
+                            <img
+                              src={collapsed.plankBanding ? assets.plusIcon : assets.minusIcon}
+                              alt={collapsed.plankBanding ? 'Expand' : 'Collapse'}
+                              className="h-[0.8rem] w-[0.8rem]"
+                            />
+                          </button>
+                        </div>
+                        {!collapsed.plankBanding && (
+                          <>
+                            <div className="flex flex-col gap-[0.4rem]">
+                              {edgeBandingOptions.map((row, rowIndex) => (
+                                <div key={rowIndex} className="flex items-center justify-between">
+                                  {row.map((item) => (
+                                    <div
+                                      key={item.key}
+                                      className="flex w-[4rem] items-center gap-[0.1rem]"
+                                    >
+                                      <input
+                                        type="checkbox"
+                                        checked={item.checked}
+                                        onChange={(e) =>
+                                          handleBandingToggle(
+                                            item.key as
+                                              | 'top'
+                                              | 'bottom'
+                                              | 'left'
+                                              | 'right'
+                                              | 'front'
+                                              | 'back',
+                                            e.target.checked
+                                          )
+                                        }
+                                        disabled={isDisabled || item.disabled}
+                                        className="h-[0.9rem] w-[0.9rem] cursor-pointer rounded border-[0.1rem] border-[var(--border-color)] accent-[var(--primary-color)] disabled:opacity-50"
+                                      />
+                                      <p
+                                        className={`text-[0.6rem] font-[700] ${item.disabled ? 'text-[var(--border-color)] opacity-50' : 'text-[var(--primary-color)]'}`}
+                                      >
+                                        {item.label}
+                                      </p>
+                                    </div>
+                                  ))}
                                 </div>
                               ))}
                             </div>
-                          ))}
-                        </div>
+                          </>
+                        )}
+                      </div>
+                      <hr className="mx-[0.2rem] my-[0.2rem] ml-[0rem] w-[15rem] pl-[0rem] opacity-20" />
+                    </>
+                  )}
+
+                  {!isQuickHideActive &&
+                    isSettingOpen &&
+                    isFullCupboardorPlankSelected &&
+                    !isWallSelected && (
+                      <>
+                        {sideBarMenuConfig.map((menu) => (
+                          <div key={menu.subMenu}>
+                            {/* HEADER */}
+                            <div className="bv-insp-section mb-[0rem] ml-[1rem] flex flex-col">
+                              <div className="bv-insp-head relative mb-[0rem] flex items-center justify-between gap-[0.5rem]">
+                                <p className="flex-1 text-[0.7rem] font-[700] text-[var(--primary-color)]">
+                                  {menu.title}
+                                </p>
+                                <button
+                                  onClick={() => toggleSection('layout')}
+                                  className="bv-insp-toggle absolute top-1/2 right-[0.75rem] flex h-[0.8rem] w-[0.8rem] -translate-y-1/2 items-center justify-center border-0 bg-[var(--primary-white)] p-0"
+                                >
+                                  <img
+                                    src={collapsed.layout ? assets.plusIcon : assets.minusIcon}
+                                    alt={collapsed.layout ? 'Expand' : 'Collapse'}
+                                    className="h-[0.8rem] w-[0.8rem]"
+                                  />
+                                </button>
+                              </div>
+                              {!collapsed.layout && (
+                                <>
+                                  {/* PLANK LAYOUT - STACKED WITH CONTROLS */}
+                                  {(isPlankSelected || isPlatformSelected) && (
+                                    <div className="flex flex-col gap-[0.6rem]">
+                                      {menu.fields.map((field) => (
+                                        <div
+                                          key={field.name}
+                                          className="flex flex-row items-start justify-between gap-[0rem]"
+                                        >
+                                          {/* LEFT SIDE */}
+                                          <div className="flex items-center justify-between gap-[0rem]">
+                                            {/* LEFT: LABEL */}
+                                            <p className="w-[3.5rem] text-[0.6rem] font-[700] text-[var(--primary-color)]">
+                                              {field.label}
+                                            </p>
+
+                                            {field.controls && (
+                                              <div className="ml-[0rem] flex gap-[0.65rem] rounded-[0.25rem] bg-[#f2f2f2] p-[0.15rem]">
+                                                {controlIconMap[field.name]?.map((icon, idx) => {
+                                                  let isActive = false;
+                                                  if (field.name === 'width') {
+                                                    isActive =
+                                                      (idx === 0 && widthSide === 'left') ||
+                                                      (idx === 1 && widthSide === 'right');
+                                                  } else if (field.name === 'height') {
+                                                    isActive =
+                                                      (idx === 0 && heightSide === 'top') ||
+                                                      (idx === 1 && heightSide === 'bottom');
+                                                  } else if (field.name === 'depth') {
+                                                    isActive =
+                                                      (idx === 0 && depthSide === 'front') ||
+                                                      (idx === 1 && depthSide === 'back');
+                                                  }
+
+                                                  return (
+                                                    <button
+                                                      key={idx}
+                                                      type="button"
+                                                      onClick={() =>
+                                                        handleControlClick(field.name, idx)
+                                                      }
+                                                      className={`bg-[rgba(242, 242, 242, 1)] flex h-[1.2rem] w-[1.2rem] items-center justify-center rounded-[0.15rem] border-[0.1rem] p-[0rem] transition-all duration-150 ${
+                                                        isActive
+                                                          ? 'border-[0rem] border-[var(--border-color)] bg-[white]'
+                                                          : 'bg-[rgba(242, 242, 242, 1)] border-[0rem] border-transparent hover:bg-[#eaeaea]'
+                                                      } `}
+                                                    >
+                                                      <img
+                                                        src={icon}
+                                                        alt="control"
+                                                        className="h-[0.55rem] w-[0.55rem] cursor-pointer object-contain"
+                                                      />
+                                                    </button>
+                                                  );
+                                                })}
+                                              </div>
+                                            )}
+                                          </div>
+
+                                          {/* RIGHT SIDE INPUT */}
+                                          {field.type === 'select' ? (
+                                            <select
+                                              value={field.value ?? ''}
+                                              onChange={(e) =>
+                                                field.onValueChange(Number(e.target.value))
+                                              }
+                                              disabled={field.disabled}
+                                              className="mt-[0.25rem] mr-[1rem] h-[1.2rem] w-[3.5rem] cursor-pointer rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] bg-white p-[0rem] pl-[0.1rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none"
+                                            >
+                                              {field.options?.map((opt) => (
+                                                <option key={opt} value={opt}>
+                                                  {opt}
+                                                </option>
+                                              ))}
+                                            </select>
+                                          ) : (
+                                            <SidebarInputWithSuffix
+                                              wrapperClassName="relative mt-[0.25rem] mr-[1rem] w-[5rem]"
+                                              inputStyleCSS="h-[1.2rem] w-[3.5rem] [appearance:textfield] items-center justify-between rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] pr-[1.4rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                                              suffix="MM"
+                                              min={field.min}
+                                              step={1}
+                                              type="number"
+                                              value={field.value ?? ''}
+                                              onChange={(e) =>
+                                                field.onValueChange(Number(e.target.value))
+                                              }
+                                              disabled={field.disabled}
+                                            />
+                                          )}
+                                        </div>
+                                      ))}
+                                    </div>
+                                  )}
+
+                                  {/* CUPBOARD LAYOUT - aligned with Camlock / Minifix columns */}
+                                  {!isPlankSelected && !isPlatformSelected && (
+                                    <div className="mt-[1rem] mb-[0rem] flex gap-[0.75rem] font-[700]">
+                                      {/* Left column: Width, Depth */}
+                                      <div className="flex w-[6rem] flex-col">
+                                        <p className="mt-[0rem] mb-[0.2rem] text-[0.6rem] font-[700] text-[var(--primary-color)]">
+                                          Width
+                                        </p>
+                                        <SidebarInputWithSuffix
+                                          wrapperClassName="relative w-[5rem]"
+                                          inputStyleCSS="h-[1.2rem] w-[5rem] [appearance:textfield] rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                                          suffix="MM"
+                                          type="number"
+                                          min={1}
+                                          step="1"
+                                          value={dimensionsUI.width ?? ''}
+                                          onChange={(e) =>
+                                            handleDimensionChange(
+                                              'width',
+                                              Math.max(1, Number(e.target.value))
+                                            )
+                                          }
+                                          disabled={isHorizontalPlank || isDisabled}
+                                        />
+
+                                        <p className="mt-[0.6rem] mb-[0.2rem] text-[0.6rem] font-[700] text-[var(--primary-color)]">
+                                          Depth
+                                        </p>
+                                        <SidebarInputWithSuffix
+                                          wrapperClassName="relative w-[5rem]"
+                                          inputStyleCSS="h-[1.2rem] w-[5rem] [appearance:textfield] rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                                          suffix="MM"
+                                          type="number"
+                                          min={1}
+                                          step="1"
+                                          value={dimensionsUI.depth ?? ''}
+                                          onChange={(e) =>
+                                            handleDimensionChange(
+                                              'depth',
+                                              Math.max(1, Number(e.target.value))
+                                            )
+                                          }
+                                          disabled={isQuickHideActive}
+                                        />
+                                      </div>
+
+                                      <div className="mr-[0.3rem] ml-[0.2rem] w-[0.2px] self-stretch bg-[var(--table-title-border-color)]" />
+
+                                      {/* Right column: Height */}
+                                      <div className="mr-[0.7rem] flex w-[5.6rem] flex-col">
+                                        <p className="mt-[0rem] mb-[0.2rem] text-[0.6rem] font-[700] text-[var(--primary-color)]">
+                                          Height
+                                        </p>
+                                        <SidebarInputWithSuffix
+                                          wrapperClassName="relative w-[5rem]"
+                                          inputStyleCSS="h-[1.2rem] w-[5rem] [appearance:textfield] rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                                          suffix="MM"
+                                          type="number"
+                                          min={1}
+                                          step="1"
+                                          value={dimensionsUI.height ?? ''}
+                                          onChange={(e) =>
+                                            handleDimensionChange(
+                                              'height',
+                                              Math.max(1, Number(e.target.value))
+                                            )
+                                          }
+                                          disabled={isVerticalPlank || isDisabled}
+                                        />
+                                      </div>
+                                    </div>
+                                  )}
+                                </>
+                              )}
+                            </div>
+
+                            <hr className="my-[0.4rem] opacity-20" />
+                          </div>
+                        ))}
                       </>
                     )}
-                  </div>
-                  <hr className="mx-[0.2rem] my-[0.2rem] ml-[0rem] w-[15rem] pl-[0rem] opacity-20" />
-                </>
-              )}
+                  {!isQuickHideActive && isSettingOpen && isPlankSelected && !isWallSelected && (
+                    <>
+                      <div className="bv-insp-section mb-[0.7rem] ml-[1rem] flex flex-col gap-[0.5rem]">
+                        <div className="bv-insp-head relative flex items-center justify-between gap-[0.5rem]">
+                          {/* Title */}
+                          <p className="mt-[0rem] mb-[0rem] flex-1 text-[0.7rem] font-[700] text-[var(--primary-color)]">
+                            Position Move
+                          </p>
+                          <button
+                            onClick={() => toggleSection('positionMove')}
+                            className="bv-insp-toggle absolute top-1/2 right-[0.75rem] flex h-[0.8rem] w-[0.8rem] -translate-y-1/2 items-center justify-center border-0 bg-[var(--primary-white)] p-0"
+                          >
+                            <img
+                              src={collapsed.positionMove ? assets.plusIcon : assets.minusIcon}
+                              alt={collapsed.positionMove ? 'Expand' : 'Collapse'}
+                              className="h-[0.8rem] w-[0.8rem]"
+                            />
+                          </button>
+                        </div>
+                        {!collapsed.positionMove && (
+                          <>
+                            <div className="grid grid-cols-2 gap-[0.4rem]">
+                              {positionFields.map((field) => (
+                                <DistanceInput
+                                  label={field.label}
+                                  direction={field.direction}
+                                  rotate={field.rotate}
+                                  width={field.width}
+                                  value={field.value}
+                                  disabled={field.disabled}
+                                  onChange={handlePositionDistanceChange}
+                                />
+                              ))}
+                            </div>
+                          </>
+                        )}
+                      </div>
+                      <hr className="mx-[0.2rem] my-[0.2rem] ml-[0rem] w-[15rem] pl-[0rem] opacity-20" />
+                    </>
+                  )}
 
-              {!isQuickHideActive && isSettingOpen && isFullCupboardorPlankSelected && (
-                <>
-                  {sideBarMenuConfig.map((menu) => (
-                    <div key={menu.subMenu}>
-                      {/* HEADER */}
-                      <div className="mb-[0rem] ml-[1rem] flex flex-col">
-                        <div className="mb-[0rem] flex items-center justify-between gap-[0.5rem]">
-                          <p className="flex-1 text-[0.7rem] font-[700] text-[var(--primary-color)]">
-                            {menu.title}
+                  {/* ================= Main Object Position ================= */}
+                  {!isQuickHideActive && isSettingOpen && isMainObject && !isWallSelected && (
+                    <>
+                      <div className="bv-insp-section mb-[0.7rem] ml-[1rem] flex flex-col gap-[0.5rem]">
+                        <div className="bv-insp-head relative flex items-center justify-between gap-[0.5rem]">
+                          {/* Title */}
+                          <p className="mt-[0rem] mb-[0rem] flex-1 text-[0.7rem] font-[700] text-[var(--primary-color)]">
+                            Position
+                          </p>
+                          <button
+                            onClick={() => toggleSection('mainPosition')}
+                            className="bv-insp-toggle absolute top-1/2 right-[0.75rem] flex h-[0.8rem] w-[0.8rem] -translate-y-1/2 items-center justify-center border-0 bg-[var(--primary-white)] p-0"
+                          >
+                            <img
+                              src={collapsed.mainPosition ? assets.plusIcon : assets.minusIcon}
+                              alt={collapsed.mainPosition ? 'Expand' : 'Collapse'}
+                              className="h-[0.8rem] w-[0.8rem]"
+                            />
+                          </button>
+                        </div>
+                        {!collapsed.mainPosition && (
+                          <div className="mt-[1rem] mb-[0rem] flex gap-[0.75rem] font-[700]">
+                            <div className="flex w-[6rem] flex-col">
+                              <p className="mt-[0rem] mb-[0.2rem] text-[0.6rem] font-[700] text-[var(--primary-color)] uppercase">
+                                x
+                              </p>
+                              <input
+                                type="number"
+                                step="0.01"
+                                value={Number(selectedObject?.position?.x ?? 0).toFixed(2)}
+                                onChange={(e) =>
+                                  handleMainObjectPositionChange('x', Number(e.target.value))
+                                }
+                                disabled={isDisabled}
+                                className="h-[1.2rem] w-[5rem] [appearance:textfield] rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                              />
+
+                              <p className="mt-[0.6rem] mb-[0.2rem] text-[0.6rem] font-[700] text-[var(--primary-color)] uppercase">
+                                z
+                              </p>
+                              <input
+                                type="number"
+                                step="0.01"
+                                value={Number(selectedObject?.position?.z ?? 0).toFixed(2)}
+                                onChange={(e) =>
+                                  handleMainObjectPositionChange('z', Number(e.target.value))
+                                }
+                                disabled={isDisabled}
+                                className="h-[1.2rem] w-[5rem] [appearance:textfield] rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                              />
+                            </div>
+
+                            <div className="mr-[0.3rem] ml-[0.2rem] w-[0.2px] self-stretch bg-[var(--table-title-border-color)]" />
+
+                            <div className="mr-[0.7rem] flex w-[5.6rem] flex-col">
+                              <p className="mt-[0rem] mb-[0.2rem] text-[0.6rem] font-[700] text-[var(--primary-color)] uppercase">
+                                y
+                              </p>
+                              <input
+                                type="number"
+                                step="0.01"
+                                value={Number(selectedObject?.position?.y ?? 0).toFixed(2)}
+                                onChange={(e) =>
+                                  handleMainObjectPositionChange('y', Number(e.target.value))
+                                }
+                                disabled={isDisabled}
+                                className="h-[1.2rem] w-[5rem] [appearance:textfield] rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                              />
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                      <hr className="mx-[0.2rem] my-[0.2rem] ml-[0rem] w-[15rem] pl-[0rem] opacity-20" />
+                    </>
+                  )}
+
+                  {/* ================= Handle/Handleless Selector ================= */}
+                  {/* Moved to end after Material as per design sequence */}
+
+                  {/* ================= Top Plank ================= */}
+                  {!isQuickHideActive && isSettingOpen && isFullCupboard && (
+                    <>
+                      <div className="bv-insp-section mt-[0] mb-[0.7rem] ml-[1rem] flex flex-col gap-[0.5rem]">
+                        <div className="bv-insp-head relative flex items-center justify-between gap-[0.5rem]">
+                          <p className="mb-[0] flex flex-1 text-[0.7rem] font-[700] text-[var(--primary-color)]">
+                            Top Plank
+                          </p>
+                          <button
+                            onClick={() => toggleSection('topPlank')}
+                            className="bv-insp-toggle absolute top-1/2 right-[0.75rem] flex h-[0.8rem] w-[0.8rem] -translate-y-1/2 items-center justify-center border-0 bg-[var(--primary-white)] p-0"
+                          >
+                            <img
+                              src={collapsed.topPlank ? assets.plusIcon : assets.minusIcon}
+                              alt={collapsed.topPlank ? 'Expand' : 'Collapse'}
+                              className="h-[0.8rem] w-[0.8rem]"
+                            />
+                          </button>
+                        </div>
+                        {!collapsed.topPlank && (
+                          <>
+                            {/* Row 1: Toggle only */}
+                            <div className="flex items-center gap-[0.5rem]">
+                              <div
+                                onClick={handleTopPlankToggle}
+                                className={`relative h-[1rem] w-[2rem] cursor-pointer rounded-full border-[0.1rem] border-[var(--toggle-border-color)] p-[0rem] transition-colors duration-300 ${topPlankEnabled ? 'bg-[var(--primary-color)]' : 'bg-[white]'} ${topPlankDisabled || isDisabled ? 'pointer-events-none opacity-50' : ''}`}
+                              >
+                                {/* Knob */}
+                                <div
+                                  className={`absolute top-[0.16rem] left-[0.1rem] h-[0.6rem] w-[0.6rem] rounded-full border-[0.1rem] border-[var(--toggle-border-color)] p-[0rem] ring-[0.1rem] transition-transform duration-300 ease-in-out ${
+                                    topPlankEnabled
+                                      ? 'translate-x-[1rem] bg-[white] ring-[var(--primary-color)]'
+                                      : 'translate-x-0 bg-[var(--primary-color)] ring-[white]'
+                                  }`}
+                                />
+                              </div>
+                            </div>
+
+                            {/* Depth: label above input (aligned with Layout / Position field pattern) */}
+                            <div className="mt-[1rem] flex w-[6rem] flex-col font-[700]">
+                              <p className="mt-[0rem] mb-[0.2rem] text-[0.6rem] font-[700] text-[var(--primary-color)]">
+                                Top Plank Depth
+                              </p>
+                              <SidebarInputWithSuffix
+                                wrapperClassName="relative w-[5rem]"
+                                inputStyleCSS="h-[1.2rem] w-[5rem] [appearance:textfield] rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                                suffix="MM"
+                                type="number"
+                                value={Number(getTopPlank()?.dimensions?.depth ?? 0).toFixed(2)}
+                                onChange={handleTopPlankDepthChange}
+                                disabled={isDisabled || topPlankDisabled}
+                              />
+                            </div>
+                          </>
+                        )}
+                      </div>
+
+                      <hr className="mx-[0.2rem] my-[0.2rem] ml-[0rem] w-[15rem] pl-[0rem] opacity-20" />
+
+                      {/* ================= Base ================= */}
+
+                      <div className="bv-insp-section mt-[0] mb-[0.7rem] ml-[1rem] flex flex-col gap-[0.5rem]">
+                        <div className="bv-insp-head relative flex items-center justify-between gap-[0.5rem]">
+                          <p className="mb-[0] flex flex-1 text-[0.7rem] font-[700] text-[var(--primary-color)]">
+                            Base
+                          </p>
+                          <button
+                            onClick={() => toggleSection('base')}
+                            className="bv-insp-toggle absolute top-1/2 right-[0.75rem] flex h-[0.8rem] w-[0.8rem] -translate-y-1/2 items-center justify-center border-0 bg-[var(--primary-white)] p-0"
+                          >
+                            <img
+                              src={collapsed.base ? assets.plusIcon : assets.minusIcon}
+                              alt={collapsed.base ? 'Expand' : 'Collapse'}
+                              className="h-[0.8rem] w-[0.8rem]"
+                            />
+                          </button>
+                        </div>
+                        {!collapsed.base && (
+                          <>
+                            <div className="mt-[0.5rem] flex w-full max-w-[13.5rem] flex-col font-[700]">
+                              <p className="mt-[0rem] mb-[0.2rem] text-[0.6rem] font-[700] text-[var(--primary-color)]">
+                                Base type
+                              </p>
+                              <div
+                                role="radiogroup"
+                                aria-label="Base type"
+                                className="flex w-full gap-[0.35rem]"
+                              >
+                                {(
+                                  [
+                                    { id: 'noBase' as const, label: 'No Base' },
+                                    { id: 'nailer' as const, label: 'Nailer' },
+                                    { id: 'skirting' as const, label: 'Skirting' },
+                                  ] as const
+                                ).map((opt) => {
+                                  const active =
+                                    selectedObject && getBaseMode(selectedObject) === opt.id;
+                                  return (
+                                    <button
+                                      key={opt.id}
+                                      type="button"
+                                      role="radio"
+                                      aria-checked={active}
+                                      disabled={isDisabled}
+                                      onClick={() => handleBaseModeSelect(opt.id)}
+                                      className={`flex h-[1.2rem] min-h-[1.2rem] min-w-0 flex-1 items-center justify-center rounded-[0.25rem] border-[0.1rem] px-[0.2rem] py-0 text-center text-[0.58rem] leading-none font-[600] transition-colors duration-150 ${
+                                        active
+                                          ? 'border-[var(--primary-color)] bg-[var(--primary-color)] text-[var(--primary-white)]'
+                                          : 'border-[var(--border-color)] bg-[var(--primary-white)] text-[var(--primary-color)] hover:bg-[#f7fafc]'
+                                      } ${isDisabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}`}
+                                    >
+                                      {opt.label}
+                                    </button>
+                                  );
+                                })}
+                              </div>
+
+                              {selectedObject?.nailerEnabled && (
+                                <div className="mt-[0.25rem] w-full max-w-[13.5rem]">
+                                  <p className="mb-[0.25rem] text-[0.55rem] font-[600] text-[#4a5568]">
+                                    Nailer model
+                                  </p>
+                                  <select
+                                    value={selectedObject?.nailerModel || 'stand_1'}
+                                    onChange={(e) => handleNailerModelChange(e.target.value)}
+                                    disabled={isDisabled}
+                                    className="flex h-[1.2rem] w-full cursor-pointer appearance-none items-center justify-between rounded-[0.1rem] border-[0rem] bg-[var(--primary-color)] p-[0rem] px-[0.5rem] text-left font-[comfortaa] text-[0.6rem] font-[var(--font-family)] font-extralight text-[var(--primary-white)] transition-colors duration-200 ease-in-out"
+                                  >
+                                    <option value="stand_1">Stand 1</option>
+                                    <option value="stand_2">Stand 2</option>
+                                  </select>
+                                </div>
+                              )}
+                            </div>
+
+                            {selectedObject?.skirtingEnabled && (
+                              <div className="mt-[0.35rem] mb-[0rem] flex gap-[0.75rem] font-[700]">
+                                <div className="flex w-[6rem] flex-col">
+                                  <p
+                                    className={`mt-[0rem] mb-[0.2rem] text-[0.6rem] font-[700] text-[var(--primary-color)] ${isDisabled ? 'opacity-50' : ''}`}
+                                  >
+                                    Offset
+                                  </p>
+                                  <SidebarInputWithSuffix
+                                    wrapperClassName="relative w-[5rem]"
+                                    inputStyleCSS="h-[1.2rem] w-[5rem] [appearance:textfield] rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                                    suffix="MM"
+                                    type="number"
+                                    value={selectedObject?.skirtingOffset ?? 10}
+                                    onChange={handleSkirtingOffsetChange}
+                                    disabled={isDisabled}
+                                  />
+                                </div>
+
+                                <div className="mr-[0.3rem] ml-[0.2rem] w-[0.2px] self-stretch bg-[var(--table-title-border-color)]" />
+
+                                <div className="mr-[0.7rem] flex w-[5.6rem] flex-col">
+                                  <p
+                                    className={`mt-[0rem] mb-[0.2rem] text-[0.6rem] font-[700] text-[var(--primary-color)] ${isDisabled ? 'opacity-50' : ''}`}
+                                  >
+                                    Height
+                                  </p>
+                                  <SidebarInputWithSuffix
+                                    wrapperClassName="relative w-[5rem]"
+                                    inputStyleCSS="h-[1.2rem] w-[5rem] [appearance:textfield] rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                                    suffix="MM"
+                                    type="number"
+                                    value={selectedObject?.skirtingHeight ?? 75}
+                                    onChange={handleSkirtingHeightChange}
+                                    disabled={isDisabled}
+                                  />
+                                </div>
+                              </div>
+                            )}
+                          </>
+                        )}
+                      </div>
+
+                      <hr className="mx-[0.2rem] my-[0.2rem] ml-[0rem] w-[15rem] pl-[0rem] opacity-20" />
+                    </>
+                  )}
+
+                  {!isQuickHideActive && isSettingOpen && isDoorSelected && (
+                    <>
+                      <div className="bv-insp-section mt-[0] mb-[0.7rem] ml-[1rem] flex flex-col gap-[0rem]">
+                        <div className="bv-insp-head flex items-center justify-between gap-[0.5rem]">
+                          <p className="mb-[0] flex flex-1 text-[0.7rem] font-[700] text-[var(--primary-color)]">
+                            Door
+                          </p>
+                          <button
+                            onClick={() => toggleSection('shelf')}
+                            className="bv-insp-toggle mr-[0.75rem] flex h-[0.8rem] w-[0.8rem] flex-shrink-0 items-center justify-center border-0 bg-[var(--primary-white)] p-0"
+                          >
+                            <img
+                              src={collapsed.shelf ? assets.plusIcon : assets.minusIcon}
+                              alt={collapsed.shelf ? 'Expand' : 'Collapse'}
+                              className="h-[0.8rem] w-[0.8rem]"
+                            />
+                          </button>
+                        </div>
+                        {!collapsed.shelf && (
+                          <>
+                            <div className={'relative flex items-center justify-between'}>
+                              <p className="m-0 pl-[0rem] font-[comfortaa] text-[0.6rem] font-[var(--font-family)] text-[var(--primary-color)]">
+                                Door Position
+                              </p>
+                              <select
+                                className="mr-[1.5rem] flex h-[1.2rem] w-[6.8rem] cursor-pointer appearance-none items-center justify-between rounded-[0.1rem] border-[0rem] bg-[var(--primary-color)] p-[0rem] px-[0.5rem] text-left font-[comfortaa] text-[0.6rem] font-[var(--font-family)] font-extralight text-[var(--primary-white)] transition-colors duration-200 ease-in-out"
+                                value={doorPosition}
+                                onChange={(e) => {
+                                  const value = e.target.value;
+                                  setDoorPosition(value);
+                                  handleDoorPositionChange(value);
+                                }}
+                                disabled={isDisabled}
+                              >
+                                <option value="None">None</option>
+                                <option value="Left">Left</option>
+                                <option value="Right">Right</option>
+                                <option value="Top">Top</option>
+                                <option value="Bottom">Bottom</option>
+                              </select>
+                            </div>
+
+                            <div className="relative flex items-center justify-between pl-[0rem]">
+                              <p className="m-0 font-[comfortaa] text-[0.6rem] font-[var(--font-family)] text-[var(--primary-color)]">
+                                Open/Close
+                              </p>
+                              <button
+                                className="mr-[1.5rem] flex h-[1.2rem] w-[6.8rem] cursor-pointer appearance-none items-center justify-between rounded-[0.1rem] border-[0rem] bg-[var(--primary-color)] p-[0rem] px-[0.5rem] text-left font-[comfortaa] text-[0.6rem] font-[var(--font-family)] font-extralight text-[var(--primary-white)] transition-colors duration-200 ease-in-out"
+                                disabled={isDisabled}
+                                onClick={handleOpenCloseChange}
+                              >
+                                Open/Close
+                              </button>
+                            </div>
+                          </>
+                        )}
+                      </div>
+                      <hr className="mx-[0.2rem] my-[0.2rem] ml-[0rem] w-[15rem] pl-[0rem] opacity-20" />
+                    </>
+                  )}
+
+                  {!isQuickHideActive && isSettingOpen && isDoorSelected && (
+                    <>
+                      <div className="bv-insp-section mt-[0] mb-[0.7rem] ml-[1rem] flex flex-col gap-[0rem]">
+                        <div className="bv-insp-head flex items-center justify-between gap-[0.5rem]">
+                          <p className="mb-[0] flex flex-1 text-[0.7rem] font-[700] text-[var(--primary-color)]">
+                            Door
                           </p>
                           <button
                             onClick={() => toggleSection('layout')}
-                            className="mr-[0.75rem] flex h-[0.8rem] w-[0.8rem] flex-shrink-0 items-center justify-center border-0 bg-[var(--primary-white)] p-0"
+                            className="bv-insp-toggle mr-[0.75rem] flex h-[0.8rem] w-[0.8rem] flex-shrink-0 items-center justify-center border-0 bg-[var(--primary-white)] p-0"
                           >
                             <img
                               src={collapsed.layout ? assets.plusIcon : assets.minusIcon}
@@ -1962,535 +3157,133 @@ const Sidebar: React.FC = () => {
                         </div>
                         {!collapsed.layout && (
                           <>
-                            {/* PLANK LAYOUT - STACKED WITH CONTROLS */}
-                            {isPlankSelected && (
-                              <div className="flex flex-col gap-[0.6rem]">
-                                {menu.fields.map((field) => (
-                                  <div
-                                    key={field.name}
-                                    className="flex flex-row items-start justify-between gap-[0rem]"
-                                  >
-                                    {/* LEFT SIDE */}
-                                    <div className="flex items-center justify-between gap-[0rem]">
-                                      {/* LEFT: LABEL */}
-                                      <p className="w-[3.5rem] text-[0.6rem] font-[700] text-[var(--primary-color)]">
-                                        {field.label}
-                                      </p>
+                            <div className="relative flex items-center justify-between pl-[0rem]">
+                              <p className="m-0 font-[comfortaa] text-[0.6rem] font-[var(--font-family)] text-[var(--primary-color)]">
+                                Door Type
+                              </p>
+                              <select
+                                className="mr-[1.5rem] flex h-[1.2rem] w-[6.8rem] cursor-pointer appearance-none items-center justify-between rounded-[0.1rem] border-[0rem] bg-[var(--primary-color)] px-[0.5rem] text-left font-[comfortaa] text-[0.6rem] font-extralight text-[var(--primary-white)] transition-colors duration-200 ease-in-out"
+                                disabled={isDisabled}
+                                value={
+                                  selectedObject?.doorType === DOOR_TYPES.INSET
+                                    ? DOOR_TYPES.INSET
+                                    : DOOR_TYPES.OVERLAY
+                                }
+                                onChange={(e) => {
+                                  const value = e.target.value;
+                                  if (selectedObject?.id) {
+                                    updateDoorType(scene, selectedObject.id, value);
+                                  }
+                                }}
+                              >
+                                <option value={DOOR_TYPES.INSET}>In to In</option>
+                                <option value={DOOR_TYPES.OVERLAY}>Out to Out</option>
+                              </select>
+                            </div>
 
-                                      {field.controls && (
-                                        <div className="ml-[0rem] flex gap-[0.65rem] rounded-[0.25rem] bg-[#f2f2f2] p-[0.15rem]">
-                                          {controlIconMap[field.name]?.map((icon, idx) => {
-                                            let isActive = false;
-                                            if (field.name === 'width') {
-                                              isActive =
-                                                (idx === 0 && widthSide === 'left') ||
-                                                (idx === 1 && widthSide === 'right');
-                                            } else if (field.name === 'height') {
-                                              isActive =
-                                                (idx === 0 && heightSide === 'top') ||
-                                                (idx === 1 && heightSide === 'bottom');
-                                            } else if (field.name === 'depth') {
-                                              isActive =
-                                                (idx === 0 && depthSide === 'front') ||
-                                                (idx === 1 && depthSide === 'back');
-                                            }
-
-                                            return (
-                                              <button
-                                                key={idx}
-                                                type="button"
-                                                onClick={() => handleControlClick(field.name, idx)}
-                                                className={`bg-[rgba(242, 242, 242, 1)] flex h-[1.2rem] w-[1.2rem] items-center justify-center rounded-[0.15rem] border-[0.1rem] p-[0rem] transition-all duration-150 ${isActive
-                                                    ? 'border-[0rem] border-[var(--border-color)] bg-[white]'
-                                                    : 'bg-[rgba(242, 242, 242, 1)] border-[0rem] border-transparent hover:bg-[#eaeaea]'
-                                                  } `}
-                                              >
-                                                <img
-                                                  src={icon}
-                                                  alt="control"
-                                                  className="h-[0.55rem] w-[0.55rem] cursor-pointer object-contain"
-                                                />
-                                              </button>
-                                            );
-                                          })}
-                                        </div>
-                                      )}
-                                    </div>
-
-                                    {/* RIGHT SIDE INPUT */}
-                                    {field.type === 'select' ? (
-                                      <select
-                                        value={field.value ?? ''}
-                                        onChange={(e) =>
-                                          field.onValueChange(Number(e.target.value))
-                                        }
-                                        disabled={field.disabled}
-                                        className="mt-[0.25rem] mr-[1rem] h-[1.2rem] w-[3.5rem] cursor-pointer rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] bg-white p-[0rem] pl-[0.1rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none"
-                                      >
-                                        {field.options?.map((opt) => (
-                                          <option key={opt} value={opt}>
-                                            {opt}
-                                          </option>
-                                        ))}
-                                      </select>
-                                    ) : (
-                                      <input
-                                        type="number"
-                                        min={field.min}
-                                        step={1}
-                                        value={field.value ?? ''}
-                                        onChange={(e) =>
-                                          field.onValueChange(Number(e.target.value))
-                                        }
-                                        disabled={field.disabled}
-                                        className="mt-[0.25rem] mr-[1rem] h-[1.2rem] w-[3.5rem] [appearance:textfield] items-center justify-between rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-                                      />
-                                    )}
-                                  </div>
-                                ))}
-                              </div>
-                            )}
-
-                            {/* CUPBOARD LAYOUT - 2x2 GRID */}
-                            {!isPlankSelected && (
-                              <div className="mt-[0rem] mr-[0rem] grid grid-cols-2 gap-[0rem]">
-                                {/* Width */}
-                                <div className="flex flex-col gap-[0.2rem]">
-                                  <p className="mb-[0rem] text-[0.6rem] font-[700] text-[var(--primary-color)]">
-                                    Width
-                                  </p>
-                                  <input
-                                    type="number"
-                                    min={1}
-                                    step="1"
-                                    value={dimensionsUI.width ?? ''}
-                                    onChange={(e) =>
-                                      handleDimensionChange(
-                                        'width',
-                                        Math.max(1, Number(e.target.value))
-                                      )
-                                    }
-                                    disabled={isHorizontalPlank || isDisabled}
-                                    className="h-[1.2rem] w-[5rem] [appearance:textfield] rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-                                  />
-                                </div>
-
-                                {/* Height */}
-                                <div className="flex flex-col gap-[0.2rem]">
-                                  <p className="mb-[0rem] text-[0.6rem] font-[700] text-[var(--primary-color)]">
-                                    Height
-                                  </p>
-                                  <input
-                                    type="number"
-                                    min={1}
-                                    step="1"
-                                    value={dimensionsUI.height ?? ''}
-                                    onChange={(e) =>
-                                      handleDimensionChange(
-                                        'height',
-                                        Math.max(1, Number(e.target.value))
-                                      )
-                                    }
-                                    disabled={isVerticalPlank || isDisabled}
-                                    className="h-[1.2rem] w-[5rem] [appearance:textfield] rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-                                  />
-                                </div>
-
-                                {/* Depth */}
-                                <div className="flex flex-col gap-[0.2rem]">
-                                  <p className="mb-[0rem] text-[0.6rem] font-[700] text-[var(--primary-color)]">
-                                    Depth
-                                  </p>
-                                  <input
-                                    type="number"
-                                    min={1}
-                                    step="1"
-                                    value={dimensionsUI.depth ?? ''}
-                                    onChange={(e) =>
-                                      handleDimensionChange(
-                                        'depth',
-                                        Math.max(1, Number(e.target.value))
-                                      )
-                                    }
-                                    disabled={isQuickHideActive}
-                                    className="h-[1.2rem] w-[5rem] [appearance:textfield] rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-                                  />
-                                </div>
-                              </div>
-                            )}
+                            <div className="relative flex items-center justify-between pl-[0rem]">
+                              <p className="m-0 font-[comfortaa] text-[0.6rem] font-[var(--font-family)] text-[var(--primary-color)]">
+                                Open/Close
+                              </p>
+                              <button
+                                className="mr-[1.5rem] flex h-[1.2rem] w-[6.8rem] cursor-pointer appearance-none items-center justify-between rounded-[0.1rem] border-[0rem] bg-[var(--primary-color)] p-[0rem] px-[0.5rem] text-left font-[comfortaa] text-[0.6rem] font-[var(--font-family)] font-extralight text-[var(--primary-white)] transition-colors duration-200 ease-in-out"
+                                disabled={isDisabled}
+                                onClick={handleOpenCloseChange}
+                              >
+                                Open/Close
+                              </button>
+                            </div>
                           </>
                         )}
                       </div>
+                      <hr className="mx-[0.2rem] my-[0.2rem] ml-[0rem] w-[15rem] pl-[0rem] opacity-20" />
+                    </>
+                  )}
 
-                      <hr className="my-[0.4rem] opacity-20" />
-                    </div>
-                  ))}
-                </>
-              )}
-              {!isQuickHideActive && isSettingOpen && isPlankSelected && (
-                <>
-                  <div className="mb-[0.7rem] ml-[1rem] flex flex-col gap-[0.5rem]">
-                    <div className="flex items-center justify-between gap-[0.5rem]">
-                      {/* Title */}
-                      <p className="mt-[0rem] mb-[0rem] flex-1 text-[0.7rem] font-[700] text-[var(--primary-color)]">
-                        Position Move
-                      </p>
-                      <button
-                        onClick={() => toggleSection('positionMove')}
-                        className="mr-[0.75rem] flex h-[0.8rem] w-[0.8rem] flex-shrink-0 items-center justify-center border-0 bg-[var(--primary-white)] p-0"
-                      >
-                        <img
-                          src={collapsed.positionMove ? assets.plusIcon : assets.minusIcon}
-                          alt={collapsed.positionMove ? 'Expand' : 'Collapse'}
-                          className="h-[0.8rem] w-[0.8rem]"
-                        />
-                      </button>
-                    </div>
-                    {!collapsed.positionMove && (
-                      <>
-                        <div className="grid grid-cols-2 gap-[0.4rem]">
-                          {positionFields.map((field) => (
-                            <DistanceInput
-                              label={field.label}
-                              direction={field.direction}
-                              rotate={field.rotate}
-                              width={field.width}
-                              value={field.value}
-                              disabled={field.disabled}
-                              onChange={handlePositionDistanceChange}
-                            />
-                          ))}
-                        </div>
-                      </>
-                    )}
-                  </div>
-                  <hr className="mx-[0.2rem] my-[0.2rem] ml-[0rem] w-[15rem] pl-[0rem] opacity-20" />
-                </>
-              )}
-
-              {/* ================= Handle/Handleless Selector ================= */}
-              {!isQuickHideActive && isSettingOpen && isFullCupboard && (
-                <>
-                  <div className="mt-[0] mb-[0.7rem] ml-[1rem] flex items-center gap-[4rem]">
-                    <div className="flex items-center justify-between">
-                      <p className="mt-[0.4rem] mb-[0] flex text-[0.7rem] font-[700] text-[var(--primary-color)]">
-                        Handle Mode
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-[0.5rem]">
-                      <select
-                        className="mt-[0.5rem] flex h-[1.3rem] w-[3.8rem] cursor-pointer appearance-none items-center justify-between rounded-[0.1rem] border-[0rem] bg-[var(--primary-color)] p-[0rem] px-[0.5rem] text-left font-[comfortaa] font-[poppins] text-[0.6rem] font-[var(--font-family)] font-extralight text-[var(--primary-white)] transition-colors duration-200 ease-in-out"
-                        value={handleMode}
-                        onChange={(e) => {
-                          const value = e.target.value as 'handle' | 'handleless';
-                          handleHandleModeChange(value);
-                        }}
-                        disabled={isQuickHideActive}
-                      >
-                        <option value="handle">Handle</option>
-                        <option value="handleless">Handleless</option>
-                      </select>
-                    </div>
-                  </div>
-                  <hr className="mx-[0.2rem] my-[0.2rem] ml-[0rem] w-[15rem] pl-[0rem] opacity-20" />
-                </>
-              )}
-
-              {/* ================= Top Plank ================= */}
-              {!isQuickHideActive && isSettingOpen && isFullCupboard && (
-                <>
-                  <div className="mt-[0] mb-[0.7rem] ml-[1rem] flex flex-col gap-[0.5rem]">
-                    <div className="flex items-center justify-between gap-[0.5rem]">
-                      <p className="mb-[0] flex flex-1 text-[0.7rem] font-[700] text-[var(--primary-color)]">
-                        Top Plank
-                      </p>
-                      <button
-                        onClick={() => toggleSection('topPlank')}
-                        className="mr-[0.75rem] flex h-[0.8rem] w-[0.8rem] flex-shrink-0 items-center justify-center border-0 bg-[var(--primary-white)] p-0"
-                      >
-                        <img
-                          src={collapsed.topPlank ? assets.plusIcon : assets.minusIcon}
-                          alt={collapsed.topPlank ? 'Expand' : 'Collapse'}
-                          className="h-[0.8rem] w-[0.8rem]"
-                        />
-                      </button>
-                    </div>
-                    {!collapsed.topPlank && (
-                      <>
-                        <div className="flex items-center gap-[0rem]">
-                          <div
-                            onClick={handleTopPlankToggle}
-                            className={`relative h-[1rem] w-[2rem] cursor-pointer rounded-full border-[0.1rem] border-[var(--toggle-border-color)] p-[0rem] transition-colors duration-300 ${topPlankEnabled ? 'bg-[var(--primary-color)]' : 'bg-[white]'} ${topPlankDisabled ? 'pointer-events-none opacity-50' : ''}`}
-                          >
-                            {/* Knob */}
-                            <div
-                              className={`absolute top-[0.16rem] left-[0.1rem] h-[0.6rem] w-[0.6rem] rounded-full border-[0.1rem] border-[var(--toggle-border-color)] p-[0rem] ring-[0.1rem] transition-transform duration-300 ease-in-out ${topPlankEnabled
-                                  ? 'translate-x-[1rem] bg-[white] ring-[var(--primary-color)]'
-                                  : 'translate-x-0 bg-[var(--primary-color)] ring-[white]'
-                                }`}
-                            />
-                          </div>
-
-                          <p className="mt-[0px] mb-[0px] ml-[0.5rem] text-[0.56rem] font-[700] text-[var(--primary-color)]">
-                            Top Plank Depth
-                          </p>
-                          <div className="flex items-center gap-[0rem]">
-                            <input
-                              type="number"
-                              value={Number(getTopPlank()?.dimensions?.depth ?? 0).toFixed(2)}
-                              onChange={handleTopPlankDepthChange}
-                              className="ml-[1.3rem] h-[1.2rem] w-[3.8rem] [appearance:textfield] appearance-none rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-                            />
-                          </div>
-                        </div>
-                      </>
-                    )}
-                  </div>
-
-                  <hr className="mx-[0.2rem] my-[0.2rem] ml-[0rem] w-[15rem] pl-[0rem] opacity-20" />
-
-                  {/* ================= Base ================= */}
-
-                  <div className="mt-[0] mb-[0.7rem] ml-[1rem] flex flex-col gap-[0.5rem]">
-                    <div className="flex items-center justify-between gap-[0.5rem]">
-                      <p className="mb-[0] flex flex-1 text-[0.7rem] font-[700] text-[var(--primary-color)]">
-                        Base
-                      </p>
-                      <button
-                        onClick={() => toggleSection('base')}
-                        className="mr-[0.75rem] flex h-[0.8rem] w-[0.8rem] flex-shrink-0 items-center justify-center border-0 bg-[var(--primary-white)] p-0"
-                      >
-                        <img
-                          src={collapsed.base ? assets.plusIcon : assets.minusIcon}
-                          alt={collapsed.base ? 'Expand' : 'Collapse'}
-                          className="h-[0.8rem] w-[0.8rem]"
-                        />
-                      </button>
-                    </div>
-                    {!collapsed.base && (
-                      <>
-                        <div className="flex items-center gap-[0rem]">
-                          <div
-                            onClick={handleBaseheightToggle}
-                            className={`relative h-[1rem] w-[2rem] cursor-pointer rounded-full border-[0.1rem] border-[var(--toggle-border-color)] p-[0rem] transition-colors duration-300 ${baseheightEnabled ? 'bg-[var(--primary-color)]' : 'bg-[white]'} ${baseheightDisabled ? 'pointer-events-none opacity-50' : ''}`}
-                          >
-                            {/* Knob */}
-                            <div
-                              className={`absolute top-[0.15rem] left-[0.1rem] h-[0.6rem] w-[0.6rem] rounded-full border-[0.1rem] border-[var(--toggle-border-color)] p-[0rem] ring-[0.1rem] transition-transform duration-300 ease-in-out ${baseheightEnabled
-                                  ? 'translate-x-[1rem] bg-[white] ring-[var(--primary-color)]'
-                                  : 'translate-x-0 bg-[var(--primary-color)] ring-[white]'
-                                }`}
-                            />
-                          </div>
-
-                          <p className="mt-[0px] mb-[0px] ml-[0.5rem] text-[0.56rem] font-[700] text-[var(--primary-color)]">
-                            Base Height
-                          </p>
-                          <div className="flex items-center gap-[0rem]">
-                            <input
-                              type="number"
-                              className="ml-[2.4rem] h-[1.2rem] w-[3.8rem] [appearance:textfield] appearance-none rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-                            />
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-[0rem]">
-                          <div
-                            onClick={handleFrontpanelToggle}
-                            className={`relative h-[1rem] w-[2rem] cursor-pointer rounded-full border-[0.1rem] border-[var(--toggle-border-color)] p-[0rem] transition-colors duration-300 ${frontpanelEnabled ? 'bg-[var(--primary-color)]' : 'bg-[white]'} ${frontpanelDisabled ? 'pointer-events-none opacity-50' : ''}`}
-                          >
-                            {/* Knob */}
-                            <div
-                              className={`absolute top-[0.16rem] left-[0.1rem] h-[0.6rem] w-[0.6rem] rounded-full border-[0.1rem] border-[var(--toggle-border-color)] p-[0rem] ring-[0.1rem] transition-transform duration-300 ease-in-out ${frontpanelEnabled
-                                  ? 'translate-x-[1rem] bg-[white] ring-[var(--primary-color)]'
-                                  : 'translate-x-0 bg-[var(--primary-color)] ring-[white]'
-                                }`}
-                            />
-                          </div>
-
-                          <p className="mt-[0px] mb-[0px] ml-[0.5rem] text-[0.56rem] font-[700] text-[var(--primary-color)]">
-                            Front & Back Panel
-                          </p>
-                          <div className="flex items-center gap-[0rem]">
-                            <input
-                              type="number"
-                              className="ml-[0.5rem] h-[1.2rem] w-[3.8rem] [appearance:textfield] appearance-none rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-                            />
-                          </div>
-                        </div>
-
-                        <div className="mb-[0rem] ml-[0rem] flex flex-row gap-[0.8rem] pb-[0rem]">
-                          <div className="mr-[1rem] px-3 py-2">
-                            <p className="mt-[0px] mb-[0px] text-[0.56rem] font-[700] text-[var(--primary-color)]">
-                              Back Panel
-                            </p>
-                            <input
-                              type="number"
-                              className="h-[1.2rem] w-[5rem] [appearance:textfield] appearance-none rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-                            />
-                          </div>
-                          <div className="mr-[0.5rem] px-[3] py-[2]">
-                            <p className="mt-[0px] mb-[0px] text-[0.56rem] font-[700] text-[var(--primary-color)]">
-                              Inward Size
-                            </p>
-                            <input
-                              type="number"
-                              className="h-[1.2rem] w-[5rem] [appearance:textfield] appearance-none rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] p-[0rem] pl-[0.3rem] text-[0.58rem] focus:border-[var(--primary-color)] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-                            />
-                          </div>
-                        </div>
-                      </>
-                    )}
-                  </div>
-
-                  <hr className="mx-[0.2rem] my-[0.2rem] ml-[0rem] w-[15rem] pl-[0rem] opacity-20" />
-                </>
-              )}
-
-              {!isQuickHideActive && isSettingOpen && isDoorSelected && (
-                <>
-                  <div className="mt-[0] mb-[0.7rem] ml-[1rem] flex flex-col gap-[0rem]">
-                    <div className="flex items-center justify-between gap-[0.5rem]">
-                      <p className="mb-[0] flex flex-1 text-[0.7rem] font-[700] text-[var(--primary-color)]">
-                        Door
-                      </p>
-                      <button
-                        onClick={() => toggleSection('shelf')}
-                        className="mr-[0.75rem] flex h-[0.8rem] w-[0.8rem] flex-shrink-0 items-center justify-center border-0 bg-[var(--primary-white)] p-0"
-                      >
-                        <img
-                          src={collapsed.shelf ? assets.plusIcon : assets.minusIcon}
-                          alt={collapsed.shelf ? 'Expand' : 'Collapse'}
-                          className="h-[0.8rem] w-[0.8rem]"
-                        />
-                      </button>
-                    </div>
-                    {!collapsed.shelf && (
-                      <>
-                        <div className={'relative flex items-center justify-between'}>
-                          <p className="m-0 pl-[0rem] font-[comfortaa] text-[0.6rem] font-[var(--font-family)] text-[var(--primary-color)]">
-                            Door Position
-                          </p>
-                          <select
-                            className="mr-[1.5rem] flex h-[1.2rem] w-[6.8rem] cursor-pointer appearance-none items-center justify-between rounded-[0.1rem] border-[0rem] bg-[var(--primary-color)] p-[0rem] px-[0.5rem] text-left font-[comfortaa] text-[0.6rem] font-[var(--font-family)] font-extralight text-[var(--primary-white)] transition-colors duration-200 ease-in-out"
-                            value={doorPosition}
-                            onChange={(e) => {
-                              const value = e.target.value;
-                              setDoorPosition(value);
-                              handleDoorPositionChange(value);
-                            }}
-                            disabled={isQuickHideActive}
-                          >
-                            <option value="None">None</option>
-                            <option value="Left">Left</option>
-                            <option value="Right">Right</option>
-                            <option value="Top">Top</option>
-                            <option value="Bottom">Bottom</option>
-                          </select>
-                        </div>
-
-                        <div className="relative flex items-center justify-between pl-[0rem]">
-                          <p className="m-0 font-[comfortaa] text-[0.6rem] font-[var(--font-family)] text-[var(--primary-color)]">
-                            Open/Close
+                  {!isQuickHideActive && isSettingOpen && isDrawerSelected && (
+                    <>
+                      <div className="bv-insp-section mt-[0] mb-[0.7rem] ml-[1rem] flex flex-col gap-[0rem]">
+                        <div className="bv-insp-head flex items-center justify-between gap-[0.5rem]">
+                          <p className="mb-[0] flex flex-1 text-[0.7rem] font-[700] text-[var(--primary-color)]">
+                            Drawer
                           </p>
                           <button
-                            className="mr-[1.5rem] flex h-[1.2rem] w-[6.8rem] cursor-pointer appearance-none items-center justify-between rounded-[0.1rem] border-[0rem] bg-[var(--primary-color)] p-[0rem] px-[0.5rem] text-left font-[comfortaa] text-[0.6rem] font-[var(--font-family)] font-extralight text-[var(--primary-white)] transition-colors duration-200 ease-in-out"
-                            disabled={isQuickHideActive}
-                            onClick={handleOpenCloseChange}
+                            onClick={() => toggleSection('shelf')}
+                            className="bv-insp-toggle mr-[0.75rem] flex h-[0.8rem] w-[0.8rem] flex-shrink-0 items-center justify-center border-0 bg-[var(--primary-white)] p-0"
                           >
-                            Open/Close
+                            <img
+                              src={collapsed.shelf ? assets.plusIcon : assets.minusIcon}
+                              alt={collapsed.shelf ? 'Expand' : 'Collapse'}
+                              className="h-[0.8rem] w-[0.8rem]"
+                            />
                           </button>
                         </div>
-                      </>
-                    )}
-                  </div>
-                  <hr className="mx-[0.2rem] my-[0.2rem] ml-[0rem] w-[15rem] pl-[0rem] opacity-20" />
-                </>
-              )}
+                        {!collapsed.shelf && (
+                          <>
+                            <div className="relative flex items-center justify-between pl-[0rem]">
+                              <p className="m-0 font-[comfortaa] text-[0.6rem] font-[var(--font-family)] text-[var(--primary-color)]">
+                                Drawer Type
+                              </p>
+                              <select
+                                className="mr-[1.5rem] flex h-[1.2rem] w-[6.8rem] cursor-pointer appearance-none items-center justify-between rounded-[0.1rem] border-[0rem] bg-[var(--primary-color)] px-[0.5rem] text-left font-[comfortaa] text-[0.6rem] font-extralight text-[var(--primary-white)] transition-colors duration-200 ease-in-out"
+                                disabled={isDisabled}
+                                value={
+                                  selectedObject?.drawerType === DRAWER_TYPES.OVERLAY
+                                    ? DRAWER_TYPES.OVERLAY
+                                    : DRAWER_TYPES.INSET
+                                }
+                                onChange={(e) => {
+                                  const value = e.target.value;
+                                  if (selectedObject?.id) {
+                                    updateDrawerType(scene, selectedObject.id, value);
+                                  }
+                                }}
+                              >
+                                <option value={DRAWER_TYPES.INSET}>In to In</option>
+                                <option value={DRAWER_TYPES.OVERLAY}>Out to Out</option>
+                              </select>
+                            </div>
 
-              {!isQuickHideActive && isSettingOpen && isDrawerSelected && (
-                <>
-                  <div className="mt-[0] mb-[0.7rem] ml-[1rem] flex flex-col gap-[0rem]">
-                    <div className="flex items-center justify-between gap-[0.5rem]">
-                      <p className="mb-[0] flex flex-1 text-[0.7rem] font-[700] text-[var(--primary-color)]">
-                        Drawer
-                      </p>
-                      <button
-                        onClick={() => toggleSection('shelf')}
-                        className="mr-[0.75rem] flex h-[0.8rem] w-[0.8rem] flex-shrink-0 items-center justify-center border-0 bg-[var(--primary-white)] p-0"
-                      >
-                        <img
-                          src={collapsed.shelf ? assets.plusIcon : assets.minusIcon}
-                          alt={collapsed.shelf ? 'Expand' : 'Collapse'}
-                          className="h-[0.8rem] w-[0.8rem]"
-                        />
-                      </button>
-                    </div>
-                    {!collapsed.shelf && (
+                            <div className="relative flex items-center justify-between pl-[0rem]">
+                              <p className="m-0 font-[comfortaa] text-[0.6rem] font-[var(--font-family)] text-[var(--primary-color)]">
+                                Open/Close
+                              </p>
+                              <button
+                                className="mr-[1.5rem] flex h-[1.2rem] w-[6.8rem] cursor-pointer appearance-none items-center justify-between rounded-[0.1rem] border-[0rem] bg-[var(--primary-color)] p-[0rem] px-[0.5rem] text-left font-[comfortaa] text-[0.6rem] font-[var(--font-family)] font-extralight text-[var(--primary-white)] transition-colors duration-200 ease-in-out"
+                                disabled={isDisabled}
+                                onClick={handleOpenCloseChange}
+                              >
+                                Open/Close
+                              </button>
+                            </div>
+                          </>
+                        )}
+                      </div>
+                      <hr className="mx-[0.2rem] my-[0.2rem] ml-[0rem] w-[15rem] pl-[0rem] opacity-20" />
+                    </>
+                  )}
+
+                  {/* ================= MATERIAL ================= */}
+                  <div className="bv-insp-head relative flex items-center justify-between gap-[0.5rem]">
+                    <p className="mb-2 ml-[1rem] flex-1 text-[0.7rem] font-[700] text-[var(--primary-color)]">
+                      Material
+                    </p>
+                    <button
+                      onClick={() => toggleSection('material')}
+                      className="bv-insp-toggle absolute top-1/2 right-[0.75rem] flex h-[0.8rem] w-[0.8rem] -translate-y-1/2 items-center justify-center border-0 bg-[var(--primary-white)] p-0"
+                    >
+                      <img
+                        src={collapsed.material ? assets.plusIcon : assets.minusIcon}
+                        alt={collapsed.material ? 'Expand' : 'Collapse'}
+                        className="h-[0.8rem] w-[0.8rem]"
+                      />
+                    </button>
+                  </div>
+                  <div className="mr-[1rem] px-[3] py-[2]">
+                    {!collapsed.material && (
                       <>
-                        <div className="relative flex items-center justify-between pl-[0rem]">
-                          <p className="m-0 font-[comfortaa] text-[0.6rem] font-[var(--font-family)] text-[var(--primary-color)]">
-                            Drawer Type
-                          </p>
-                          <select
-                            className="mr-[1.5rem] flex h-[1.2rem] w-[6.8rem] cursor-pointer appearance-none items-center justify-between rounded-[0.1rem] border-[0rem] bg-[var(--primary-color)] px-[0.5rem] text-left font-[comfortaa] text-[0.6rem] font-extralight text-[var(--primary-white)] transition-colors duration-200 ease-in-out"
-                            disabled={isQuickHideActive}
-                            value={
-                              selectedObject?.drawerType === DRAWER_TYPES.OVERLAY
-                                ? DRAWER_TYPES.OVERLAY
-                                : DRAWER_TYPES.INSET
-                            }
-                            onChange={(e) => {
-                              const value = e.target.value;
-                              if (selectedObject?.id) {
-                                updateDrawerType(scene, selectedObject.id, value);
-                              }
-                            }}
-                          >
-                            <option value={DRAWER_TYPES.INSET}>In to In</option>
-                            <option value={DRAWER_TYPES.OVERLAY}>Out to Out</option>
-                          </select>
-                        </div>
-
-                        <div className="relative flex items-center justify-between pl-[0rem]">
-                          <p className="m-0 font-[comfortaa] text-[0.6rem] font-[var(--font-family)] text-[var(--primary-color)]">
-                            Open/Close
-                          </p>
-                          <button
-                            className="mr-[1.5rem] flex h-[1.2rem] w-[6.8rem] cursor-pointer appearance-none items-center justify-between rounded-[0.1rem] border-[0rem] bg-[var(--primary-color)] p-[0rem] px-[0.5rem] text-left font-[comfortaa] text-[0.6rem] font-[var(--font-family)] font-extralight text-[var(--primary-white)] transition-colors duration-200 ease-in-out"
-                            disabled={isQuickHideActive}
-                            onClick={handleOpenCloseChange}
-                          >
-                            Open/Close
-                          </button>
-                        </div>
-                      </>
-                    )}
-                  </div>
-                  <hr className="mx-[0.2rem] my-[0.2rem] ml-[0rem] w-[15rem] pl-[0rem] opacity-20" />
-                </>
-              )}
-
-              {/* ================= MATERIAL ================= */}
-              <div className="flex items-center justify-between gap-[0.5rem]">
-                <p className="mb-2 ml-[1rem] flex-1 text-[0.7rem] font-[700] text-[var(--primary-color)]">
-                  Material
-                </p>
-                <button
-                  onClick={() => toggleSection('material')}
-                  className="mr-[0.75rem] flex h-[0.8rem] w-[0.8rem] flex-shrink-0 items-center justify-center border-0 bg-[var(--primary-white)] p-0"
-                >
-                  <img
-                    src={collapsed.material ? assets.plusIcon : assets.minusIcon}
-                    alt={collapsed.material ? 'Expand' : 'Collapse'}
-                    className="h-[0.8rem] w-[0.8rem]"
-                  />
-                </button>
-              </div>
-              <div className="mr-[1rem] px-[3] py-[2]">
-                {!collapsed.material && (
-                  <>
-                    {/* Color */}
-                    {/* <div className="pointer-events-none mb-[0rem] ml-[1rem] flex items-center justify-between opacity-40">
+                        {/* Color */}
+                        {/* <div className="pointer-events-none mb-[0rem] ml-[1rem] flex items-center justify-between opacity-40">
                       <p className="text-[0.6rem] font-[700] text-[var(--primary-color)]">Color</p>
 
                       <div className="flex h-[1.5rem] w-[8rem] items-center gap-[0.3rem] rounded-[0.1rem] bg-[var(--primary-light-grey)] px-[0.3rem] py-[0.3rem]">
@@ -2527,247 +3320,293 @@ const Sidebar: React.FC = () => {
                       </div>
                     </div> */}
 
-                    {/* Change Material */}
-                    <div
-                      onClick={handleMaterialChange}
-                      className="mb-2 flex items-center justify-between gap-[0rem] py-[0rem] pr-[0.5rem] pr-[0rem]"
-                    >
-                      <p className="ml-[1rem] text-[0.6rem] font-[700] text-[var(--primary-color)]">
-                        Change Material
-                      </p>
-                      <button
-                        className="flex h-[1.3rem] w-[6.8rem] cursor-pointer appearance-none items-center justify-between justify-center rounded-[0.1rem] border-[0rem] bg-[var(--primary-color)] p-[0rem] px-[0.5rem] text-center font-[comfortaa] text-[0.5rem] font-extralight text-[var(--primary-white)] transition-colors duration-200 ease-in-out"
-                        disabled={isQuickHideActive}
-                      >
-                        <p className="items-center text-center text-[0.55rem] font-[700]">
-                          Press to Change
-                        </p>
-                      </button>
-                    </div>
-
-                    {/* Texture */}
-
-                    {/* ================= Change Texture ================= */}
-                    <div className="mr-[0rem] ml-[1rem] flex flex-col gap-[0rem]">
-                      <div className="mt-[0rem] flex gap-[0rem]">
-                        <div className="flex-1">
-                          <p className="m-[0.5rem] ml-[0rem] text-[0.6rem] font-[700] text-[var(--primary-color)]">
-                            Change Texture
-                          </p>
-                        </div>
-                        <div className="flex-1">
-                          <p className="m-[0.5rem] ml-[0.5rem] text-[0.6rem] font-[700] text-[var(--primary-color)]">
-                            Texture Grain
-                          </p>
-                        </div>
-                      </div>
-
-                      {/* Controls Row */}
-                      <div className="mt-[0rem] flex gap-[1rem]">
-                        {/* Change Texture Button */}
-                        <button
-                          onClick={toggleTextureList}
-                          disabled={isTextureChangeDisabled}
-                          className={`flex h-[1.3rem] w-[5rem] flex-1 cursor-pointer appearance-none items-center justify-between rounded-[0.1rem] border-[0rem] bg-[var(--primary-color)] p-[0rem] px-[0.2rem] text-left font-[comfortaa] text-[0.5rem] font-[var(--font-family)] font-extralight text-[var(--primary-white)] transition-colors duration-200 ease-in-out ${isTextureChangeDisabled ? 'cursor-not-allowed opacity-50' : ''
-                            }`}
-                        >
-                          Select Texture
-                          <img src={assets.down_arrow1} className="h-[0.6rem] w-[0.6rem]" />
-                        </button>
-
-                        {/* Texture Grain Input */}
-                        <div className="relative flex h-[1.2rem] w-[4.5rem] flex-1 appearance-none items-center rounded-[0.1rem] border-[0.1rem] border-[rgba(120,110,170,0.5)] bg-[white] p-[0rem]">
-                          {/* Rotate Icon */}
-                          <div className="pl-[0.5rem]">
-                            <img
-                              src={assets.rotateIcon}
-                              alt="rotate"
-                              className="pointer-events-none h-[0.8rem] w-[0.8rem] opacity-70"
-                            />
+                        {/* Change Material */}
+                        {!isWallSelected && (
+                          <div
+                            onClick={handleMaterialChange}
+                            className="mb-2 flex items-center justify-between gap-[0rem] py-[0rem] pr-[0.5rem] pr-[0rem]"
+                          >
+                            <p className="ml-[1rem] text-[0.6rem] font-[700] text-[var(--primary-color)]">
+                              Change Material
+                            </p>
+                            <button
+                              className="flex h-[1.3rem] w-[6.8rem] cursor-pointer appearance-none items-center justify-between justify-center rounded-[0.1rem] border-[0rem] bg-[var(--primary-color)] p-[0rem] px-[0.5rem] text-center font-[comfortaa] text-[0.5rem] font-extralight text-[var(--primary-white)] transition-colors duration-200 ease-in-out"
+                              disabled={isDisabled}
+                            >
+                              <p className="items-center text-center text-[0.55rem] font-[700]">
+                                Press to Change
+                              </p>
+                            </button>
                           </div>
-                          <div className="flex h-[1.2rem] flex-1 items-center justify-center pl-[0.3rem]">
-                            {/* Input */}
-                            <input
-                              type="number"
-                              min={0}
-                              max={180}
-                              value={textureRotation}
-                              onChange={(e) => handleTextureRotationChange(Number(e.target.value))}
-                              disabled={isDisabled || !hasTextureMaterial(selectedObject?.material)}
-                              className="h-[1rem] w-[2.8rem] border-[0rem] p-[0rem] text-[0.75rem] font-[700] text-[var(--primary-color)] focus:border-[var(--primary-color)] focus:outline-none disabled:opacity-50 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-                            />
-                          </div>
-                          <div className="pr-[0.2rem] text-[0.65rem] font-[700] text-[var(--primary-color)]">
-                            °
-                          </div>
-                        </div>
-                      </div>
-                    </div>
+                        )}
 
-                    {/* Texture List */}
-                    {isTextureListOpen && (
-                      <div className="fixed top-[3.7rem] right-[15rem] z-[100] flex h-[85.1vh] w-[11.5rem] flex-col rounded-[0.6rem] border border-[var(--border-color)] bg-[var(--primary-white)] shadow-[-4px_0_10px_rgba(0,0,0,0.05)]">
-                        {/* Search Field */}
-                        <div className="border-b border-[rgba(57,37,121,0.1)] p-[0.6rem]">
-                          <input
-                            type="text"
-                            placeholder="Search textures..."
-                            value={textureSearchQuery}
-                            onChange={(e) => setTextureSearchQuery(e.target.value)}
-                            className="w-[9.2rem] rounded-full border border-[rgba(57,37,121,0.2)] px-[0.5rem] py-[0.4rem] font-[comfortaa] text-[0.65rem] font-[500] text-[var(--primary-color)] placeholder:text-[rgba(57,37,121,0.4)] focus:border-[var(--primary-color)] focus:outline-none"
-                          />
-                          {textureSearchQuery && (
-                            <div className="mt-[0.3rem] text-[0.55rem] font-[500] text-[rgba(57,37,121,0.6)]">
-                              {filteredTextures.length} result
-                              {filteredTextures.length !== 1 ? 's' : ''}
+                        {/* Texture */}
+
+                        {/* ================= Change Texture ================= */}
+                        <div className="mr-[0rem] ml-[1rem] flex flex-col gap-[0rem]">
+                          <div className="mt-[0rem] flex gap-[0rem]">
+                            <div className="flex-1">
+                              <p className="m-[0.5rem] ml-[0rem] text-[0.6rem] font-[700] text-[var(--primary-color)]">
+                                Change Texture
+                              </p>
                             </div>
-                          )}
+                            <div className="flex-1">
+                              <p className="m-[0.5rem] ml-[0.5rem] text-[0.6rem] font-[700] text-[var(--primary-color)]">
+                                Texture Grain
+                              </p>
+                            </div>
+                          </div>
+
+                          {/* Controls Row */}
+                          <div className="mt-[0rem] flex gap-[1rem]">
+                            {/* Change Texture Button */}
+                            <button
+                              onClick={toggleTextureList}
+                              disabled={isTextureChangeDisabled}
+                              className={`flex h-[1.3rem] w-[5rem] flex-1 cursor-pointer appearance-none items-center justify-between rounded-[0.1rem] border-[0rem] bg-[var(--primary-color)] p-[0rem] px-[0.2rem] text-left font-[comfortaa] text-[0.5rem] font-[var(--font-family)] font-extralight text-[var(--primary-white)] transition-colors duration-200 ease-in-out ${
+                                isTextureChangeDisabled ? 'cursor-not-allowed opacity-50' : ''
+                              }`}
+                            >
+                              Select Texture
+                              <img src={assets.down_arrow1} className="h-[0.6rem] w-[0.6rem]" />
+                            </button>
+
+                            {/* Texture Grain Input */}
+                            <div className="relative flex h-[1.2rem] w-[4.5rem] flex-1 appearance-none items-center rounded-[0.1rem] border-[0.1rem] border-[rgba(84,83,51,0.3)] bg-[white] p-[0rem]">
+                              <select
+                                value={textureGrain}
+                                onChange={(e) =>
+                                  handleTextureGrainChange(e.target.value as TextureGrain)
+                                }
+                                disabled={
+                                  isDisabled || !hasTextureMaterial(selectedObject?.material)
+                                }
+                                className="h-[1rem] w-full border-[0rem] pl-[0.2rem] text-[0.6rem] font-[700] text-[var(--primary-color)] focus:border-[var(--primary-color)] focus:outline-none disabled:opacity-50"
+                              >
+                                <option value="None">None</option>
+                                <option value="Horizontal">Horizontal</option>
+                                <option value="Vertical">Vertical</option>
+                              </select>
+                            </div>
+                          </div>
                         </div>
-                        {/* Scrollable grid area */}
-                        <div
-                          className={`flex-1 ${visibleCount > LOAD_MORE_INCREMENT ? 'overflow-y-auto' : 'overflow-y-auto'} p-[0.6rem] [&::-webkit-scrollbar]:w-[0.3rem] [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-[rgba(57,37,121,0.1)] hover:[&::-webkit-scrollbar-thumb]:bg-[rgba(57,37,121,0.25)] [&::-webkit-scrollbar-track]:bg-transparent`}
-                        >
-                          <div className="grid grid-cols-3 gap-[0.2rem] p-[0rem]">
-                            {/* Add New Texture Button */}
-                            <div className="flex aspect-square w-full cursor-pointer flex-col items-center justify-center gap-[0rem] bg-[var(--primary-color)] transition-transform active:scale-[0.95]">
-                              <button className="flex cursor-pointer flex-col items-center justify-center gap-[0.1rem] border-[0rem] bg-transparent p-[0rem]">
-                                <div className="flex h-[1rem] w-[1rem] items-center justify-center rounded border-[0rem]">
-                                  <img
-                                    src={assets.plusIcon}
-                                    alt="Add New Texture"
-                                    className="h-[0.8rem] w-[0.8rem] invert"
-                                  />
+
+                        {/* Texture List */}
+                        {isTextureListOpen && (
+                          <div className="bv-texture-panel fixed top-[3.7rem] right-[15rem] z-[100] flex h-[85.1vh] w-[11.5rem] flex-col rounded-[0.6rem] border border-[var(--border-color)] bg-[var(--primary-white)] shadow-[-4px_0_10px_rgba(0,0,0,0.05)]">
+                            {/* Search Field */}
+                            <div className="bv-texture-search border-b border-[rgba(84,83,51,0.1)] p-[0.6rem]">
+                              <input
+                                type="text"
+                                placeholder="Search textures..."
+                                value={textureSearchQuery}
+                                onChange={(e) => setTextureSearchQuery(e.target.value)}
+                                className="w-[9.2rem] rounded-full border border-[rgba(84,83,51,0.2)] px-[0.5rem] py-[0.4rem] font-[comfortaa] text-[0.65rem] font-[500] text-[var(--primary-color)] placeholder:text-[rgba(84,83,51,0.4)] focus:border-[var(--primary-color)] focus:outline-none"
+                              />
+                              {textureSearchQuery && (
+                                <div className="mt-[0.3rem] text-[0.55rem] font-[500] text-[rgba(84,83,51,0.6)]">
+                                  {filteredTextures.length} result
+                                  {filteredTextures.length !== 1 ? 's' : ''}
+                                </div>
+                              )}
+                            </div>
+                            {/* Scrollable grid area */}
+                            <div
+                              className={`flex-1 ${visibleCount > LOAD_MORE_INCREMENT ? 'overflow-y-auto' : 'overflow-y-auto'} p-[0.6rem] [&::-webkit-scrollbar]:w-[0.3rem] [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-[rgba(84,83,51,0.1)] hover:[&::-webkit-scrollbar-thumb]:bg-[rgba(84,83,51,0.25)] [&::-webkit-scrollbar-track]:bg-transparent`}
+                            >
+                              <div className="grid grid-cols-3 gap-[0.2rem] p-[0rem]">
+                                {/* Add New Texture Button */}
+                                <div
+                                  onClick={() => setIsAddTexturePopupOpen(true)}
+                                  className="bv-texture-add flex aspect-square w-full cursor-pointer flex-col items-center justify-center gap-[0rem] bg-[var(--primary-color)] transition-transform active:scale-[0.95]"
+                                >
+                                  <button className="pointer-events-none flex cursor-pointer flex-col items-center justify-center gap-[0.1rem] border-[0rem] bg-transparent p-[0rem]">
+                                    <div className="flex h-[1rem] w-[1rem] items-center justify-center rounded border-[0rem]">
+                                      <img
+                                        src={assets.plusIcon}
+                                        alt="Add New Texture"
+                                        className="h-[0.8rem] w-[0.8rem] invert"
+                                      />
+                                    </div>
+
+                                    <span className="px-[0.13rem] text-center font-[comfortaa] text-[0.5rem] leading-none font-bold tracking-tighter whitespace-normal text-[white]">
+                                      Add New Texture
+                                    </span>
+                                  </button>
                                 </div>
 
-                                <span className="px-[0.13rem] text-center font-[comfortaa] text-[0.5rem] leading-none font-bold tracking-tighter whitespace-normal text-[white]">
-                                  Add New Texture
-                                </span>
-                              </button>
-                            </div>
-
-                            {filteredTextures.length === 0 ? (
-                              <div className="col-span-3 flex flex-col items-center justify-center py-[2rem] text-center">
-                                <span className="text-[0.7rem] font-[500] text-[rgba(57,37,121,0.6)]">
-                                  No textures found
-                                </span>
-                                <span className="mt-[0.3rem] text-[0.6rem] font-[400] text-[rgba(57,37,121,0.4)]">
-                                  Try a different search term
-                                </span>
-                              </div>
-                            ) : (
-                              filteredTextures.slice(0, visibleCount).map((m, idx) => (
-                                <div
-                                  key={`${m.option}-${idx}`}
-                                  className="group relative flex aspect-square w-full cursor-pointer items-center justify-center overflow-hidden text-center active:scale-[0.95]"
-                                  onClick={() => handleTextureSelect(m)}
-                                >
-                                  <img
-                                    src={`${process.env.NEXT_PUBLIC_PUBLIC_API}/${m.image}`}
-                                    alt={m.name}
-                                    className="h-full w-full object-cover transition-all duration-200 ease-in-out group-hover:brightness-75"
-                                  />
-
-                                  <div className="absolute inset-0 bg-black opacity-0 transition-opacity duration-200 ease-in-out group-hover:opacity-60" />
-
-                                  <div className="absolute inset-0 flex items-end justify-center bg-gradient-to-t from-black/80 to-transparent px-1 py-1 opacity-0 transition-opacity duration-200 ease-in-out group-hover:opacity-100">
-                                    <span className="text-[0.5rem] font-semibold text-white">
-                                      {m.name}
+                                {filteredTextures.length === 0 && !isFetchingTextures ? (
+                                  <div className="col-span-3 flex flex-col items-center justify-center py-[2rem] text-center">
+                                    <span className="text-[0.7rem] font-[500] text-[rgba(84,83,51,0.6)]">
+                                      No textures found
+                                    </span>
+                                    <span className="mt-[0.3rem] text-[0.6rem] font-[400] text-[rgba(84,83,51,0.4)]">
+                                      Try a different search term
                                     </span>
                                   </div>
-                                </div>
-                              ))
-                            )}
-                          </div>
-                          {hasMoreTextures && (
-                            <div className="flex justify-center rounded-b-[0.6rem] border-t border-[rgba(57,37,121,0.1)] bg-white p-[0.3rem]">
-                              <button
-                                className="flex cursor-pointer items-center gap-[0.4rem] border-[0rem] border-[var(--primary-color)] bg-transparent font-[comfortaa] text-[0.7rem] font-[700] text-[var(--primary-color)] transition-colors hover:text-[var(--primary-color)]"
-                                onClick={handleLoadMore}
-                              >
-                                Load More
-                                <div className="flex h-[0.5rem] w-[0.5rem] items-center justify-center p-[0rem]">
-                                  <img
-                                    className="h-[0.8rem] w-[0.8rem]"
-                                    src={assets.loadMore}
-                                    alt="Load More"
-                                  />
-                                </div>
-                              </button>
-                            </div>
-                          )}
-                        </div>
+                                ) : (
+                                  filteredTextures.map((m, idx) => (
+                                    <div
+                                      key={`${m.option}-${idx}`}
+                                      className="bv-texture-tile group relative flex aspect-square w-full cursor-pointer items-center justify-center overflow-hidden text-center active:scale-[0.95]"
+                                      onClick={() => handleTextureSelect(m)}
+                                    >
+                                      <img
+                                        src={`${(process.env.NEXT_PUBLIC_PUBLIC_API || '').replace(/\/$/, '')}${m.image_thumbnail || m.image}`}
+                                        alt={m.name}
+                                        className="h-full w-full object-cover transition-all duration-200 ease-in-out group-hover:brightness-75"
+                                      />
 
-                        {/* Load More Button at bottom */}
-                      </div>
-                    )}
+                                      <div className="absolute inset-0 bg-black opacity-0 transition-opacity duration-200 ease-in-out group-hover:opacity-60" />
 
-                    {/* Door Position */}
-                    {!isQuickHideActive && isSettingOpen && isDoorOrDrawerSelected && (
-                      <>
-                        <hr className="mx-[0.2rem] my-[0.2rem] ml-[0rem] w-[15rem] pl-[0rem] opacity-20" />
-
-                        <div className="mt-[0rem] ml-[1rem] flex flex-col items-start gap-[0.5rem]">
-                          <p className="mb-[1] flex text-[0.7rem] font-[700] text-[var(--primary-color)]">
-                            Handle Position
-                          </p>
-                          <div className="mb-[0rem] flex w-[13rem] justify-center gap-[0.5rem]">
-                            {handlePositionInputFlid.map((field) => (
-                              <div key={field.name} className="mt-[0rem]">
-                                <p className="m-[0] w-[3.9rem] text-[0.56rem] font-[200] font-[var(--font-family)] tracking-[0.04rem] text-[var(--primary-color)]">
-                                  {field.label}
-                                </p>
-                                <div
-                                  className={`mt-2 flex h-[1.3rem] w-[3rem] items-center gap-[0.1rem] rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] bg-white p-0 p-[0rem] px-[0.35rem] focus-within:border-[var(--primary-color)]`}
-                                >
-                                  {/* IMAGE ICON */}
-                                  <Image
-                                    src={field.icon}
-                                    alt={field.label}
-                                    width={19}
-                                    height={19}
-                                    className="h-[0.7rem] w-[0.7rem] object-contain opacity-70"
-                                  />
-
-                                  <img
-                                    src={assets.vrLine}
-                                    className="ml-[0.1rem] h-[0.9rem] w-[0.5rem]"
-                                  />
-
-                                  {/* Input */}
-                                  <input
-                                    id={field.name}
-                                    name={field.name}
-                                    type={field.type}
-                                    value={field.value ?? ''}
-                                    onChange={field.onChange}
-                                    className="ml-[0rem] w-[1.9rem] [appearance:textfield] border-[0rem] bg-transparent p-[0rem] text-[0.7rem] font-[600] text-[var(--primary-color)] outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-                                  />
-                                </div>
+                                      <div className="absolute inset-0 flex items-end justify-center bg-gradient-to-t from-black/80 to-transparent px-1 py-1 opacity-0 transition-opacity duration-200 ease-in-out group-hover:opacity-100">
+                                        <span className="text-[0.5rem] font-semibold text-white">
+                                          {m.name}
+                                        </span>
+                                      </div>
+                                    </div>
+                                  ))
+                                )}
+                                {/* Sentinal element for Infinite Scroll */}
+                                <div ref={observerTarget} className="h-[10px] w-full" />
                               </div>
-                            ))}
+                              {isFetchingTextures && (
+                                <div className="flex justify-center py-2">
+                                  <span className="text-[0.6rem] font-semibold text-[var(--primary-color)]">
+                                    Loading...
+                                  </span>
+                                </div>
+                              )}
+                            </div>
                           </div>
-                        </div>
-                        <hr className="mx-[0.2rem] my-[0.2rem] ml-[0rem] w-[15rem] pl-[0rem] opacity-20" />
+                        )}
+
+                        {/* Door Position */}
+                        {!isQuickHideActive && isSettingOpen && isDoorOrDrawerSelected && (
+                          <>
+                            <hr className="mx-[0.2rem] my-[0.2rem] ml-[0rem] w-[15rem] pl-[0rem] opacity-20" />
+
+                            <div className="mt-[0rem] ml-[1rem] flex flex-col items-start gap-[0.5rem]">
+                              <p className="mb-[1] flex text-[0.7rem] font-[700] text-[var(--primary-color)]">
+                                Handle Position
+                              </p>
+                              <div className="mb-[0rem] flex w-[13rem] justify-center gap-[0.5rem]">
+                                {handlePositionInputFlid.map((field) => (
+                                  <div key={field.name} className="mt-[0rem]">
+                                    <p className="m-[0] w-[3.9rem] text-[0.56rem] font-[200] font-[var(--font-family)] tracking-[0.04rem] text-[var(--primary-color)]">
+                                      {field.label}
+                                    </p>
+                                    <div
+                                      className={`mt-2 flex h-[1.3rem] w-[3rem] items-center gap-[0.1rem] rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] bg-white p-0 p-[0rem] px-[0.35rem] focus-within:border-[var(--primary-color)]`}
+                                    >
+                                      {/* IMAGE ICON */}
+                                      <Image
+                                        src={field.icon}
+                                        alt={field.label}
+                                        width={19}
+                                        height={19}
+                                        className="h-[0.7rem] w-[0.7rem] object-contain opacity-70"
+                                      />
+
+                                      <img
+                                        src={assets.vrLine}
+                                        className="ml-[0.1rem] h-[0.9rem] w-[0.5rem]"
+                                      />
+
+                                      {/* Input */}
+                                      <input
+                                        id={field.name}
+                                        name={field.name}
+                                        type={field.type}
+                                        value={field.value ?? ''}
+                                        onChange={field.onChange}
+                                        className="ml-[0rem] w-[1.9rem] [appearance:textfield] border-[0rem] bg-transparent p-[0rem] text-[0.7rem] font-[600] text-[var(--primary-color)] outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                                      />
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                            <hr className="mx-[0.2rem] my-[0.2rem] ml-[0rem] w-[15rem] pl-[0rem] opacity-20" />
+                          </>
+                        )}
                       </>
                     )}
-                  </>
-                )}
-              </div>
-            </>
-          )}
-        </>
-      )}
-      {showMaterialPopup && (
-        <MaterialChangePopup
-          onClose={() => setShowMaterialPopup(false)}
-          onSave={() => {
-            if (process.env.NEXT_PUBLIC_DEBUG === 'true') {
-            }
-            setShowMaterialPopup(false);
-          }}
-        />
-      )}
-    </div>
+                  </div>
+                  <hr className="mx-[0.2rem] my-[0.2rem] ml-[0rem] w-[15rem] pl-[0rem] opacity-20" />
+                  {/* Standalone Handle Mode section after Material */}
+                  {!isQuickHideActive && isSettingOpen && isDoorOrDrawerSelected && (
+                    <>
+                      <div className="mt-[0] mb-[0.7rem] ml-[1rem] flex items-center gap-[4rem]">
+                        <div className="flex items-center justify-between">
+                          <p className="mt-[0.4rem] mb-[0] flex text-[0.7rem] font-[700] text-[var(--primary-color)]">
+                            Handle Mode
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-[0.5rem]">
+                          <select
+                            className="mt-[0.5rem] flex h-[1.3rem] w-[3.8rem] cursor-pointer appearance-none items-center justify-between rounded-[0.1rem] border-[0rem] bg-[var(--primary-color)] p-[0rem] px-[0.5rem] text-left font-[comfortaa] font-[poppins] text-[0.6rem] font-[var(--font-family)] font-extralight text-[var(--primary-white)] transition-colors duration-200 ease-in-out"
+                            value={handleMode}
+                            onChange={(e) => {
+                              const value = e.target.value as 'handle' | 'handleless';
+                              handleHandleModeChange(value);
+                            }}
+                            disabled={isDisabled}
+                          >
+                            <option value="handle">Handle</option>
+                            <option value="handleless">Handleless</option>
+                          </select>
+                        </div>
+                      </div>
+
+                      {/* Up Side / Down Side buttons — only for single drawer/door in handleless mode */}
+                      {isDoorOrDrawerSelected && handleMode === 'handleless' && (
+                        <div className="mt-[0.2rem] mb-[0.5rem] ml-[1rem] flex flex-col gap-[0.4rem]">
+                          <p className="mb-[0] text-[0.6rem] font-[600] text-[var(--primary-color)]">
+                            L-Shape Position
+                          </p>
+                          <div className="flex items-center gap-[0.5rem]">
+                            <button
+                              onClick={() => handleLShapeDirection('up')}
+                              disabled={isDisabled}
+                              className="flex h-[1.4rem] w-[5.5rem] cursor-pointer items-center justify-center rounded-[0.2rem] border-[0.1rem] border-[var(--primary-color)] bg-[var(--primary-white)] p-[0rem] text-[0.55rem] font-[600] text-[var(--primary-color)] transition-colors duration-200 hover:bg-[var(--primary-color)] hover:text-[var(--primary-white)] disabled:cursor-not-allowed disabled:opacity-50"
+                            >
+                              ▲ Up Side
+                            </button>
+                            <button
+                              onClick={() => handleLShapeDirection('down')}
+                              disabled={isDisabled}
+                              className="flex h-[1.4rem] w-[5.5rem] cursor-pointer items-center justify-center rounded-[0.2rem] border-[0.1rem] border-[var(--primary-color)] bg-[var(--primary-white)] p-[0rem] text-[0.55rem] font-[600] text-[var(--primary-color)] transition-colors duration-200 hover:bg-[var(--primary-color)] hover:text-[var(--primary-white)] disabled:cursor-not-allowed disabled:opacity-50"
+                            >
+                              ▼ Down Side
+                            </button>
+                          </div>
+                        </div>
+                      )}
+
+                      <hr className="mx-[0.2rem] my-[0.2rem] ml-[0rem] w-[15rem] pl-[0rem] opacity-20" />
+                    </>
+                  )}
+                </>
+              )}
+            </div>
+          </>
+        )}
+        {showMaterialPopup && (
+          <MaterialChangePopup
+            selectedObject={selectedObject}
+            onClose={() => setShowMaterialPopup(false)}
+          />
+        )}
+
+        {isAddTexturePopupOpen && (
+          <TextureAddPopup
+            onClose={() => setIsAddTexturePopupOpen(false)}
+            onSuccess={() => getTextures()}
+          />
+        )}
+      </div>
+    </>
   );
 };
 

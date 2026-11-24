@@ -1,0 +1,51 @@
+<?xml version="1.0" ?>
+<Root>
+    <Project Name="" Flag="SWJ008">
+        <Panels>
+            <Panel ID="" Name="c297d61a-150a-4060-80ed-a400bb4d8916" Width="497.000000" Length="922.000000" Material="3/4 1s Poplar Ply" Thickness="19.100000" IsProduce="true" MachiningPoint="1" Type="1" Face5ID="" Face6ID="" Grain="L" ExitID="0" TrimmingThreeEdges="0" TrimmingBoardHead="0">
+                <Machines>
+                    <Machining ID="1000" Type="2" IsGenCode="2" Face="3" X="248.500000" Y="9.550000" Depth="13.000000" Diameter="10.000000" ToolName="0" MacIndex="1"/>
+                    <Machining ID="1000" Type="2" IsGenCode="2" Face="3" X="216.500000" Y="9.550000" Depth="10.000000" Diameter="8.000000" ToolName="0" MacIndex="2"/>
+                    <Machining ID="1000" Type="2" IsGenCode="2" Face="3" X="120.500000" Y="9.550000" Depth="13.000000" Diameter="10.000000" ToolName="0" MacIndex="3"/>
+                    <Machining ID="1000" Type="2" IsGenCode="2" Face="3" X="88.500000" Y="9.550000" Depth="10.000000" Diameter="8.000000" ToolName="0" MacIndex="4"/>
+                    <Machining ID="1000" Type="2" IsGenCode="2" Face="3" X="376.500000" Y="9.550000" Depth="13.000000" Diameter="10.000000" ToolName="0" MacIndex="5"/>
+                    <Machining ID="1000" Type="2" IsGenCode="2" Face="3" X="344.500000" Y="9.550000" Depth="10.000000" Diameter="8.000000" ToolName="0" MacIndex="6"/>
+                    <Machining ID="1000" Type="2" IsGenCode="2" Face="3" X="487.450000" Y="461.000000" Depth="13.000000" Diameter="10.000000" ToolName="0" MacIndex="7"/>
+                    <Machining ID="1000" Type="2" IsGenCode="2" Face="3" X="487.450000" Y="493.000000" Depth="10.000000" Diameter="8.000000" ToolName="0" MacIndex="8"/>
+                    <Machining ID="1000" Type="2" IsGenCode="2" Face="3" X="487.450000" Y="589.000000" Depth="13.000000" Diameter="10.000000" ToolName="0" MacIndex="9"/>
+                    <Machining ID="1000" Type="2" IsGenCode="2" Face="3" X="487.450000" Y="621.000000" Depth="10.000000" Diameter="8.000000" ToolName="0" MacIndex="10"/>
+                    <Machining ID="1000" Type="2" IsGenCode="2" Face="3" X="487.450000" Y="333.000000" Depth="13.000000" Diameter="10.000000" ToolName="0" MacIndex="11"/>
+                    <Machining ID="1000" Type="2" IsGenCode="2" Face="3" X="487.450000" Y="365.000000" Depth="10.000000" Diameter="8.000000" ToolName="0" MacIndex="12"/>
+                    <Machining ID="1000" Type="2" IsGenCode="2" Face="3" X="487.450000" Y="717.000000" Depth="13.000000" Diameter="10.000000" ToolName="0" MacIndex="13"/>
+                    <Machining ID="1000" Type="2" IsGenCode="2" Face="3" X="487.450000" Y="749.000000" Depth="10.000000" Diameter="8.000000" ToolName="0" MacIndex="14"/>
+                    <Machining ID="1000" Type="2" IsGenCode="2" Face="3" X="487.450000" Y="205.000000" Depth="13.000000" Diameter="10.000000" ToolName="0" MacIndex="15"/>
+                    <Machining ID="1000" Type="2" IsGenCode="2" Face="3" X="487.450000" Y="237.000000" Depth="10.000000" Diameter="8.000000" ToolName="0" MacIndex="16"/>
+                    <Machining ID="1000" Type="2" IsGenCode="2" Face="3" X="487.450000" Y="845.000000" Depth="13.000000" Diameter="10.000000" ToolName="0" MacIndex="17"/>
+                    <Machining ID="1000" Type="2" IsGenCode="2" Face="3" X="487.450000" Y="877.000000" Depth="10.000000" Diameter="8.000000" ToolName="0" MacIndex="18"/>
+                    <Machining ID="1000" Type="2" IsGenCode="2" Face="3" X="487.450000" Y="77.000000" Depth="13.000000" Diameter="10.000000" ToolName="0" MacIndex="19"/>
+                    <Machining ID="1000" Type="2" IsGenCode="2" Face="3" X="487.450000" Y="109.000000" Depth="10.000000" Diameter="8.000000" ToolName="0" MacIndex="20"/>
+                    <Machining ID="1000" Type="2" IsGenCode="2" Face="3" X="9.550000" Y="461.000000" Depth="13.000000" Diameter="10.000000" ToolName="0" MacIndex="21"/>
+                    <Machining ID="1000" Type="2" IsGenCode="2" Face="3" X="9.550000" Y="493.000000" Depth="10.000000" Diameter="8.000000" ToolName="0" MacIndex="22"/>
+                    <Machining ID="1000" Type="2" IsGenCode="2" Face="3" X="9.550000" Y="589.000000" Depth="13.000000" Diameter="10.000000" ToolName="0" MacIndex="23"/>
+                    <Machining ID="1000" Type="2" IsGenCode="2" Face="3" X="9.550000" Y="621.000000" Depth="10.000000" Diameter="8.000000" ToolName="0" MacIndex="24"/>
+                    <Machining ID="1000" Type="2" IsGenCode="2" Face="3" X="9.550000" Y="333.000000" Depth="13.000000" Diameter="10.000000" ToolName="0" MacIndex="25"/>
+                    <Machining ID="1000" Type="2" IsGenCode="2" Face="3" X="9.550000" Y="365.000000" Depth="10.000000" Diameter="8.000000" ToolName="0" MacIndex="26"/>
+                    <Machining ID="1000" Type="2" IsGenCode="2" Face="3" X="9.550000" Y="717.000000" Depth="13.000000" Diameter="10.000000" ToolName="0" MacIndex="27"/>
+                    <Machining ID="1000" Type="2" IsGenCode="2" Face="3" X="9.550000" Y="749.000000" Depth="10.000000" Diameter="8.000000" ToolName="0" MacIndex="28"/>
+                    <Machining ID="1000" Type="2" IsGenCode="2" Face="3" X="9.550000" Y="205.000000" Depth="13.000000" Diameter="10.000000" ToolName="0" MacIndex="29"/>
+                    <Machining ID="1000" Type="2" IsGenCode="2" Face="3" X="9.550000" Y="237.000000" Depth="10.000000" Diameter="8.000000" ToolName="0" MacIndex="30"/>
+                    <Machining ID="1000" Type="2" IsGenCode="2" Face="3" X="9.550000" Y="845.000000" Depth="13.000000" Diameter="10.000000" ToolName="0" MacIndex="31"/>
+                    <Machining ID="1000" Type="2" IsGenCode="2" Face="3" X="9.550000" Y="877.000000" Depth="10.000000" Diameter="8.000000" ToolName="0" MacIndex="32"/>
+                    <Machining ID="1000" Type="2" IsGenCode="2" Face="3" X="9.550000" Y="77.000000" Depth="13.000000" Diameter="10.000000" ToolName="0" MacIndex="33"/>
+                    <Machining ID="1000" Type="2" IsGenCode="2" Face="3" X="9.550000" Y="109.000000" Depth="10.000000" Diameter="8.000000" ToolName="0" MacIndex="34"/>
+                </Machines>
+                <EdgeGroup>
+                    <Edge Face="1" Thickness="0.000000" Material="Alder Ven EB"/>
+                    <Edge Face="2" Thickness="0.000000" Material="Alder Ven EB"/>
+                    <Edge Face="3" Thickness="0.000000"/>
+                    <Edge Face="4" Thickness="0.000000"/>
+                </EdgeGroup>
+            </Panel>
+        </Panels>
+    </Project>
+</Root>

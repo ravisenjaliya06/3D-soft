@@ -5,6 +5,10 @@ export interface User {
   email: string;
   username: string;
   profile_picture: string | File | null;
+  is_ghost?: boolean;
+  ghost_access_type?: string;
+  selected_organization?: string | null;
+  organizations?: Organization[];
 }
 
 export interface addmember {
@@ -15,15 +19,37 @@ export interface addmember {
 
 export interface Member {
   id: string;
-  name: string;
+  name?: string;
+  username?: string;
+  displayName?: string;
   email: string;
   groups: string[];
   is_invited: boolean;
 }
 
 export interface Organization {
-  display_name: string;
+  id?: string;
+  name?: string;
+  display_name?: string | null;
   logo: string | File | null;
+
+  // Company Details
+  company_name?: string;
+  company_address?: string;
+  company_email?: string;
+  company_phone?: string;
+  company_website?: string;
+  company_gstin?: string;
+  company_pan?: string;
+
+  // Banking Details
+  bank_name?: string;
+  account_name?: string;
+  account_number?: string;
+  account_type?: string;
+  ifsc_code?: string;
+  branch_name?: string;
+  upi_id?: string;
 }
 
 export interface TeamRole {

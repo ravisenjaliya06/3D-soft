@@ -4,6 +4,7 @@ import * as THREE from 'three';
 import { MoveHandler } from '../handler/moveHandler';
 import { useAppDispatch, useAppSelector } from '../hooks';
 import { FloorManager } from '../sceneCreator/floorManager';
+import { FLOOR_PLAN_TYPES, MATERIAL_TYPES } from '../sceneCreator/interface';
 import { SaveToLibraryPopup } from '../sceneCreator/popup/SaveToLibraryPopup';
 import HelperTool from '../sceneCreator/tools/HelperTool';
 import { ObjectsSaver } from '../sceneCreator/tools/objectSaver';
@@ -12,18 +13,14 @@ import { deleteObject } from '../sceneCreator/utils';
 import { store } from '../store';
 import { setHoverdMesh, updateObject } from '../store/dataSlice';
 import { setScene } from '../store/sceneSlice';
+import { selectIsLatestVersion } from '../store/selectors';
 import { isPlankObjectFindByName } from '../utils/objectTypes';
+import { gettingDesignID, gettingVersionID } from '../utils/routeIds';
 import { DistanceTool } from './distance/distance';
 import { DesignProps, ThreeDView } from './interface';
 import MeasurementTool from './MeasurementTool';
 import { getOrCreateThreeDView } from './sceneSingleton';
-
-export const gettingDesignID = () => {
-  /** Retrieves the current design ID from the URL path. */
-
-  const designID = window.location.pathname.split('/')[2];
-  return designID;
-};
+export { gettingDesignID, gettingVersionID } from '../utils/routeIds';
 
 export function removeExistingLines() {
   /** Removes all existing outline line objects from the 3D scene. */
@@ -85,6 +82,7 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
   const isMeasurementActive = useAppSelector((state) => state.data.isMeasurementActive);
   const currentUnitType = useAppSelector((state) => state.data.currentUnitType);
   const objects = useAppSelector((state) => state.data.objects);
+  const isLatestVersion = useAppSelector(selectIsLatestVersion);
   const mountRef = useRef<HTMLDivElement>(null);
   const [design3D, setLocalDesign3D] = useState<ThreeDView | null>(null);
   const [selectedObject, setSelectedObject] = useState<THREE.Mesh | null>(null);
@@ -96,6 +94,7 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
   const lastHoveredObjectRef = useRef<THREE.Mesh | null>(null);
   const outlineRef = useRef<OutlineManager | null>(null);
   const dimToolRef = useRef<DistanceTool | null>(null);
+  const prevFloorDataRef = useRef<string>('');
   const [showSavePopup, setShowSavePopup] = React.useState(false);
   const [catalogName, setCatalogName] = React.useState('');
   const [error, setError] = React.useState<string | null>(null);
@@ -103,12 +102,10 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
   useEffect(() => {
     if (!mountRef.current || !designId) return;
 
-    // Clear full store so new design starts fresh (scene, data, catalog, history, etc.)
-    // i commented this line because i want to use the same store for multiple designs
-    // dispatch(resetStoreForNewDesign());
+    const versionId = (router.query.versionid as string) ?? gettingVersionID();
 
     // Get or create scene for this design (each design has its own scene)
-    const threeDView = getOrCreateThreeDView(mountRef.current, designId);
+    const threeDView = getOrCreateThreeDView(mountRef.current, designId, versionId, dispatch);
 
     setLocalDesign3D(threeDView);
     setDesign3D(threeDView);
@@ -166,7 +163,7 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
       setSelectedObject(null);
       setHelperToolObject(null);
     };
-  }, [designId]);
+  }, [designId, router.query.versionid]);
 
   useEffect(() => {
     if (!design3D) return;
@@ -236,6 +233,7 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
     'TABLE',
     'PLATFORM',
     'FLOOR',
+    'MODEL',
   ];
   const isSelectableMesh = (obj: THREE.Object3D) =>
     obj instanceof THREE.Mesh &&
@@ -261,8 +259,15 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
     const selector = design3D.selector;
     if (!selector) return;
 
+    // Use a ref to debounce the dispatch
+    const hoverTimeoutRef = { current: null as NodeJS.Timeout | null };
+
     selector.onHover = (mesh) => {
-      dispatch(setHoverdMesh(mesh));
+      if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
+
+      hoverTimeoutRef.current = setTimeout(() => {
+        dispatch(setHoverdMesh(mesh));
+      }, 50); // 50ms debounce
     };
 
     selector.onSelect = (mesh) => {
@@ -289,12 +294,13 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
       }
     }
 
-    const onTransformChange = () => {
+    const onTransformChange = (event: any) => {
+      if (event && event.value) return; // Only sync when dragging stops (mouse released)
+
       if (!selectedObject) return;
 
       const objectId = selectedObject.userData.objectId;
       if (!objectId) return;
-
       // Update Redux store with new position/rotation/scale
       dispatch(
         updateObject({
@@ -318,10 +324,10 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
       );
     };
 
-    transformControls.addEventListener('mouseUp', onTransformChange);
+    transformControls.addEventListener('dragging-changed', onTransformChange);
 
     return () => {
-      transformControls.removeEventListener('mouseUp', onTransformChange);
+      transformControls.removeEventListener('dragging-changed', onTransformChange);
     };
   }, [design3D, selectedObject, dispatch]);
 
@@ -330,12 +336,15 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
       deleteObject();
     }
 
-    if (design3D && design3D.transformControls) {
+    if (design3D && design3D.transformControls && event.ctrlKey) {
       if (event.key.toLowerCase() === 'g') {
+        event.preventDefault();
         design3D.transformControls.setMode('translate');
-      } else if (event.key.toLowerCase() === 'r') {
+      } else if (event.key.toLowerCase() === 's') {
+        event.preventDefault();
         design3D.transformControls.setMode('scale');
       } else if (event.key.toLowerCase() === 'e') {
+        event.preventDefault();
         design3D.transformControls.setMode('rotate');
       }
     }
@@ -362,16 +371,23 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
     if (!design3D?.scene) return;
 
     // Filter floor objects from data.objects array
-    const floorObjects = objects.filter((obj) => obj.type === 'floor');
+    const floorObjects = objects.filter((obj) => obj.type === FLOOR_PLAN_TYPES.FLOOR);
 
-    if (floorObjects.length === 0) return;
+    if (floorObjects.length === 0) {
+      if (prevFloorDataRef.current !== '') {
+        const floorManager = new FloorManager(design3D.scene, []);
+        floorManager.syncData();
+        prevFloorDataRef.current = '';
+      }
+      return;
+    }
 
     // Convert MeshObjectData back to Floor format for FloorManager
     const floorData = floorObjects.map((obj) => {
       // Extract texture URL from floor material
-      let textureUrl = '/textures/wood_7.jpg'; // Default
+      let textureUrl = '/textures/floor_white.jpg'; // Default
       if (obj.material && Array.isArray(obj.material)) {
-        const floorMaterial = obj.material.find((mat) => mat.type === 'Floor');
+        const floorMaterial = obj.material.find((mat) => mat.type === MATERIAL_TYPES.MISCELLANEOUS);
         if (floorMaterial?.textures && floorMaterial.textures.length > 0) {
           const textureDetail = floorMaterial.textures[0].textureDetail;
           if (textureDetail?.image) {
@@ -392,6 +408,12 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
         textureUrl: textureUrl,
       };
     });
+
+    const currentFloorDataStr = JSON.stringify(floorData);
+    if (prevFloorDataRef.current === currentFloorDataStr) {
+      return;
+    }
+    prevFloorDataRef.current = currentFloorDataStr;
 
     const floorManager = new FloorManager(design3D.scene, floorData);
     floorManager.syncData();
@@ -419,14 +441,16 @@ const Design: React.FC<DesignProps> = ({ setDesign3D }) => {
             unitType={currentUnitType}
             onComplete={() => {}}
           />
-          <HelperTool
-            design3D={design3D}
-            selectedObject={helperToolObject}
-            moveHandler={moveHandler}
-            setShowSavePopup={setShowSavePopup}
-            setCatalogName={setCatalogName}
-            setError={setError}
-          />
+          {isLatestVersion && (
+            <HelperTool
+              design3D={design3D}
+              selectedObject={helperToolObject}
+              moveHandler={moveHandler}
+              setShowSavePopup={setShowSavePopup}
+              setCatalogName={setCatalogName}
+              setError={setError}
+            />
+          )}
         </>
       )}
       {showSavePopup && (

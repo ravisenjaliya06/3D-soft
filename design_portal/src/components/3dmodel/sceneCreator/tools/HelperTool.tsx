@@ -1,14 +1,14 @@
 import { assets } from '@/svgPaths';
-import { useRouter } from 'next/navigation';
+import { useRouter } from 'next/router';
 
 import React, { useCallback, useEffect, useRef } from 'react';
 import * as THREE from 'three';
-import { GLTFExporter } from 'three/examples/jsm/exporters/GLTFExporter.js';
 import { CSS2DObject, CSS2DRenderer } from 'three/examples/jsm/renderers/CSS2DRenderer.js';
 import { generateCompartmentsFromMesh } from '../../handler/items';
 import { store } from '../../store';
 import { addObjects } from '../../store/dataSlice';
-import { HelperToolProps, INVISIBLE_BOXES } from '../interface';
+import { parseDesignIdsFromPathname } from '../../utils/routeIds';
+import { HelperToolProps, OBJECT_TYPES } from '../interface';
 import {
   collectSceneObjectIds,
   createCopiedStoreObjects,
@@ -136,10 +136,14 @@ const HelperTool: React.FC<HelperToolProps> = ({
   }, []);
 
   const handlePanelDesign = useCallback(() => {
-    const designId = window.location.pathname.split('/')[2];
+    const { designId, versionId } = parseDesignIdsFromPathname(window.location.pathname);
 
-    router.push(`/design/${designId}/paneldesign`);
-  }, [router, design3D]);
+    if (designId && versionId) {
+      router.push(`/design/${designId}/${versionId}/paneldesign`);
+    } else {
+      router.push(`/design/${designId}/paneldesign`);
+    }
+  }, [router]);
 
   const handleSave = useCallback(() => {
     setCatalogName('');
@@ -147,62 +151,10 @@ const HelperTool: React.FC<HelperToolProps> = ({
     setShowSavePopup(true);
   }, []);
 
-  const handleOBJ = useCallback(
-    (object: THREE.Mesh) => {
-      console.log('selectedObject', object);
-      if (!object) return;
-
-      object.children.forEach((child) => {
-        if (
-          child.userData.type === INVISIBLE_BOXES.INVISIBLE_BOX ||
-          child.name.includes('invisibleBox')
-        ) {
-          console.log('child', child);
-          object.remove(child);
-        }
-      });
-
-      const exporter = new GLTFExporter();
-
-      exporter.parse(
-        object,
-        (result) => {
-          let blob: Blob;
-
-          if (result instanceof ArrayBuffer) {
-            // GLB (binary)
-            blob = new Blob([result], { type: 'model/gltf-binary' });
-          } else {
-            // Fallback: JSON glTF
-            const json = JSON.stringify(result);
-            blob = new Blob([json], { type: 'application/json' });
-          }
-
-          const link = document.createElement('a');
-          link.href = URL.createObjectURL(blob);
-          link.download = 'mesh.glb';
-          link.click();
-          console.log('GLB export complete', link);
-
-          URL.revokeObjectURL(link.href);
-        },
-        (error) => {
-          console.error('GLB export failed:', error);
-        },
-        {
-          binary: true, // 🔑 THIS MAKES IT .glb
-          onlyVisible: true,
-          truncateDrawRange: true,
-        }
-      );
-    },
-    [selectedObject]
-  );
-
   const actions = useCallback(() => {
     if (!moveHandler) return [];
 
-    return [
+    const baseActions = [
       {
         id: 'move',
         icon: assets.moveObject,
@@ -233,14 +185,18 @@ const HelperTool: React.FC<HelperToolProps> = ({
         title: 'Save to library',
         onClick: handleSave,
       },
-      {
-        id: 'save1',
-        icon: assets.saveHelper,
-        title: 'Save to library',
-        onClick: handleOBJ,
-      },
     ];
-  }, [handleMove, handleDelete, handlePanelDesign, handleMove, handleDelete, handleCopy]);
+
+    const isModel =
+      selectedObject?.userData?.type === 'model' ||
+      selectedObject?.userData?.type === OBJECT_TYPES.MODEL;
+
+    if (isModel) {
+      return baseActions.filter((a) => a.id !== 'panel-design');
+    }
+
+    return baseActions;
+  }, [selectedObject, handleMove, handleDelete, handlePanelDesign, handleCopy, handleSave]);
 
   const createTool = useCallback(
     (object: THREE.Mesh) => {
@@ -272,7 +228,7 @@ const HelperTool: React.FC<HelperToolProps> = ({
       const size = box.getSize(new THREE.Vector3());
 
       label.position.copy(center);
-      label.position.y += size.y / 2 + 0.12;
+      label.position.y += size.y / 2 + 0.55;
 
       design3D.scene.add(label);
       helperToolRef.current = label;
@@ -288,8 +244,11 @@ const HelperTool: React.FC<HelperToolProps> = ({
   useEffect(() => {
     if (!rendererRef.current) return;
 
-    if (selectedObject) createTool(selectedObject);
-    else removeTool();
+    if (selectedObject) {
+      createTool(selectedObject);
+    } else {
+      removeTool();
+    }
   }, [selectedObject, createTool, removeTool]);
 
   useEffect(() => {
@@ -302,7 +261,7 @@ const HelperTool: React.FC<HelperToolProps> = ({
       const center = box.getCenter(new THREE.Vector3());
       const size = box.getSize(new THREE.Vector3());
 
-      helperToolRef.current.position.set(center.x, center.y + size.y / 2 + 0.12, center.z);
+      helperToolRef.current.position.set(center.x, center.y + size.y / 2 + 0.55, center.z);
 
       rendererRef.current?.render(design3D.scene, design3D.camera);
       requestAnimationFrame(update);

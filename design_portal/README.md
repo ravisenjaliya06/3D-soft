@@ -54,6 +54,7 @@ run the following command:
 
 ```
 check.bat or .\check.bat
+For Ubuntu/Linux use ./check.sh
 ```
 
 This command will analyze your code for potential errors and enforce coding standards. If there are any issues, ESLint will provide feedback on how to fix them.

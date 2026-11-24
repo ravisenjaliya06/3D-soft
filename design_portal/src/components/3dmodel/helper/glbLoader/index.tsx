@@ -1,31 +1,128 @@
 import * as THREE from 'three';
+import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import { KTX2Loader } from 'three/examples/jsm/loaders/KTX2Loader.js';
 import * as SkeletonUtils from 'three/examples/jsm/utils/SkeletonUtils.js';
+import { GLB_CACHE_NAME, TEXTURE_CACHE_NAME } from '../../constants';
 
-// Cache to store the loaded GLB models (promises returning the scene)
-const glbCache = new Map<string, Promise<THREE.Object3D>>();
+// --- Shared Loaders Configuration ---
+const dracoLoader = new DRACOLoader();
+dracoLoader.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.5.7/');
 
-export const preloadGLB = (url: string): void => {
-  if (!glbCache.has(url)) {
-    const loader = new GLTFLoader();
-    const loadPromise = new Promise<THREE.Object3D>((resolve, reject) => {
+const ktx2Loader = new KTX2Loader();
+ktx2Loader.setTranscoderPath(
+  'https://cdn.jsdelivr.net/gh/mrdoob/three.js@r151/examples/jsm/libs/basis/'
+);
+
+const glbParseCache = new Map<string, Promise<THREE.Object3D>>();
+
+const prefetchedUrls = new Set<string>();
+
+export const prefetchModel = (url: string): void => {
+  if (!url || prefetchedUrls.has(url)) return;
+
+  prefetchedUrls.add(url);
+  fetch(url, { priority: 'low' } as any).catch((err) => {
+    prefetchedUrls.delete(url);
+    console.warn(`Failed to prefetch model: ${url}`, err);
+  });
+};
+
+/**
+ * Fetches and Caches the Texture Blob.
+ */
+export const prefetchTexture = async (url: string): Promise<void> => {
+  try {
+    if ('caches' in window) {
+      const cache = await caches.open(TEXTURE_CACHE_NAME);
+      const cachedResponse = await cache.match(url);
+      if (cachedResponse) return;
+    }
+
+    const response = await fetch(url, { priority: 'low' } as any);
+    if (!response.ok) throw new Error(`Failed to fetch ${url}`);
+    const blob = await response.blob();
+
+    if ('caches' in window) {
+      const cache = await caches.open(TEXTURE_CACHE_NAME);
+      await cache.put(url, new Response(blob));
+    }
+  } catch (e) {
+    console.warn(`Failed to prefetch texture ${url}`, e);
+  }
+};
+
+const loadAndParseGLB = async (url: string): Promise<THREE.Object3D> => {
+  // Memory Cache (Instant Repeated Clicks)
+  if (glbParseCache.has(url)) {
+    return glbParseCache.get(url)!;
+  }
+
+  const promise = new Promise<THREE.Object3D>(async (resolve, reject) => {
+    try {
+      let activeUrl = url;
+      let isLocalUrl = false;
+
+      if ('caches' in window) {
+        try {
+          const cache = await caches.open(GLB_CACHE_NAME);
+          const cachedResponse = await cache.match(url);
+          if (cachedResponse) {
+            const blob = await cachedResponse.blob();
+            activeUrl = URL.createObjectURL(blob);
+            isLocalUrl = true;
+          }
+        } catch (e) {
+          console.warn('Persistent cache check failed', e);
+        }
+      }
+
+      const loader = new GLTFLoader();
+      loader.setDRACOLoader(dracoLoader);
+      loader.setKTX2Loader(ktx2Loader);
+
+      // Fetch from Network (Single-Pass)
+      if (!isLocalUrl) {
+        try {
+          const response = await fetch(url);
+          if (!response.ok) throw new Error(`Failed to fetch ${url}`);
+
+          // Save to persistent cache while simultaneously processing the blob
+          if ('caches' in window) {
+            const cache = await caches.open(GLB_CACHE_NAME);
+            await cache.put(url, response.clone());
+          }
+
+          const blob = await response.blob();
+          activeUrl = URL.createObjectURL(blob);
+          isLocalUrl = true; // Mark as blob URL for cleanup
+        } catch (fetchErr) {
+          console.error('Network fetch failed', fetchErr);
+          reject(fetchErr);
+          return;
+        }
+      }
+
       loader.load(
-        url,
+        activeUrl,
         (glb) => {
-          // Resolve with the original scene (unscaled, or base scale)
+          if (isLocalUrl) URL.revokeObjectURL(activeUrl);
           resolve(glb.scene);
         },
         undefined,
-        (error) => {
-          console.error(`Error loading GLB ${url}:`, error);
-          // Remove from cache on error so we can try again later
-          glbCache.delete(url);
-          reject(error);
+        (err) => {
+          if (isLocalUrl) URL.revokeObjectURL(activeUrl);
+          console.error(`Error loading GLB ${url}:`, err);
+          reject(err);
         }
       );
-    });
-    glbCache.set(url, loadPromise);
-  }
+    } catch (error) {
+      reject(error);
+    }
+  });
+
+  glbParseCache.set(url, promise);
+  return promise;
 };
 
 export const GLBLoader = (
@@ -34,26 +131,23 @@ export const GLBLoader = (
   target: { width: number; height: number; depth: number }
 ): Promise<THREE.Object3D> => {
   /**
-   * Loads a GLB model with caching.
-   * If the model is already loading or loaded, it reuses the promise/result.
-   * Returns a clone of the cached model, scaled to the target dimensions.
+   * Loads a GLB model directly from the network.
+   * Returns a clone of the model, scaled to the target dimensions.
    */
 
-  // Ensure loading is started
-  preloadGLB(url);
+  // Ensure loading starts directly
+  const loadPromise = loadAndParseGLB(url);
 
   // Return a new promise that resolves to a *clone* of the cached model
-  return glbCache.get(url)!.then((cachedModel) => {
+  return loadPromise.then((cachedModel) => {
     // Clone the model so we can modify it (scale, position) without affecting the cache
     const model = SkeletonUtils.clone(cachedModel) as THREE.Object3D;
 
-    // --- Apply Scaling and Centering Logic (Same as before) ---
+    // --- Apply Scaling and Centering Logic ---
     const box = new THREE.Box3().setFromObject(model);
     const size = new THREE.Vector3();
     box.getSize(size);
 
-    // Initial uniform scale based on bounding box
-    // Avoid division by zero if size is 0 (unlikely for valid models)
     if (size.x > 0 && size.y > 0 && size.z > 0) {
       const uniformScale = Math.min(
         target.width / size.x,
@@ -82,15 +176,17 @@ export const GLBLoader = (
     const finalBox = new THREE.Box3().setFromObject(model);
     const center = new THREE.Vector3();
     finalBox.getCenter(center);
+
+    // Instead of wrapping in a Group, we just apply the centering subtract
+    // and remember how much it was shifted so the toolbar logic can calculate bottom alignment!
     model.position.sub(center);
+    model.userData.centerOffset = center.clone(); // store original offset to compute actual bottom accurately
 
     // Shadow properties
     model.traverse((n: THREE.Object3D) => {
       if (n instanceof THREE.Mesh) {
         n.castShadow = true;
         n.receiveShadow = true;
-        // Ensure materials are cloned if necessary for independent modification
-        // For now, sharing materials is usually fine unless we change color per instance
       }
     });
 

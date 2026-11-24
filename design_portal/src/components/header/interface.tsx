@@ -3,5 +3,6 @@ export interface User {
   email: string;
   username: string;
   selected_organization_name: string;
+  organization_display_name: string;
   profile_picture: string | File | null;
 }

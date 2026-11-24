@@ -18,7 +18,7 @@ const View2d: NextPage = () => {
   const design3D = null;
 
   return (
-    <div className="fixed h-screen w-screen overflow-hidden">
+    <div className="bv-editor fixed h-screen w-screen overflow-hidden">
       <Header router={router} design3D={design3D} />
       <Toolbar />
       <PlannerGrid />

@@ -3,11 +3,10 @@ import { API_ENDPOINT } from '@/services/ApiEndPoints';
 import CommonService from '@/services/CommonService';
 import { REDIRECT } from '@/services/CommonStatus';
 import { assets } from '@/svgPaths';
-import Fullscreen from '@mui/icons-material/Fullscreen';
-import FullscreenExit from '@mui/icons-material/FullscreenExit';
 import Cookies from 'js-cookie';
 import { useRouter } from 'next/router';
 import { useEffect, useRef, useState } from 'react';
+import { LuChevronDown, LuLogOut, LuMaximize, LuMinimize, LuUserCog } from 'react-icons/lu';
 import { User } from './interface';
 
 const Header = ({
@@ -42,7 +41,7 @@ const Header = ({
 
   const handleLogout = () => {
     localStorage.removeItem('token');
-    Cookies.remove('token', { path: '' });
+    Cookies.remove('token', { path: '/' });
     router.push({
       pathname: REDIRECT.UNAUTHORIZED,
     });
@@ -101,33 +100,23 @@ const Header = ({
       <div
         className={`${styles.mainheader} ${isBorderRadius ? styles.withBorderRadius : styles.noBorderRadius} ${isDropdownOpen ? styles.dropdownShadow : ''}`}
       >
-        {/* Title Moved Inside for Flex Alignment */}
         <div className={styles.headerTitle}>
+          <span className={styles.headerEyebrow}>Bravento</span>
           <p>{dashboardName}</p>
         </div>
 
         <div className={styles.headerContent}>
-          {isFullscreen ? (
-            <FullscreenExit
-              onClick={toggleFullscreen}
-              style={{
-                width: '1.5rem',
-                cursor: 'pointer',
-                marginRight: '1rem',
-              }}
-            />
-          ) : (
-            <Fullscreen
-              onClick={toggleFullscreen}
-              style={{
-                width: '1.5rem',
-                cursor: 'pointer',
-                marginRight: '1rem',
-              }}
-            />
-          )}
+          <button
+            type="button"
+            className={styles.iconButton}
+            onClick={toggleFullscreen}
+            aria-label={isFullscreen ? 'Exit full screen' : 'Full screen'}
+            title={isFullscreen ? 'Exit full screen' : 'Full screen'}
+          >
+            {isFullscreen ? <LuMinimize aria-hidden="true" /> : <LuMaximize aria-hidden="true" />}
+          </button>
           <div
-            className={styles.profileIconContainer}
+            className={`${styles.profileIconContainer} ${isDropdownOpen ? styles.profileOpen : ''}`}
             onClick={handleProfileClick}
             ref={dropdownButtonRef}
           >
@@ -141,14 +130,19 @@ const Header = ({
             {userdetails?.username ? (
               <div className={styles.userInfo}>
                 <p className={styles.userName} title={userdetails.username}>
-                  {userdetails.username.length > 10
-                    ? userdetails.username.substring(0, 10) + '...'
-                    : userdetails.username}
+                  {(userdetails.name ?? userdetails.username ?? '').length > 10
+                    ? `${(userdetails.name ?? userdetails.username ?? '').slice(0, 10)}...`
+                    : (userdetails.name ?? userdetails.username ?? '')}
                 </p>
                 <p className={styles.userSubtitle}>
-                  {userdetails.selected_organization_name.length > 15
-                    ? userdetails.selected_organization_name.substring(0, 15) + '...'
-                    : userdetails.selected_organization_name}
+                  {(userdetails.organization_display_name || userdetails.selected_organization_name)
+                    ?.length > 15
+                    ? (
+                        userdetails.organization_display_name ||
+                        userdetails.selected_organization_name
+                      ).substring(0, 15) + '...'
+                    : userdetails.organization_display_name ||
+                      userdetails.selected_organization_name}
                 </p>
               </div>
             ) : (
@@ -157,28 +151,24 @@ const Header = ({
                 <sub className={styles.userSubtitle}></sub>
               </div>
             )}
-            <div>
-              <img src={assets.dropdown} className={styles.dropDown} alt="dropDown"></img>
-            </div>
+            <LuChevronDown className={styles.dropDown} aria-hidden="true" />
             {isDropdownOpen && (
               <div className={styles.dropdownMenuProfile} ref={dropdownMenuRef}>
                 <ul className={styles.ProfiledropdownList}>
-                  <li onClick={profileSetting}>Profile Settings</li>
-                  <img
-                    src={assets.edit_delete_line}
-                    alt="edit-delete-line"
-                    className={styles.profile_setting_line}
-                  />
-                  <li onClick={handleLogout}>Logout</li>
+                  <li onClick={profileSetting}>
+                    <LuUserCog aria-hidden="true" />
+                    Profile Settings
+                  </li>
+                  <hr className={styles.profile_setting_line} />
+                  <li onClick={handleLogout} className={styles.logoutRow}>
+                    <LuLogOut aria-hidden="true" />
+                    Logout
+                  </li>
                 </ul>
               </div>
             )}
           </div>
         </div>
-      </div>
-      {/* Old line separator kept just in case but likely hidden via CSS */}
-      <div className={styles.simpleLine}>
-        <img src={assets.header_part_line} alt="simpleLine" className={styles.simpleLine} />
       </div>
     </>
   );

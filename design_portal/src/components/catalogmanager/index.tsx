@@ -1,7 +1,23 @@
+import { MATERIAL_TYPE_ICONS } from '@/components/common/materialTypeIcons';
 import { API_ENDPOINT } from '@/services/ApiEndPoints';
 import commonService from '@/services/CommonService';
-import { assets } from '@/svgPaths';
 import React, { useCallback, useEffect, useState } from 'react';
+import {
+  LuArrowRight,
+  LuBox,
+  LuCheck,
+  LuChevronDown,
+  LuGripVertical,
+  LuInfo,
+  LuLibrary,
+  LuPackageOpen,
+  LuPencil,
+  LuPlus,
+  LuSearch,
+  LuTrash2,
+  LuTriangleAlert,
+  LuX,
+} from 'react-icons/lu';
 import { Material, MeshObjectData } from '../3dmodel/sceneCreator/interface';
 import { convertKeysToCamel, formatEnumLabel } from '../3dmodel/sceneCreator/utils';
 import Header from '../header/header';
@@ -326,248 +342,186 @@ const CatalogManager = () => {
   const [opentype, setOpentype] = useState(false);
   const [open, setOpen] = useState(false);
 
-  const iconList: { [key: string]: string } = {
-    Banding: assets.banding,
-    'Board Stock': assets.brandstok,
-    Caster: assets.caster,
-    Connector: assets.connector,
-    'Drawer Guide': assets.drawerguid,
-    Hinge: assets.hinge,
-    'Hinge Plate': assets.hinge,
-    Laminate: assets.brandstok,
-    Leg: assets.leg,
-    'Leg Leveler': assets.leg_leveler,
-    Miscellaneous: assets.mis,
-    Molding: assets.molding,
-    'Panel Stock': assets.panel_stock,
-    Pull: assets.pull,
-    Rod: assets.rod,
-    'Sliding Door Rail': assets.door_rail,
-    'Sliding Door Roller': assets.sliding_door_roller,
-    'Wire Basket': assets.wire_basket,
-  };
+  const iconList = MATERIAL_TYPE_ICONS;
+
+  const selectedPart = ruleParts.find((p) => p.id === selectedPartId);
+  const selectedMaterial = materialData.find((m) => m.id === selectedMaterialId);
 
   return (
-    <div className="flex h-screen flex-row overflow-hidden">
+    <div className={styles.page}>
       <Sidebar />
-      <div className="max-w-[85rem] flex-[3]">
-        <Header isBorderRadius={true} dashboardName="Catalog Manager" />
+      <div className={styles.rightside}>
+        <Header isBorderRadius={true} dashboardName="Catalog" />
 
-        <div className="justify-between">
+        <div className={styles.content}>
           {/* TOP TOOLBAR */}
-          <div className="mx-auto w-[90rem] max-w-[90rem]">
-            <div className="mt-[3rem] flex h-[5rem] flex-row gap-[0.5rem] pt-[1rem] pr-[1rem] pb-[0rem] pl-[7rem]">
-              <div className="mb-[1rem] flex items-center gap-[0.5rem] rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] bg-[linear-gradient(90deg,#fff_0%,#f5e5ff_100%)] p-[0rem] px-[1rem] py-[1.5rem]">
-                <div className="flex items-center">
-                  <div className="flex items-center gap-[0.75rem] pr-[1.4rem]">
-                    <span className="text-[0.8rem] font-[var(--font-family)] font-medium tracking-[0.02rem] text-[#392579]">
-                      Catalog Part
-                    </span>
-                    <div className="relative inline-flex items-center">
-                      <select
-                        onFocus={() => setOpenpart(true)}
-                        onBlur={() => setOpenpart(false)}
-                        className="h-[1.5rem] w-[8rem] cursor-pointer appearance-none rounded-[0.3rem] border-[0.1rem] border-[#d1d5db] bg-white px-[0.4rem] pr-[1.8rem] font-['Comfortaa'] text-[0.69rem] text-[#392579] outline-none"
-                        value={catalogType}
-                        onChange={(e) => setCatalogType(e.target.value)}
-                      >
-                        {catalogTypes.map((opt) => (
-                          <option key={opt.value} value={opt.value}>
-                            {formatEnumLabel(opt.label)}
-                          </option>
-                        ))}
-                      </select>
-                      <div className="pointer-events-none absolute right-[0.25rem] flex h-[1.1rem] w-[1.1rem] items-center justify-center rounded-[0.2rem] border-none border-[#d1d5db] bg-white">
-                        <img
-                          src={openpart ? assets.menuup : assets.menudown}
-                          className="h-[1.5rem] w-[1.5rem]"
-                        />
-                      </div>
-                    </div>
-                  </div>
-                  <div className="h-[3rem] w-[0.01rem] bg-[#D7D3E4]" />
-                  <div className="flex items-center gap-[0.75rem] pl-[1.4rem]">
-                    <span className="text-[0.8rem] font-[var(--font-family)] font-medium tracking-[0.02rem] text-[#392579]">
-                      Type
-                    </span>
-                    <div className="relative inline-flex items-center">
-                      <select
-                        onFocus={() => setOpentype(true)}
-                        onBlur={() => setOpentype(false)}
-                        className="rounded-md-[0.1rem] h-[1.5rem] w-[8.2rem] cursor-pointer appearance-none rounded-[0.3rem] border-[0.1rem] border-[#d1d5db] bg-[#ffff] p-[0rem] px-[0.4rem] py-[0.2rem] pl-[0.2rem] font-['Comfortaa'] text-[0.69rem] text-[#392579] outline-none"
-                        value={selectedCatalog?.id || ''}
-                        onChange={(e) => {
-                          const catalog = catalogData.find((c) => c.id === e.target.value);
-                          setSelectedCatalog(catalog || null);
-                        }}
-                      >
-                        {catalogData
-                          .filter((c) => c.isMain && c.type === catalogType.toLowerCase())
-                          .map((opt) => (
-                            <option key={opt.id} value={opt.id}>
-                              {formatEnumLabel(opt.name)}
-                            </option>
-                          ))}
-                      </select>
-                      <div className="pointer-events-none absolute right-[0.25rem] flex h-[1.1rem] w-[1.1rem] items-center justify-center rounded-[0.2rem] border-none border-[#d1d5db] bg-white">
-                        <img
-                          src={opentype ? assets.menuup : assets.menudown}
-                          className="h-[1.5rem] w-[1.5rem]"
-                        />
-                      </div>
-                    </div>
-                    <div className="ml-[1.7rem] h-[3rem] w-[0.01rem] bg-[#D7D3E4]" />
-                  </div>
-                </div>
-                <div className="flex">
-                  <img
-                    src={assets.addd}
-                    alt="Add"
-                    className="pointer-events-none ml-[34rem] h-[4.5rem] w-[4.5rem] cursor-pointer opacity-50"
-                    onClick={handleAddCatalog}
+          <div className={styles.toolbar}>
+            <div className={styles.toolbarIntro}>
+              <span className={styles.eyebrow}>
+                <LuLibrary aria-hidden="true" />
+                Furniture catalog
+              </span>
+              <h2 className={styles.toolbarTitle}>Assign materials to catalog parts</h2>
+              <p className={styles.toolbarSub}>
+                Pick a catalog item, choose a material type, then assign boards, edge banding or
+                hardware to each part.
+              </p>
+            </div>
+
+            <div className={styles.toolbarControls}>
+              <label className={styles.selectField}>
+                <span>Catalog part</span>
+                <div className={styles.selectWrap}>
+                  <select
+                    onFocus={() => setOpenpart(true)}
+                    onBlur={() => setOpenpart(false)}
+                    value={catalogType}
+                    onChange={(e) => setCatalogType(e.target.value)}
+                  >
+                    {catalogTypes.map((opt) => (
+                      <option key={opt.value} value={opt.value}>
+                        {formatEnumLabel(opt.label)}
+                      </option>
+                    ))}
+                  </select>
+                  <LuChevronDown
+                    className={`${styles.selectChevron} ${openpart ? styles.chevronOpen : ''}`}
+                    aria-hidden="true"
                   />
                 </div>
-              </div>
+              </label>
+
+              <label className={styles.selectField}>
+                <span>Type</span>
+                <div className={styles.selectWrap}>
+                  <select
+                    onFocus={() => setOpentype(true)}
+                    onBlur={() => setOpentype(false)}
+                    value={selectedCatalog?.id || ''}
+                    onChange={(e) => {
+                      const catalog = catalogData.find((c) => c.id === e.target.value);
+                      setSelectedCatalog(catalog || null);
+                    }}
+                  >
+                    {catalogData
+                      .filter((c) => c.isMain && c.type === catalogType.toLowerCase())
+                      .map((opt) => (
+                        <option key={opt.id} value={opt.id}>
+                          {formatEnumLabel(opt.name)}
+                        </option>
+                      ))}
+                  </select>
+                  <LuChevronDown
+                    className={`${styles.selectChevron} ${opentype ? styles.chevronOpen : ''}`}
+                    aria-hidden="true"
+                  />
+                </div>
+              </label>
+
+              <button
+                type="button"
+                className={styles.addCatalogButton}
+                onClick={handleAddCatalog}
+                disabled
+                title="Adding catalogs isn't available yet"
+              >
+                <LuPlus aria-hidden="true" />
+                New catalog
+              </button>
             </div>
           </div>
 
-          {/* MAIN CONTENT */}
-          <div className="flex h-[40rem] flex-row gap-[1rem] px-[0rem] pr-[6.5rem] pb-[1rem] pl-[7rem]">
-            {/* LEFT SIDEBAR */}
-            <div className="flex h-full max-h-[66vh] w-[14rem] flex-col justify-between rounded-[0.2rem] border-[0.1rem] border-[var(--border-color)] bg-[white] p-[0.2rem] p-[0rem]">
-              {/* ================= RULE LIST ================= */}
-              <div className="flex flex-[1] flex-col">
-                <div className="m-[0.5rem] flex flex-col gap-[0.3rem] space-y-[1] overflow-y-auto pr-[1]">
-                  {ruleMaterialTypes.map((type) => (
-                    <div
-                      key={type}
-                      onClick={() => setActiveRuleType(type)}
-                      className={`flex cursor-pointer items-center gap-[0.5rem] rounded-[0.2rem] p-[0.5rem] text-left text-[0.7rem] font-medium transition ${
-                        activeRuleType === type
-                          ? 'bg-[var(--primary-hover)] text-[var(--primary-color)]'
-                          : 'text-gray-500 hover:bg-gray-100'
-                      }`}
-                    >
-                      <img src={iconList[type]} alt="" className="h-[1rem] w-[1rem]" />
-                      {type}
-                    </div>
-                  ))}
+          {/* STEP 1: material types strip + item details */}
+          <section className={styles.typeBar}>
+            <div className={styles.typeBarMain}>
+              <div className={styles.panelHead}>
+                <span className={styles.stepBadge}>1</span>
+                <div>
+                  <h3>Material types</h3>
+                  <p>Used by this catalog item</p>
                 </div>
               </div>
-
-              {/* ================= DETAILS (BOTTOM) ================= */}
-              <div className="border-t-[0.1rem] border-[var(--border-color)] p-[0rem] pt-[2]">
-                <div className="rounded-[0.2rem] bg-white p-[0.3rem]">
-                  {/* HEADER */}
-                  <p className="mb-[1] text-center text-[0.75rem] font-medium text-[var(--primary-color)]">
-                    Part Details
-                  </p>
-
-                  {/* INPUTS */}
-                  <div className="mr-[1rem] ml-[0.5rem] flex flex-col justify-center gap-[0.1rem]">
-                    {/* NAME */}
-                    <div className="relative mb-[0.5rem] w-[11rem]">
-                      <fieldset className="h-[1.5rem] rounded-[0.3rem] border-[0.1rem] border-[var(--border-color)] bg-white px-[0.7rem] focus-within:border-[var(--primary-color)]">
-                        <legend className="px-[0.3rem] text-[0.55rem] text-[var(--border-color)]">
-                          Name
-                        </legend>
-
-                        {isEditingName ? (
-                          <input
-                            type="text"
-                            value={formatEnumLabel(selectedCatalog?.name || '')}
-                            onBlur={handleBlur(setIsEditingName)}
-                            onKeyDown={(e) => handleKeyDown(e, setIsEditingName)}
-                            className="mt-[0.1rem] w-full border-[0rem] bg-transparent text-[0.65rem] text-[var(--primary-color)] outline-none"
-                          />
-                        ) : (
-                          <div
-                            onClick={() => setIsEditingName(true)}
-                            className="mt-[0.1rem] w-full cursor-pointer text-[0.65rem] text-[var(--primary-color)]"
-                          >
-                            {formatEnumLabel(selectedCatalog?.name || '')}
-                          </div>
-                        )}
-                      </fieldset>
-                    </div>
-
-                    {/* DESCRIPTION */}
-                    <div className="relative mb-[0.5rem] w-[11rem]">
-                      <fieldset className="h-[1.5rem] rounded-[0.3rem] border-[0.1rem] border-[var(--border-color)] bg-white px-[0.7rem] focus-within:border-[var(--primary-color)]">
-                        <legend className="px-[0.3rem] text-[0.55rem] text-[var(--border-color)]">
-                          Description
-                        </legend>
-
-                        {isEditingDescription ? (
-                          <input
-                            type="text"
-                            value={selectedCatalog?.description}
-                            onBlur={handleBlur(setIsEditingDescription)}
-                            onKeyDown={(e) => handleKeyDown(e, setIsEditingDescription)}
-                            className="mt-[0.1rem] w-full border-[0rem] bg-transparent text-[0.65rem] text-[var(--primary-color)] outline-none"
-                          />
-                        ) : (
-                          <div
-                            onClick={() => setIsEditingDescription(true)}
-                            className="mt-[0.1rem] w-full cursor-pointer text-[0.65rem] text-[var(--primary-color)]"
-                          >
-                            {selectedCatalog?.description}
-                          </div>
-                        )}
-                      </fieldset>
-                    </div>
-                  </div>
-                </div>
+              <div className={styles.typeList} role="tablist" aria-label="Material types">
+                {ruleMaterialTypes.map((type) => {
+                  const TypeIcon = iconList[type] ?? LuBox;
+                  return (
+                    <button
+                      type="button"
+                      role="tab"
+                      aria-selected={activeRuleType === type}
+                      key={type}
+                      onClick={() => setActiveRuleType(type)}
+                      className={`${styles.typeItem} ${activeRuleType === type ? styles.typeItemActive : ''}`}
+                    >
+                      <span className={styles.typeIcon}>
+                        <TypeIcon aria-hidden="true" />
+                      </span>
+                      {type}
+                    </button>
+                  );
+                })}
+                {ruleMaterialTypes.length === 0 && (
+                  <p className={styles.mutedNote}>No material types on this item yet.</p>
+                )}
               </div>
             </div>
 
-            {/* Middle Table */}
-            <div className="h-full max-h-[66vh] w-full max-w-[31.05rem] overflow-hidden rounded-[0.2rem] border-[0.1rem] border-[var(--border-color)] bg-white p-[0rem]">
-              {/* ================= TABLE SCROLL CONTAINER ================= */}
-              <div className="overflow-y-auto pb-[0.75rem]">
-                <table className="w-full border-collapse border-spacing-0 p-[0rem]">
-                  {/* ================= TABLE HEADER ================= */}
-                  <thead className="sticky top-0 z-10 bg-[var(--primary-white)]">
+            <div className={styles.partDetails}>
+              <p className={styles.partDetailsTitle}>Item details</p>
+              <fieldset className={styles.detailField}>
+                <legend>Name</legend>
+                {isEditingName ? (
+                  <input
+                    type="text"
+                    value={formatEnumLabel(selectedCatalog?.name || '')}
+                    onBlur={handleBlur(setIsEditingName)}
+                    onKeyDown={(e) => handleKeyDown(e, setIsEditingName)}
+                  />
+                ) : (
+                  <div onClick={() => setIsEditingName(true)}>
+                    {formatEnumLabel(selectedCatalog?.name || '')}
+                  </div>
+                )}
+              </fieldset>
+              <fieldset className={styles.detailField}>
+                <legend>Description</legend>
+                {isEditingDescription ? (
+                  <input
+                    type="text"
+                    value={selectedCatalog?.description}
+                    onBlur={handleBlur(setIsEditingDescription)}
+                    onKeyDown={(e) => handleKeyDown(e, setIsEditingDescription)}
+                  />
+                ) : (
+                  <div onClick={() => setIsEditingDescription(true)}>
+                    {selectedCatalog?.description}
+                  </div>
+                )}
+              </fieldset>
+            </div>
+          </section>
+
+          {/* MAIN CONTENT */}
+          <div className={styles.workspace}>
+            {/* MIDDLE: parts table */}
+            <div className={styles.panel}>
+              <div className={styles.panelHead}>
+                <span className={styles.stepBadge}>2</span>
+                <div>
+                  <h3>Parts &amp; assigned material</h3>
+                  <p>{activeRuleType ? `Showing ${activeRuleType}` : 'Select a material type'}</p>
+                </div>
+              </div>
+              <div className={styles.tableScroll}>
+                <table className={styles.table}>
+                  <thead>
                     <tr>
-                      <th
-                        colSpan={3}
-                        className="h-[3rem] border-b-[0.1rem] border-[var(--sidebarhadding-background-color-20)] bg-[var(--thbackground-color)] p-[0rem] px-[0.5rem] text-left font-[700] text-[#392579]"
-                      >
-                        <div className="ml-[0rem] text-[0.85rem]">Material Properties</div>
-                      </th>
-                    </tr>
-
-                    <tr>
-                      <th className="h-[1.75rem] border-b-[0.1rem] border-[var(--sidebarhadding-background-color-20)] p-[0rem] px-[0.5rem] py-[0.3rem] text-left text-[0.85rem] font-[700] text-[#392579]">
-                        <div className="ml-[0rem] flex items-center text-left">
-                          Part
-                          <img
-                            src={assets.up_down_arrow}
-                            alt="Sort"
-                            className="ml-[0.3rem] h-[0.8rem] w-[0.8rem]"
-                          />
-                        </div>
-                      </th>
-
-                      <th className="h-[1.75rem] border-b-[0.1rem] border-[var(--sidebarhadding-background-color-20)] p-[0rem] px-[0.5rem] py-[0.3rem] text-left text-[0.85rem] font-[700] text-[#392579]">
-                        <div className="flex items-center">
-                          Material
-                          <img
-                            src={assets.up_down_arrow}
-                            alt="Sort"
-                            className="ml-[0.3rem] h-[0.8rem] w-[0.8rem]"
-                          />
-                        </div>
-                      </th>
-
-                      <th className="h-[1.75rem] border-b-[0.1rem] border-[var(--sidebarhadding-background-color-20)] p-[0rem] px-[0.5rem] py-[0.3rem] text-[0.85rem] font-[700] text-[#392579]">
-                        Action
-                      </th>
+                      <th>Part</th>
+                      <th>Material</th>
+                      <th className={styles.center}>Action</th>
                     </tr>
                   </thead>
-
-                  {/* ================= TABLE BODY ================= */}
-                  <tbody className="m-[0rem] p-[0rem]">
+                  <tbody>
                     {ruleParts.length > 0 &&
                       ruleParts.map((part) => (
                         <tr
@@ -578,278 +532,211 @@ const CatalogManager = () => {
                             handleAssignMaterial(part.id, materialId);
                           }}
                           onClick={() => setSelectedPartId(part.id)}
-                          className={`cursor-pointer p-[0rem] transition-colors duration-150 hover:bg-[var(--primary-hover)] ${
-                            selectedPartId === part.id
-                              ? 'bg-[var(--primary-hover)]'
-                              : 'bg-[var(--primary-white)]'
-                          } `}
+                          className={`${styles.row} ${selectedPartId === part.id ? styles.rowSelected : ''}`}
                         >
-                          <td className="h-[1.75rem] min-h-[1.75rem] border-b-[0.1rem] border-[var(--sidebarhadding-background-color-20)] px-[0.5rem]">
-                            <div className="flex h-full items-center text-left text-[0.72rem] text-[#3F3F46]">
-                              {formatEnumLabel(part.name)}
-                            </div>
+                          <td className={styles.partName}>{formatEnumLabel(part.name)}</td>
+                          <td>
+                            {part.material?.name ? (
+                              <span className={styles.materialChip}>{part.material.name}</span>
+                            ) : (
+                              <span className={styles.noMaterial}>No material assigned</span>
+                            )}
                           </td>
-
-                          <td className="h-[1.75rem] min-h-[1.75rem] border-b-[0.1rem] border-[var(--sidebarhadding-background-color-20)] px-[0.5rem]">
-                            <div className="flex h-full items-center text-[0.72rem] text-[#3F3F46]">
-                              {part.material?.name || 'NO MATERIAL ASSIGNED'}
-                            </div>
-                          </td>
-
-                          <td className="h-[1.75rem] min-h-[1.75rem] border-b-[0.1rem] border-[var(--sidebarhadding-background-color-20)] px-[0.5rem]">
-                            <div className="flex h-full items-center justify-center gap-[0.5rem]">
+                          <td>
+                            <div className={styles.rowActions}>
                               {/* DELETE BUTTON */}
                               <button
-                                disabled={true} //disable here (use condition if needed)
+                                disabled={true}
                                 onClick={() => handleShowDeletePopup()}
-                                className="m-[0rem] cursor-not-allowed gap-[1] rounded-md border-[0rem] bg-transparent p-[0rem] px-[0.5] py-[2.5] text-[0.6rem] text-[var(--delete-text-color)] opacity-40"
+                                className={styles.iconBtn}
+                                aria-label="Remove material"
                               >
-                                <img
-                                  src={assets.trash}
-                                  alt="delete"
-                                  className="m-[0rem] h-[0.9rem] min-h-[0.9rem] w-[0.9rem] min-w-[0.9rem] p-[0rem]"
-                                />
+                                <LuTrash2 aria-hidden="true" />
                               </button>
 
                               {/* EDIT BUTTON */}
-                              <button
-                                disabled={true} //disable here
-                                className="m-[0rem] cursor-not-allowed gap-[1] rounded-md border-[0rem] bg-transparent p-[0rem] px-[0.5] py-[2.5] text-[0.6rem] text-[var(--delete-text-color)] opacity-40"
-                              >
-                                <img
-                                  src={assets.edit}
-                                  alt="edit"
-                                  className="m-[0rem] h-[0.9rem] min-h-[0.9rem] w-[0.9rem] min-w-[0.9rem] p-[0rem]"
-                                />
+                              <button disabled={true} className={styles.iconBtn} aria-label="Edit">
+                                <LuPencil aria-hidden="true" />
                               </button>
                             </div>
                           </td>
                         </tr>
                       ))}
-                    {/* ===== EMPTY ROWS (Keep visual height) ===== */}
-                    {Array.from({
-                      length: Math.max(0, 18 - ruleParts.length),
-                    }).map((_, idx) => (
-                      <tr key={`empty-${idx}`} className="bg-[var(--primary-white)] p-[0rem]">
-                        <td className="h-[1.75rem] min-h-[1.75rem] border-b-[0.1rem] border-[var(--sidebarhadding-background-color-20)] p-[0rem] px-[0.5rem] py-[2.5]">
-                          &nbsp;
-                        </td>
-                        <td className="m-[0rem] h-[1.75rem] min-h-[1.75rem] border-b-[0.1rem] border-[var(--sidebarhadding-background-color-20)] p-[0rem] px-[0.5rem] py-[2.5]">
-                          &nbsp;
-                        </td>
-                        <td className="m-[0rem] h-[1.75rem] min-h-[1.75rem] border-b-[0.1rem] border-[var(--sidebarhadding-background-color-20)] p-[0rem] px-[0.5rem] py-[2.5]">
-                          &nbsp;
-                        </td>
-                      </tr>
-                    ))}
                   </tbody>
                 </table>
+                {ruleParts.length === 0 && (
+                  <div className={styles.emptyState}>
+                    <span className={styles.emptyIcon}>
+                      <LuPackageOpen aria-hidden="true" />
+                    </span>
+                    <strong>No parts to show</strong>
+                    <p>Choose a catalog item and a material type to see its parts.</p>
+                  </div>
+                )}
+              </div>
+              <div className={styles.panelFoot}>
+                <LuInfo aria-hidden="true" />
+                {selectedPart
+                  ? `Selected part: ${formatEnumLabel(selectedPart.name)}`
+                  : 'Click a part to select it, or drag a material onto it.'}
               </div>
             </div>
 
-            {/* RIGHT BOX */}
-            <div className="relative mb-[2rem] flex h-full flex-col gap-[1rem] rounded-[0.2rem] border-[0rem] bg-white p-[0rem]">
-              <div className="h-full max-h-[66vh] w-full max-w-[31.05rem] rounded-[0.2rem] border-[0.1rem] border-[var(--border-color)] bg-[var(--primary-white)] p-[0rem]">
-                {/* ================= TOP BAR ================= */}
-                <div className="sticky top-[0rem] m-[0rem] flex h-[3rem] items-center gap-[0.9375rem] border-b-[0.1rem] border-[var(--border-color)] bg-[var(--thbackground-color)] p-[0rem] px-[1rem]">
-                  {/* DROPDOWN */}
-                  <div className="relative sticky top-[0rem] inline-flex items-center">
-                    <select
-                      onFocus={() => setOpen(true)}
-                      onBlur={() => setOpen(false)}
-                      value={selectedMaterialType}
-                      onChange={(e) => setSelectedMaterialType(e.target.value)}
-                      className="m-[0rem] h-[1.7rem] w-[8rem] min-w-[8rem] appearance-none overflow-y-auto rounded-[0.3rem] rounded-md border-[0.1rem] border-[var(--border-color)] bg-transparent bg-white p-[0rem] pr-[1.5rem] pl-[0.4rem] font-['Comfortaa'] text-[0.65rem] text-[var(--primary-color)] focus:outline-[0rem] [&::-webkit-scrollbar]:w-[0.45rem] [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-[var(--primary-light-grey)] hover:[&::-webkit-scrollbar-thumb]:bg-[var(--primary-light-grey)] [&::-webkit-scrollbar-track]:bg-transparent"
-                    >
-                      {materialTypes.map((type) => (
-                        <option key={type} value={type}>
-                          {type}
-                        </option>
-                      ))}
-                    </select>
-                    <div className="pointer-events-none absolute right-[0.25rem] flex h-[1.1rem] w-[1.1rem] items-center justify-center rounded-[0.2rem] border-none border-[#d1d5db] bg-white">
-                      <img
-                        src={open ? assets.menuup : assets.menudown}
-                        className="m-[0rem] h-[1.5rem] w-[1.5rem] p-[0rem]"
-                      />
-                    </div>
-                  </div>
-
-                  {/* SEARCH */}
-                  <div className="relative sticky top-[0rem] flex items-center">
-                    <svg
-                      className="pointer-events-none absolute right-3 h-[1.0625rem] p-[0rem] pb-[0.125rem] pl-[0.1875rem] text-[#392579]/50"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth={1}
-                    >
-                      <circle cx="11" cy="11" r="5" />
-                      <path d="m20 20-4.35-4.35" />
-                    </svg>
-                    <input
-                      type="text"
-                      placeholder="Search"
-                      value={materialSearch}
-                      onChange={(e) => setMaterialSearch(e.target.value)}
-                      className="m-[0rem] h-[1.5rem] w-[15rem] flex-1 rounded-[0.4375rem] border-[0.1rem] border-[#C4BED7]/50 bg-white p-[0rem] pr-9 pl-[1.5rem] text-[0.65rem] text-[#A0AEC0] outline-none focus:border-purple-400 focus:ring-[0.1rem] focus:ring-purple-300"
-                    />
-                  </div>
-                </div>
-
-                {/* ================= TABLE ================= */}
-                <div
-                  style={{
-                    scrollbarWidth: 'thin',
-                    scrollbarColor: 'var(--scrollbar-color-2) transparent',
-                  }}
-                  className="h-full max-h-[59vh] w-full max-w-[31.05rem] overflow-y-auto [&::-webkit-scrollbar]:w-[0.35rem] [&::-webkit-scrollbar-button]:block [&::-webkit-scrollbar-button]:h-[0.6rem] [&::-webkit-scrollbar-button]:bg-transparent [&::-webkit-scrollbar-button:single-button:vertical:decrement]:bg-[var(--scrollbar-color-2)] [&::-webkit-scrollbar-button:single-button:vertical:increment]:bg-[var(--scrollbar-color-2)] [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-[var(--scrollbar-color-2)] [&::-webkit-scrollbar-track]:bg-transparent"
-                >
-                  <table className="w-full border-collapse border-spacing-0 bg-[var(--primary-white)] p-[0rem]">
-                    {/* ================= TABLE HEADER ================= */}
-                    <thead className="sticky top-[0rem] z-[10] bg-[var(--primary-white)] p-[0rem]">
-                      <tr className="p-[0rem]">
-                        <th className="m-[0rem] h-[1.75rem] w-[2.5rem] border-b-[0.1rem] border-[var(--sidebarhadding-background-color-20)] p-[0rem]"></th>
-
-                        <th className="m-[0rem] h-[1.75rem] border-b-[0.1rem] border-[var(--sidebarhadding-background-color-20)] p-[0rem] py-[0.3rem] text-left text-[0.87rem] font-semibold text-[var(--primary-color)]">
-                          <div className="flex items-center p-[0rem]">
-                            Material Name
-                            <img
-                              src={assets.up_down_arrow}
-                              alt="Sort"
-                              className="ml-[0.3rem] h-[0.8rem] w-[0.8rem] p-[0rem]"
-                            />
-                          </div>
-                        </th>
-
-                        <th className="m-[0rem] h-[1.75rem] border-b-[0.1rem] border-[var(--sidebarhadding-background-color-20)] p-[0rem] py-[0.3rem] text-left text-[0.87rem] font-semibold text-[var(--primary-color)]">
-                          <div className="flex items-center p-[0rem]">
-                            Description
-                            <img
-                              src={assets.up_down_arrow}
-                              alt="Sort"
-                              className="ml-[0.3rem] h-[0.8rem] w-[0.8rem]"
-                            />
-                          </div>
-                        </th>
-                      </tr>
-                    </thead>
-
-                    {/* ================= TABLE BODY ================= */}
-                    <tbody>
-                      {filteredMaterials.length > 0 ? (
-                        <>
-                          {filteredMaterials.map((row) => (
-                            <tr
-                              key={row.id}
-                              draggable
-                              onDragStart={(e) => e.dataTransfer.setData('materialId', row.id)}
-                              onClick={() => setSelectedMaterialId(row.id)}
-                              className={`cursor-pointer transition-colors duration-150 hover:bg-[var(--primary-table-hover)] ${
-                                selectedMaterialId === row.id
-                                  ? 'bg-[var(--primary-hover)]'
-                                  : 'bg-[var(--primary-white)]'
-                              } `}
-                            >
-                              {/* RADIO */}
-                              <td className="m-[0rem] h-[1.75rem] min-h-[1.75rem] border-b-[0.1rem] border-[var(--sidebarhadding-background-color-20)] p-[0rem] px-[1rem]">
-                                <input
-                                  type="radio"
-                                  checked={selectedMaterialId === row.id}
-                                  onChange={() => setSelectedMaterialId(row.id)}
-                                  className="m-[0rem] h-[1.15rem] min-h-[1.15rem] w-[1.15rem] min-w-[1.15rem] cursor-pointer border-[0.1rem] p-[0rem]"
-                                />
-                              </td>
-
-                              {/* NAME */}
-                              <td className="m-[0rem] h-[1.75rem] border-b-[0.1rem] border-[var(--sidebarhadding-background-color-20)] p-[0rem] text-left text-[0.65rem] text-[#3F3F46]">
-                                {row.name}
-                              </td>
-
-                              {/* DESCRIPTION */}
-                              <td className="m-[0rem] h-[1.75rem] border-b-[0.1rem] border-[var(--sidebarhadding-background-color-20)] p-[0rem] text-left text-[0.65rem] text-[#3F3F46]">
-                                {row.description}
-                              </td>
-                            </tr>
-                          ))}
-
-                          {/* ===== Spacer row to avoid cut-off ===== */}
-                          <tr>
-                            <td colSpan={3} className="h-[0.75rem]"></td>
-                          </tr>
-                        </>
-                      ) : (
-                        <tr>
-                          <td
-                            colSpan={3}
-                            className="h-[1.75rem] text-center text-[0.65rem] text-gray-400"
-                          >
-                            No materials found
-                          </td>
-                        </tr>
-                      )}
-                    </tbody>
-                  </table>
+            {/* RIGHT: material library */}
+            <div className={styles.panel}>
+              <div className={styles.panelHead}>
+                <span className={styles.stepBadge}>3</span>
+                <div>
+                  <h3>Material library</h3>
+                  <p>Choose a material to assign</p>
                 </div>
               </div>
-              {/* ================= BOTTOM ACTION BAR ================= */}
-              <div className="sticky bottom-0 z-20 border-[0rem] border-[var(--border-color)] bg-white p-[0.3rem] p-[0rem]">
-                <div
-                  onClick={handleAssignMaterialButton}
-                  className="flex h-[1.875rem] w-[8.9375rem] cursor-pointer items-center gap-[0.5rem] rounded-[0.1rem] border-[0.1rem] border-[var(--border-color)] bg-[var(--primary-white)] bg-white p-[0rem] px-[0.875rem] text-[0.8rem] text-[var(--primary-color)]"
-                >
-                  <img
-                    src={assets.addMaterialIcon}
-                    alt="Add Material"
-                    className="h-[1rem] w-[1rem]"
+              <div className={styles.libraryBar}>
+                <div className={styles.selectWrap}>
+                  <select
+                    onFocus={() => setOpen(true)}
+                    onBlur={() => setOpen(false)}
+                    value={selectedMaterialType}
+                    onChange={(e) => setSelectedMaterialType(e.target.value)}
+                  >
+                    {materialTypes.map((type) => (
+                      <option key={type} value={type}>
+                        {type}
+                      </option>
+                    ))}
+                  </select>
+                  <LuChevronDown
+                    className={`${styles.selectChevron} ${open ? styles.chevronOpen : ''}`}
+                    aria-hidden="true"
                   />
-                  Add to Material
                 </div>
+                <div className={styles.searchWrap}>
+                  <LuSearch className={styles.searchIcon} aria-hidden="true" />
+                  <input
+                    type="text"
+                    placeholder="Search materials…"
+                    value={materialSearch}
+                    onChange={(e) => setMaterialSearch(e.target.value)}
+                  />
+                </div>
+              </div>
+
+              <div className={styles.tableScroll}>
+                <table className={styles.table}>
+                  <thead>
+                    <tr>
+                      <th className={styles.radioCol}></th>
+                      <th>Material name</th>
+                      <th>Description</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredMaterials.length > 0 ? (
+                      filteredMaterials.map((row) => (
+                        <tr
+                          key={row.id}
+                          draggable
+                          onDragStart={(e) => e.dataTransfer.setData('materialId', row.id)}
+                          onClick={() => setSelectedMaterialId(row.id)}
+                          className={`${styles.row} ${selectedMaterialId === row.id ? styles.rowSelected : ''}`}
+                        >
+                          <td className={styles.radioCol}>
+                            <input
+                              type="radio"
+                              checked={selectedMaterialId === row.id}
+                              onChange={() => setSelectedMaterialId(row.id)}
+                              className={styles.radio}
+                            />
+                          </td>
+                          <td className={styles.partName}>
+                            <span className={styles.dragHandle}>
+                              <LuGripVertical aria-hidden="true" />
+                            </span>
+                            {row.name}
+                          </td>
+                          <td className={styles.descCell}>{row.description}</td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td colSpan={3} className={styles.noRows}>
+                          No materials found
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* BOTTOM ACTION BAR */}
+              <div className={styles.assignBar}>
+                <div className={styles.assignSummary}>
+                  <span>
+                    {selectedPart ? formatEnumLabel(selectedPart.name) : 'No part selected'}
+                  </span>
+                  <LuArrowRight aria-hidden="true" />
+                  <span>{selectedMaterial ? selectedMaterial.name : 'No material selected'}</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleAssignMaterialButton}
+                  className={styles.assignButton}
+                >
+                  <LuCheck aria-hidden="true" />
+                  Assign to part
+                </button>
               </div>
             </div>
           </div>
         </div>
       </div>
+
       {/* add catalog popup  */}
       {showPopup && (
         <div className={styles.createpopupOverlay}>
           <div className={styles.createpopup}>
-            <img src={assets.createicon} className={styles.createicon} alt="createicon" />
-            <img
-              src={assets.close}
-              className={styles.createclose}
-              alt="close"
-              onClick={() => setShowPopup(false)}
-            />
-            <div className={styles.create_right_side}>
-              <h2>Add Catalog</h2>
-              <p>Please enter a name for this Material.</p>
-              <form
-                className={styles.form}
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  // handleCreateDesign();
-                }}
+            <div className={styles.modalHead}>
+              <span className={styles.modalIcon}>
+                <LuPlus aria-hidden="true" />
+              </span>
+              <div>
+                <h2>Add catalog</h2>
+                <p>Give the new catalog item a name and short description.</p>
+              </div>
+              <button
+                type="button"
+                className={styles.createclose}
+                aria-label="Close"
+                onClick={() => setShowPopup(false)}
               >
-                <div className={styles.createinputGroup}>
-                  {fields.map((field, index) => (
-                    <InputField
-                      className={styles.inputField}
-                      key={index}
-                      borderColor="var(--primary-color-grey-2)"
-                      {...field}
-                      error=""
-                    />
-                  ))}
-                </div>
-              </form>
+                <LuX aria-hidden="true" />
+              </button>
             </div>
+            <form
+              className={styles.form}
+              onSubmit={(e) => {
+                e.preventDefault();
+                // handleCreateDesign();
+              }}
+            >
+              <div className={styles.createinputGroup}>
+                {fields.map((field, index) => (
+                  <InputField
+                    className={styles.inputField}
+                    key={index}
+                    borderColor="var(--primary-color-grey-2)"
+                    {...field}
+                    error=""
+                  />
+                ))}
+              </div>
+            </form>
             <div className={styles.createButtonGrop}>
               <button className={styles.cancelcreateButton} onClick={() => setShowPopup(false)}>
                 Cancel
               </button>
               <button className={styles.createcontinueButton} onClick={handleCreateCatalog}>
-                continue
+                Continue
               </button>
             </div>
           </div>
@@ -866,23 +753,22 @@ const CatalogManager = () => {
           }}
         >
           <div className={styles.deletepopup}>
-            <img
-              src={assets.deletepopup}
-              alt="deletepopupicon"
-              className={styles.deletepopupicon}
-            />
-
-            <img
-              src={assets.close}
-              alt="close"
+            <button
+              type="button"
+              aria-label="Close"
               onClick={() => setshowDeletePopup(false)}
               className={styles.close}
-            />
-
+            >
+              <LuX aria-hidden="true" />
+            </button>
+            <span className={styles.deletepopupicon}>
+              <LuTriangleAlert aria-hidden="true" />
+            </span>
             <div className={styles.right_side}>
-              <h2>Delete Design</h2>
+              <h2>Remove material?</h2>
               <p className={styles.deletemassage}>
-                Are you sure you want to delete this design? This action cannot be undone.
+                This removes the assigned material from the selected part. This can&apos;t be
+                undone.
               </p>
             </div>
             <div className={styles.deleteButtonGrop}>
@@ -890,7 +776,7 @@ const CatalogManager = () => {
                 Cancel
               </button>
               <button className={styles.deleteButton} onClick={handleDeleteAssignMaterial}>
-                Delete
+                Remove
               </button>
             </div>
           </div>

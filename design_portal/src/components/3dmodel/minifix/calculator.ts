@@ -8,26 +8,83 @@ import type {
   PlankData,
 } from './types';
 
-function getFaceId(normal: Position, name?: string): string {
-  const { x, y, z } = normal;
+type AxisKey = 'x' | 'y' | 'z';
 
-  if (name?.toUpperCase().includes('VERTICAL')) {
-    if (x >= 1) return '1';
-    if (z >= 1) return '2';
-    if (y <= -1) return '3';
-    if (z <= -1) return '4';
-    if (y >= 1) return '5';
-    if (x <= -1) return '6';
+function getSortedDimensions(plank: PlankData): { axis: AxisKey; value: number }[] {
+  const dimensions: { axis: AxisKey; value: number }[] = [
+    { axis: 'x', value: plank.width },
+    { axis: 'y', value: plank.height },
+    { axis: 'z', value: plank.depth },
+  ];
+  return dimensions.sort((a, b) => b.value - a.value);
+}
+
+function getPlankFrame(plank: PlankData): {
+  primaryAxis: AxisKey;
+  secondaryAxis: AxisKey;
+  thicknessAxis: AxisKey;
+  primarySize: number;
+  secondarySize: number;
+} {
+  const sorted = getSortedDimensions(plank);
+  return {
+    primaryAxis: sorted[0].axis,
+    secondaryAxis: sorted[1].axis,
+    thicknessAxis: sorted[2].axis,
+    primarySize: sorted[0].value,
+    secondarySize: sorted[1].value,
+  };
+}
+
+function axisComponent(v: Position, axis: AxisKey): number {
+  if (axis === 'x') return v.x;
+  if (axis === 'y') return v.y;
+  return v.z;
+}
+
+function pointAxis01(point: Position, plank: PlankData, axis: AxisKey): number {
+  const { position: center } = plank;
+  if (axis === 'x') return point.x - center.x + plank.width / 2;
+  if (axis === 'y') return point.y - center.y + plank.height / 2;
+  return point.z - center.z + plank.depth / 2;
+}
+
+function getFaceId(direction: Position, plank: PlankData): string {
+  const frame = getPlankFrame(plank);
+  const localDirection = {
+    x: axisComponent(direction, frame.primaryAxis),
+    y: axisComponent(direction, frame.secondaryAxis),
+    z: axisComponent(direction, frame.thicknessAxis),
+  };
+
+  const absDirection = {
+    x: Math.abs(localDirection.x),
+    y: Math.abs(localDirection.y),
+    z: Math.abs(localDirection.z),
+  };
+
+  let dominantAxis: AxisKey = 'x';
+  let dominantValue = absDirection.x;
+  if (absDirection.y > dominantValue) {
+    dominantAxis = 'y';
+    dominantValue = absDirection.y;
+  }
+  if (absDirection.z > dominantValue) {
+    dominantAxis = 'z';
   }
 
-  if (y >= 1) return '1';
-  if (z >= 1) return '2';
-  if (x >= 1) return '3';
-  if (z <= -1) return '4';
-  if (x <= -1) return '5';
-  if (y <= -1) return '6';
+  if (dominantAxis === 'x') return localDirection.x >= 0 ? '4' : '3';
+  if (dominantAxis === 'y') return localDirection.y >= 0 ? '5' : '6';
+  if (dominantAxis === 'z') return localDirection.z >= 0 ? '1' : '2';
 
   return '0';
+}
+
+function getFaceIdForHole(drillType: '1' | '2', direction: Position, plank: PlankData): string {
+  if (drillType === '2') {
+    return direction.y >= 0 ? '5' : '6';
+  }
+  return getFaceId(direction, plank);
 }
 
 function calculateLocal2D(
@@ -35,33 +92,35 @@ function calculateLocal2D(
   plank: PlankData,
   faceId: string
 ): { x: number; y: number } {
-  const { position: center, width, height, depth } = plank;
-  const halfW = width / 2;
-  const halfH = height / 2;
-  const halfD = depth / 2;
+  const frame = getPlankFrame(plank);
 
-  const dx = point.x - center.x;
-  const dy = point.y - center.y;
-  const dz = point.z - center.z;
+  const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
+  const primaryCoord = clamp(pointAxis01(point, plank, frame.primaryAxis), 0, frame.primarySize);
+  const secondaryCoord = clamp(
+    pointAxis01(point, plank, frame.secondaryAxis),
+    0,
+    frame.secondarySize
+  );
 
   switch (faceId) {
     case '1':
-      return { x: dx + halfW, y: dz + halfD };
-
-    case '6':
-      return { x: dx + halfW, y: dz + halfD };
+      return { x: primaryCoord, y: frame.secondarySize };
 
     case '2':
-      return { x: dx + halfW, y: dy + halfH };
-
-    case '4':
-      return { x: -dx + halfW, y: dy + halfH };
+      return { x: primaryCoord, y: 0 };
 
     case '3':
-      return { x: -dz + halfD, y: dy + halfH };
+      return { x: frame.primarySize, y: secondaryCoord };
+
+    case '4':
+      return { x: 0, y: secondaryCoord };
 
     case '5':
-      return { x: dz + halfD, y: dy + halfH };
+      return { x: primaryCoord, y: secondaryCoord };
+
+    case '6':
+      // Opposite face mirrors around the panel center line.
+      return { x: frame.primarySize - primaryCoord, y: secondaryCoord };
 
     default:
       return { x: 0, y: 0 };
@@ -75,10 +134,12 @@ export function calculateMinifixPositions(
 ): MinifixConnection[] {
   const minifixConnections: MinifixConnection[] = [];
 
-  // Resolve standards
-  let activeStandards = MINIFIX_STANDARDS;
+  // Resolve standards — always start from MINIFIX_STANDARDS so every field
+  // (including new ones like camBoltProtrusion / boltTailDepth) has a default,
+  // then overlay any custom values the caller provided.
+  let activeStandards: typeof MINIFIX_STANDARDS = MINIFIX_STANDARDS;
   if (typeof spacing === 'object') {
-    activeStandards = spacing;
+    activeStandards = { ...MINIFIX_STANDARDS, ...spacing };
   }
   const effectiveSpacing =
     (typeof spacing === 'number' ? spacing : activeStandards.minifixDistance) ||
@@ -200,7 +261,10 @@ function calculateSingleConnectionData(
   }
 
   const housingFaceNormal = { x: -intoHousingDir.x, y: -intoHousingDir.y, z: -intoHousingDir.z };
-  const housingFaceId = getFaceId(housingFaceNormal, housingPlank.name);
+  const housingFaceId = getFaceIdForHole('1', housingFaceNormal, housingPlank);
+
+  // Todo :-smit/harsh create for camBoltProtrusion
+  const camBoltProtrusion: number = standards.camBoltProtrusion ?? 34;
 
   const screwHousingHole: MinifixHole = {
     type: 'SCREW',
@@ -210,13 +274,16 @@ function calculateSingleConnectionData(
     drillType: '1',
     face: housingFaceId,
     diameter: standards.screwDiameter,
-    length: standards.screwLength - 10,
+    length: camBoltProtrusion, // must reach exactly the cam center
     localPosition2D: calculateLocal2D(jointPos, housingPlank, housingFaceId),
   };
 
   const intoBoltDir = { x: -intoHousingDir.x, y: -intoHousingDir.y, z: -intoHousingDir.z };
   const boltFaceNormal = { x: -intoBoltDir.x, y: -intoBoltDir.y, z: -intoBoltDir.z };
-  const boltFaceId = getFaceId(boltFaceNormal, boltPlank.name);
+  const boltFaceId = getFaceIdForHole('2', boltFaceNormal, boltPlank);
+
+  // Todo :-smit/harsh create for bolt tail depth
+  const boltTailDepth: number = standards.boltTailDepth ?? 13;
 
   const screwMatingHole: MinifixHole = {
     type: 'SCREW',
@@ -226,15 +293,14 @@ function calculateSingleConnectionData(
     drillType: '2',
     face: boltFaceId,
     diameter: standards.screwDiameter,
-    length: standards.screwLength - 30,
+    length: boltTailDepth,
     localPosition2D: calculateLocal2D(jointPos, boltPlank, boltFaceId),
   };
 
-  const camDist = 34;
   const camPos3D = {
-    x: jointPos.x + intoHousingDir.x * camDist,
-    y: jointPos.y + intoHousingDir.y * camDist,
-    z: jointPos.z + intoHousingDir.z * camDist,
+    x: jointPos.x + intoHousingDir.x * camBoltProtrusion,
+    y: jointPos.y + intoHousingDir.y * camBoltProtrusion,
+    z: jointPos.z + intoHousingDir.z * camBoltProtrusion,
   };
 
   let camDir = { x: 0, y: -1, z: 0 };
@@ -242,20 +308,19 @@ function calculateSingleConnectionData(
     camDir = { x: 1, y: 0, z: 0 };
   }
 
+  const camFaceDirection = { x: -camDir.x, y: -camDir.y, z: -camDir.z };
+  const camFaceId = getFaceIdForHole('2', camFaceDirection, housingPlank);
+
   const camHole: MinifixHole = {
     type: 'CAM',
     connectorId: id,
     position: camPos3D,
     direction: camDir,
     drillType: '2',
-    face: getFaceId({ x: -camDir.x, y: -camDir.y, z: -camDir.z }, housingPlank.name),
+    face: camFaceId,
     diameter: standards.camDiameter,
     depth: standards.camDepth,
-    localPosition2D: calculateLocal2D(
-      camPos3D,
-      housingPlank,
-      getFaceId({ x: -camDir.x, y: -camDir.y, z: -camDir.z })
-    ),
+    localPosition2D: calculateLocal2D(camPos3D, housingPlank, camFaceId),
   };
 
   // DOWEL HOLES

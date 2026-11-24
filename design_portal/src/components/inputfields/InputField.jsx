@@ -103,22 +103,22 @@ const InputField = ({
             sx={{
               '& .MuiOutlinedInput-root': {
                 '& fieldset': {
-                  border: `0.063rem solid ${error ? 'red' : borderColor} !important`,
-                  borderRadius: '0.2rem !important',
+                  border: `0.063rem solid ${error ? 'var(--bv-danger)' : borderColor} !important`,
+                  borderRadius: 'var(--bv-radius-sm) !important',
                   padding: '0rem 0.4rem',
                 },
                 '&:hover fieldset': {
                   border: `0.063rem solid ${borderColor} !important`,
                 },
                 '&.Mui-focused fieldset': {
-                  border: '0.063rem solid var(--primary-color-grey-2) !important',
+                  border: '0.063rem solid var(--bv-primary) !important',
                 },
                 '&.Mui-error fieldset': {
-                  border: '0.063rem solid red !important',
+                  border: '0.063rem solid var(--bv-danger) !important',
                 },
               },
               '& .MuiInputBase-input': {
-                color: 'var(--primary-color)',
+                color: 'var(--bv-text)',
                 padding: '0rem 0.5rem 0rem 0.7rem',
                 height: '2.8rem',
                 fontFamily: 'var(--font-family)',
@@ -126,8 +126,8 @@ const InputField = ({
                 borderRadius: '0.4rem !important',
               },
               '& .MuiInputLabel-root': {
-                color: error ? 'red' : 'var(--text-gray)',
-                fontFamily: 'var(--font-family)',
+                color: error ? 'var(--bv-danger)' : 'var(--bv-text-subtle)',
+                fontFamily: 'var(--bv-font)',
                 fontSize: '0.8rem',
                 transform: 'translate(1rem, 0.6rem)',
                 transition: 'all 0.2s ease-out',

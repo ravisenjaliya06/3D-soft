@@ -1,202 +1,123 @@
 import { assets } from '@/svgPaths';
 import Konva from 'konva';
-import { KonvaEventObject } from 'konva/lib/Node';
 import { useRouter } from 'next/router';
-import { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { FaExclamationTriangle } from 'react-icons/fa';
-import { Circle, Layer, Path, Rect, Stage, Transformer } from 'react-konva';
+import { Circle, Layer, Line, Path, Rect, Stage, Transformer } from 'react-konva';
+import { useDispatch, useSelector } from 'react-redux';
 import * as THREE from 'three';
-import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { detectPlankByBoundingBox } from '../../utils/plankUtils';
+import { GEOMETRY } from '../sceneCreator/interface';
 import { RootState } from '../store';
+import { updateObject } from '../store/dataSlice';
+import { getDesignIdsFromRouter } from '../utils/routeIds';
+import { PANEL_TOOLS, SLOTTING_DEPTH } from './constants';
+import { useStageManager } from './hooks/useStageManager';
+import { useThreeScene } from './hooks/useThreeScene';
 import styles from './panelDesign.module.css';
+import { Axis2D, CornerType, CurveControls, Hole, Point } from './types';
+import { getHoleBounds, getPanelBounds } from './utils/boundsUtils';
+import {
+  alignExtrudedGeometry,
+  buildPathData,
+  buildThreeShape,
+  createHolePath,
+  getTangents,
+} from './utils/geometryUtils';
+import { getSnappedPosition } from './utils/snappingUtils';
 
-interface PanelDesignerProps {
-  state: RootState;
-}
-
-export default function PanelDesigner({ state }: PanelDesignerProps) {
+import { normalizeUVs, updateEdges } from '../sceneCreator/utils';
+import { DimensionHighlighter } from './components/DimensionHighlighter';
+import { HoleOffsetInputs } from './components/HoleOffsetInputs';
+import { PanelHeader } from './components/PanelHeader';
+import { HorizontalRuler, VerticalRuler } from './components/Rulers';
+import { PreviewSidebar, PropertiesSidebar } from './components/Sidebars';
+/**
+ * PanelDesigner Component
+ *
+ * A comprehensive 2D/3D interface for designing and modifying furniture panels.
+ * Features:
+ * - 2D Sketching: Draw outlines and "dig" holes using Konva.
+ * - Real-time 3D Preview: Local Three.js scene synchronized with 2D edits.
+ * - Geometry Refinement: Corner rounding, curve controls, and snapping system.
+ * - State Synchronization: Projects 2D edits back to the main 3D global scene.
+ *
+ * @param state Global application state (RootState)
+ */
+export default function PanelDesigner() {
   const router = useRouter();
-  const designId = window.location.pathname.split('/')[2];
-  const stageRef = useRef<Konva.Stage | null>(null);
-  const panelRef = useRef<Konva.Rect | null>(null);
-  const transformerRef = useRef<Konva.Transformer | null>(null);
-  const threeCanvasRef = useRef<HTMLCanvasElement>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
+  const dispatch = useDispatch();
 
-  const [stageSize, setStageSize] = useState({ width: 0, height: 0 });
-  const [stageScale, setStageScale] = useState(1);
-  const [stagePosition, setStagePosition] = useState({ x: 0, y: 0 });
-  const [selectedShapeName] = useState<string | null>(null);
-  const [showConfirmExit, setShowConfirmExit] = useState(false);
+  // Use live selectors instead of static prop
+  const selectedObject = useSelector((state: RootState) => state.data.selectedObject);
+  const selectedChildObject = useSelector((state: RootState) => state.data.selectedChildObject);
+  const scene = useSelector((state: RootState) => state.scene.scene);
+  const objects = useSelector((state: RootState) => state.data.objects);
+  // Select only the parts of state needed by hooks to avoid unnecessary re-renders
+  const stateSubset = useSelector((state: RootState) => ({
+    scene: { scene: state.scene.scene },
+    data: {
+      selectedObject: state.data.selectedObject,
+      selectedChildObject: state.data.selectedChildObject,
+    },
+  }));
+
+  const { designId = '', versionId = '' } = getDesignIdsFromRouter(router);
+  const transformerRef = useRef<Konva.Transformer | null>(null);
+
+  // States
   const [panelWidth, setpanelWidth] = useState(0);
   const [panelHeight, setpanelHeight] = useState(0);
-  const [panel] = useState({
-    x: 0,
-    y: 0,
-    width: 349,
-    height: 1960,
-  });
-  const [dimensions] = useState({
-    x: panel.x,
-    y: panel.y,
-    width: panel.width,
-    height: panel.height,
-  });
-  const [shapePoints, setShapePoints] = useState<{ x: number; y: number }[]>([]);
+  const [shapePoints, setShapePoints] = useState<Point[]>([]);
   const [cornerRadius, setcornerRadius] = useState<number[]>([]);
-  const [originalGeometry, setOriginalGeometry] = useState<THREE.BoxGeometry | undefined>();
+  const [cornerTypes, setCornerTypes] = useState<CornerType[]>([]);
+  const [originalGeometry, setOriginalGeometry] = useState<THREE.BufferGeometry | undefined>();
   const [activeTool, setActiveTool] = useState<string | null>(null);
-  const [holes, setHoles] = useState<
-    {
-      x: number;
-      y: number;
-      width: number;
-      height: number;
-      type: 'rect' | 'circle';
-    }[]
-  >([]);
+  const [holes, setHoles] = useState<Hole[]>([]);
+  const [plankThickness, setPlankThickness] = useState(18);
+  const [selectedHoleIndex, setSelectedHoleIndex] = useState<number | null>(null);
+  const [selectedPointIndex, setSelectedPointIndex] = useState<number | null>(null);
+  const [selectedLineIndex, setSelectedLineIndex] = useState<number | null>(null);
+  const [hoveredHoleIndex, setHoveredHoleIndex] = useState<number | null>(null);
+  const [hoveredPanel, setHoveredPanel] = useState(false);
+  const [hoveredCornerIndex, setHoveredCornerIndex] = useState<number | null>(null);
+  const [hoveredHolePointIndex, setHoveredHolePointIndex] = useState<number | null>(null);
+  const [hoveredLineIndex, setHoveredLineIndex] = useState<number | null>(null);
+  const [showConfirmExit, setShowConfirmExit] = useState(false);
+  const [isRotated2D, setIsRotated2D] = useState(false);
+  const [thicknessAxis, setThicknessAxis] = useState<'x' | 'y' | 'z'>('y');
+
+  const [previewPos, setPreviewPos] = useState({
+    x: typeof window !== 'undefined' ? window.innerWidth - 280 : 0,
+    y: 25,
+  });
+  const [drawingPos, setDrawingPos] = useState({
+    x: typeof window !== 'undefined' ? window.innerWidth - 280 : 0,
+    y: 293,
+  });
+  const [isDraggingPreview, setIsDraggingPreview] = useState(false);
+  const [isDraggingDrawing, setIsDraggingDrawing] = useState(false);
+
   const [isDrawingHole, setIsDrawingHole] = useState(false);
-  const [newHoleStart, setNewHoleStart] = useState<{
-    x: number;
-    y: number;
-  } | null>(null);
-  const [tempHole, setTempHole] = useState<{
-    x: number;
-    y: number;
-    width: number;
-    height: number;
-    type: 'rect' | 'circle';
-  } | null>(null);
-  const [holeShape, setHoleShape] = useState<'rect' | 'circle'>('rect');
+  const [newHoleStart, setNewHoleStart] = useState<Point | null>(null);
+  const [tempHole, setTempHole] = useState<Hole | null>(null);
+  const [holeShape, setHoleShape] = useState<'rect' | 'circle' | 'polygon'>('rect');
   const [selectedCornerIndex, setSelectedCornerIndex] = useState<number | null>(null);
-  const [showRadiusInput, setShowRadiusInput] = useState(false);
 
-  // Initialize corner radii when shapePoints change
-  useEffect(() => {
-    const numPoints = shapePoints.length || 4;
-    if (cornerRadius.length !== numPoints) {
-      setcornerRadius(Array(numPoints).fill(0));
-    }
-  }, [shapePoints]);
+  // Selected-hole offset inputs (relative to panel top-left)
+  const [holeLeftInput, setHoleLeftInput] = useState<string>('');
+  const [holeTopInput, setHoleTopInput] = useState<string>('');
 
-  // Initialize 3D scene and set originalGeometry
-  useEffect(() => {
-    const selectedObject = state?.data?.selectedObject;
-    const selectedChildObject = state?.data?.selectedChildObject;
+  // Refs for persistent Three.js objects
+  const selectedChildMeshRef = useRef<THREE.Mesh | null>(null);
 
-    const scene = state?.scene?.scene;
-    if (!threeCanvasRef.current || !scene) return;
-
-    // 1. Find the selected meshes FIRST
-    const selectedMesh = scene.children.find((obj) => obj.userData?.objectId === selectedObject);
-    const selectedChildMesh = selectedMesh?.children.find(
-      (obj) => obj.userData?.objectId === selectedChildObject
-    );
-
-    if (!(selectedChildMesh instanceof THREE.Mesh)) return;
-
-    // 2. Remove existing meshes SAFELY (using spread to avoid skipped indices)
-    [...scene.children].forEach((obj) => {
-      if (obj instanceof THREE.Mesh && obj !== selectedMesh) {
-        scene.remove(obj);
-      }
-    });
-
-    if (selectedChildMesh.geometry) {
-      setOriginalGeometry(selectedChildMesh.geometry);
-
-      const plankInfo = detectPlankByBoundingBox(selectedChildMesh);
-      const { size, thicknessAxis } = plankInfo;
-      const currentThickness = size[thicknessAxis];
-
-      if (thicknessAxis === 'y') {
-        setpanelWidth(size.x);
-        setpanelHeight(size.z);
-      } else if (thicknessAxis === 'x') {
-        setpanelWidth(size.z);
-        setpanelHeight(size.y);
-      } else {
-        setpanelWidth(size.x);
-        setpanelHeight(size.y);
-      }
-
-      const shape = new THREE.Shape();
-      let pW = 0;
-      let pH = 0;
-
-      if (thicknessAxis === 'y') {
-        pW = size.x;
-        pH = size.z;
-      } else if (thicknessAxis === 'x') {
-        pW = size.z;
-        pH = size.y;
-      } else {
-        pW = size.x;
-        pH = size.y;
-      }
-
-      shape.moveTo(-pW / 2, -pH / 2);
-      shape.lineTo(pW / 2, -pH / 2);
-      shape.lineTo(pW / 2, pH / 2);
-      shape.lineTo(-pW / 2, pH / 2);
-      shape.lineTo(-pW / 2, -pH / 2);
-
-      const extrudeSettings: THREE.ExtrudeGeometryOptions = {
-        depth: currentThickness,
-        bevelEnabled: false,
-      };
-      const newGeometry = new THREE.ExtrudeGeometry(shape, extrudeSettings);
-      newGeometry.computeBoundingBox();
-      newGeometry.computeBoundingSphere();
-
-      newGeometry.userData.oldGeometry = selectedChildMesh.geometry;
-
-      selectedChildMesh.geometry.dispose();
-      selectedChildMesh.geometry = newGeometry;
-      selectedChildMesh.position.z = selectedChildMesh.position.z - currentThickness / 2;
-    }
-
-    if (selectedMesh) {
-      scene.add(selectedMesh);
-    }
-
-    const width = containerRef.current?.clientWidth || 300;
-    const height = containerRef.current?.clientHeight || 200;
-
-    const renderer = new THREE.WebGLRenderer({
-      canvas: threeCanvasRef.current,
-      antialias: true,
-      alpha: true,
-    });
-    renderer.setSize(width, height);
-    renderer.setPixelRatio(window.devicePixelRatio);
-
-    const camera = new THREE.PerspectiveCamera(45, width / height, 1, 10000);
-    camera.position.set(0, 1, 4.5);
-    camera.lookAt(0, 0, 0);
-
-    const controls = new OrbitControls(camera, renderer.domElement);
-    controls.enableDamping = true;
-
-    const animate = () => {
-      requestAnimationFrame(animate);
-      controls.update();
-      renderer.render(scene, camera);
-    };
-    animate();
-
-    return () => {
-      renderer.dispose();
-      controls.dispose();
-    };
-  }, [
-    state?.scene?.scene,
-    state?.data?.selectedObject,
-    state?.data?.selectedChildObject,
-    router,
-    designId,
-  ]);
+  // Pen Tool & Curve Tool States
+  const [isDrawingShape, setIsDrawingShape] = useState(false);
+  const [currentDrawingPoints, setCurrentDrawingPoints] = useState<Point[]>([]);
+  const [mousePos, setMousePos] = useState<Point | null>(null);
+  const [activeCurveDragKey, setActiveCurveDragKey] = useState<string | null>(null);
+  const [curveControls, setCurveControls] = useState<CurveControls>({});
+  const [snappingGuides, setSnappingGuides] = useState<{ type: Axis2D; value: number }[]>([]);
 
   const defaultPanelPoints = [
     { x: -panelWidth / 2, y: -panelHeight / 2 },
@@ -205,777 +126,1598 @@ export default function PanelDesigner({ state }: PanelDesignerProps) {
     { x: -panelWidth / 2, y: panelHeight / 2 },
   ];
 
-  const updateMeshGeometry = (
-    points: { x: number; y: number }[],
-    holes: {
-      x: number;
-      y: number;
-      width: number;
-      height: number;
-      type: string;
-    }[],
-    cornerRadius: number[]
-  ) => {
-    /** Updates the geometry of the selected mesh based on points, holes, and corner radiuses. */
+  const clamp = (v: number, min: number, max: number) => Math.max(min, Math.min(max, v));
 
-    const selectedObject = state?.data?.selectedObject;
-    const selectedChildObject = state?.data?.selectedChildObject;
-    const scene = state?.scene?.scene;
+  const toTopRightPoint = (p: Point, panelB: { minY: number; maxX: number }): Point => ({
+    x: panelB.maxX - p.x,
+    y: p.y - panelB.minY,
+  });
 
-    if (!scene || !selectedObject || !selectedChildObject) return;
+  const fromTopRightPoint = (p: Point, panelB: { minY: number; maxX: number }): Point => ({
+    x: panelB.maxX - p.x,
+    y: panelB.minY + p.y,
+  });
 
-    const selectedMesh = scene.children.find((obj) => obj.userData?.objectId === selectedObject);
-    const selectedChildMesh = selectedMesh?.children.find(
-      (obj) => obj.userData?.objectId === selectedChildObject
-    );
+  const holeFromStoredOutput = (hole: Hole, panelB: { minY: number; maxX: number }): Hole => {
+    const ref = (hole as any)?.coord_ref;
+    if (ref !== 'top_right') return hole;
 
-    if (!(selectedChildMesh instanceof THREE.Mesh)) return;
-
-    const shape = new THREE.Shape();
-    const n = points.length;
-
-    const getTangents = (i: number) => {
-      const p0 = points[(i - 1 + n) % n];
-      const p1 = points[i];
-      const p2 = points[(i + 1) % n];
-      const r = cornerRadius[i] || 0;
-
-      if (r <= 0) {
-        return {
-          tp_in: { x: p1.x, y: p1.y },
-          tp_out: { x: p1.x, y: p1.y },
-          center: { x: p1.x, y: p1.y },
-          start_angle: 0,
-          end_angle: 0,
-          det: 0,
-        };
-      }
-
-      let dx = p1.x - p0.x;
-      let dy = p1.y - p0.y;
-      let len = Math.hypot(dx, dy);
-      const u_in_x = dx / len;
-      const u_in_y = dy / len;
-
-      dx = p2.x - p1.x;
-      dy = p2.y - p1.y;
-      len = Math.hypot(dx, dy);
-      const u_out_x = dx / len;
-      const u_out_y = dy / len;
-
-      const dot = u_in_x * u_out_x + u_in_y * u_out_y;
-      const alpha = Math.acos(Math.max(-1, Math.min(1, dot)));
-
-      const det = u_in_x * u_out_y - u_in_y * u_out_x;
-      if (det <= 0 || alpha === 0) {
-        return {
-          tp_in: { x: p1.x, y: p1.y },
-          tp_out: { x: p1.x, y: p1.y },
-          center: { x: p1.x, y: p1.y },
-          start_angle: 0,
-          end_angle: 0,
-          det: det,
-        };
-      }
-
-      const half_alpha = alpha / 2;
-      const tan_half = Math.tan(half_alpha);
-      let l = r * tan_half;
-
-      const len_prev = Math.hypot(p1.x - p0.x, p1.y - p0.y);
-      const len_next = Math.hypot(p2.x - p1.x, p2.y - p1.y);
-      if (l > len_prev / 2 || l > len_next / 2) {
-        l = Math.min(len_prev / 2, len_next / 2);
-      }
-
-      const tp_in_x = p1.x - u_in_x * l;
-      const tp_in_y = p1.y - u_in_y * l;
-      const tp_out_x = p1.x + u_out_x * l;
-      const tp_out_y = p1.y + u_out_y * l;
-
-      const n_in_x = -u_in_y;
-      const n_in_y = u_in_x;
-      const n_out_x = -u_out_y;
-      const n_out_y = u_out_x;
-
-      let bis_x = n_in_x + n_out_x;
-      let bis_y = n_in_y + n_out_y;
-      len = Math.hypot(bis_x, bis_y);
-      bis_x /= len;
-      bis_y /= len;
-
-      const sin_half = Math.sin(half_alpha);
-      const d = r / sin_half;
-
-      const center_x = p1.x + bis_x * d;
-      const center_y = p1.y + bis_y * d;
-
-      let vec_x = tp_in_x - center_x;
-      let vec_y = tp_in_y - center_y;
-      const start_angle = Math.atan2(vec_y, vec_x);
-
-      vec_x = tp_out_x - center_x;
-      vec_y = tp_out_y - center_y;
-      let end_angle = Math.atan2(vec_y, vec_x);
-      if (end_angle < start_angle) end_angle += 2 * Math.PI;
-
-      return {
-        tp_in: { x: tp_in_x, y: tp_in_y },
-        tp_out: { x: tp_out_x, y: tp_out_y },
-        center: { x: center_x, y: center_y },
-        start_angle,
-        end_angle,
-        det,
-      };
+    const transformed: Hole = {
+      ...hole,
+      x: panelB.maxX - hole.x,
+      y: panelB.minY + hole.y,
     };
 
-    const tangents0 = getTangents(0);
-    shape.moveTo(tangents0.tp_out.x, tangents0.tp_out.y);
-
-    for (let i = 1; i <= n; i++) {
-      const j = i % n;
-      const tangents = getTangents(j);
-      shape.lineTo(tangents.tp_in.x, tangents.tp_in.y);
-      const r = cornerRadius[j] || 0;
-      if (r > 0) {
-        shape.absarc(
-          tangents.center.x,
-          tangents.center.y,
-          r,
-          tangents.start_angle,
-          tangents.end_angle,
-          false
-        );
-      }
+    if (hole.points?.length) {
+      transformed.points = hole.points.map((p) => fromTopRightPoint(p, panelB));
     }
 
-    // === ADD HOLES ===
-    holes.forEach((hole) => {
-      if (hole.type === 'circle') {
-        const radiusX = hole.width / 2;
-        const radiusY = hole.height / 2;
-        const centerX = hole.x + radiusX;
-        const centerY = hole.y + radiusY;
+    return transformed;
+  };
 
-        const circlePath = new THREE.Path();
-        circlePath.absellipse(centerX, centerY, radiusX, radiusY, 0, Math.PI * 2, false);
-        shape.holes.push(circlePath);
-      } else {
-        const holePath = new THREE.Path();
-        holePath.moveTo(hole.x, hole.y);
-        holePath.lineTo(hole.x + hole.width, hole.y);
-        holePath.lineTo(hole.x + hole.width, hole.y + hole.height);
-        holePath.lineTo(hole.x, hole.y + hole.height);
-        holePath.lineTo(hole.x, hole.y);
-        shape.holes.push(holePath);
+  const holeToTopRightOutput = (hole: Hole, panelB: { minY: number; maxX: number }): Hole => {
+    const transformed: any = {
+      ...hole,
+      // Keep existing local x/y untouched for current 3D/editor logic.
+      x_top_right: panelB.maxX - hole.x,
+      y_top_right: hole.y - panelB.minY,
+    };
+
+    if (hole.points?.length) {
+      transformed.points_top_right = hole.points.map((p) => toTopRightPoint(p, panelB));
+    }
+
+    return transformed as Hole;
+  };
+
+  const commitSelectedHoleOffsets = (nextLeftMm: number, nextTopMm: number) => {
+    if (selectedHoleIndex === null) return;
+    const hole = holes[selectedHoleIndex];
+    if (!hole) return;
+
+    const panelB = getPanelBounds(shapePoints, defaultPanelPoints);
+    const holeB = getHoleBounds(hole);
+
+    const maxLeft = Math.max(0, panelB.width - holeB.width);
+    const maxTop = Math.max(0, panelB.height - holeB.height);
+
+    const left = clamp(nextLeftMm, 0, maxLeft);
+    const top = clamp(nextTopMm, 0, maxTop);
+
+    const targetMinX = panelB.minX + left;
+    const targetMinY = panelB.minY + top;
+
+    setHoles((prev) => {
+      const next = [...prev];
+      const current = next[selectedHoleIndex];
+      if (!current) return prev;
+
+      if (current.type === 'polygon' && current.points?.length) {
+        const curB = getHoleBounds(current);
+        const dx = targetMinX - curB.minX;
+        const dy = targetMinY - curB.minY;
+        const movedPoints = current.points.map((p) => ({ x: p.x + dx, y: p.y + dy }));
+        next[selectedHoleIndex] = {
+          ...current,
+          points: movedPoints,
+          x: targetMinX,
+          y: targetMinY,
+          width: curB.width,
+          height: curB.height,
+        };
+        return next;
       }
+
+      next[selectedHoleIndex] = {
+        ...current,
+        x: targetMinX,
+        y: targetMinY,
+      };
+      return next;
     });
 
-    let staticDirectionValue = 18;
+    // Keep inputs in sync with clamped values
+    setHoleLeftInput(left.toFixed(1));
+    setHoleTopInput(top.toFixed(1));
+  };
 
-    if (originalGeometry) {
-      // Use cached plank info if available, or re-detect
-      const plankInfo = detectPlankByBoundingBox(selectedChildMesh);
-      const { size, thicknessAxis } = plankInfo;
-
-      staticDirectionValue = size[thicknessAxis];
-
-      if (thicknessAxis === 'y') {
-        // HORIZONTAL: Rotate X 90deg
-        selectedChildMesh.rotation.x = Math.PI / 2;
-        selectedChildMesh.rotation.y = 0;
-        selectedChildMesh.rotation.z = 0;
-      } else if (thicknessAxis === 'x') {
-        // VERTICAL: Rotate Y 90deg
-        selectedChildMesh.rotation.x = 0;
-        selectedChildMesh.rotation.y = Math.PI / 2;
-        selectedChildMesh.rotation.z = 0;
-      } else {
-        // BACK/FRONT (z): No rotation (Logic: Draw locally X-Y, extrude Z)
-        // Check if we need rotation? Usually Back Panel is in X-Y plane.
-        selectedChildMesh.rotation.x = 0;
-        selectedChildMesh.rotation.y = 0;
-        selectedChildMesh.rotation.z = 0;
-      }
-
-      if (!selectedChildMesh.userData.isPerfect) {
-        selectedChildMesh.userData.isPerfect = true;
-      }
-    } else {
-      console.warn('originalGeometry is not defined');
-    }
-
-    const extrudeSettings = {
-      depth: staticDirectionValue,
-      bevelEnabled: false,
-    };
-
-    const newGeometry = new THREE.ExtrudeGeometry(shape, extrudeSettings);
-
-    newGeometry.userData.oldGeometry = originalGeometry;
-
-    selectedChildMesh.geometry.dispose();
-    selectedChildMesh.geometry = newGeometry;
-    selectedChildMesh.material = selectedChildMesh.material.clone();
+  const parseMm = (s: string) => {
+    const n = Number(String(s).replace(/[^\d.+-]/g, ''));
+    return Number.isFinite(n) ? n : null;
   };
 
   useEffect(() => {
-    const points = shapePoints.length > 0 ? shapePoints : defaultPanelPoints;
-    updateMeshGeometry(points, holes, cornerRadius);
-  }, [shapePoints, holes, cornerRadius, defaultPanelPoints, updateMeshGeometry]);
-
-  useEffect(() => {
-    const transformer = transformerRef.current;
-    const selectedNode = panelRef.current;
-
-    if (transformer && selectedShapeName === 'panel' && selectedNode) {
-      transformer.nodes([selectedNode]);
-      transformer.getLayer()?.batchDraw();
+    if (selectedHoleIndex === null || !holes[selectedHoleIndex]) {
+      setHoleLeftInput('');
+      setHoleTopInput('');
+      return;
     }
-  }, [selectedShapeName]);
+    const panelB = getPanelBounds(shapePoints, defaultPanelPoints);
+    const holeB = getHoleBounds(holes[selectedHoleIndex]);
+    setHoleLeftInput((holeB.minX - panelB.minX).toFixed(1));
+    setHoleTopInput((holeB.minY - panelB.minY).toFixed(1));
+  }, [selectedHoleIndex, holes, shapePoints, panelWidth, panelHeight]);
+
+  // Hooks
+  const { stageRef, stageSize, stageScale, stagePosition, handleWheel, handleStageDrag } =
+    useStageManager(panelWidth, panelHeight);
+
+  const { threeCanvasRef, containerRef } = useThreeScene(
+    shapePoints,
+    defaultPanelPoints,
+    cornerRadius,
+    cornerTypes,
+    holes,
+    curveControls,
+    plankThickness,
+    isRotated2D,
+    stateSubset
+  );
 
   useEffect(() => {
-    const updateSize = () => {
-      const width = window.innerWidth;
-      const height = window.innerHeight - 60;
-      setStageSize({ width, height });
-      setStagePosition({ x: width / 2, y: height / 2 });
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setIsDrawingShape(false);
+        setCurrentDrawingPoints([]);
+        setSnappingGuides([]);
+        setMousePos(null);
+
+        setIsDrawingHole(false);
+        setTempHole(null);
+        setNewHoleStart(null);
+
+        setActiveCurveDragKey(null);
+        setActiveTool(null);
+      }
     };
-    updateSize();
-    window.addEventListener('resize', updateSize);
-    return () => window.removeEventListener('resize', updateSize);
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
-  const handleWheel = (e: KonvaEventObject<WheelEvent>) => {
-    /** Handles mouse wheel zooming for the Konva stage with position and scale adjustments. */
+  /**
+   * Effect hook to ensure corner radius and types arrays match the number of shape points.
+   */
+  useEffect(() => {
+    const numPoints = shapePoints.length || 4;
+    if (cornerRadius.length !== numPoints) setcornerRadius(Array(numPoints).fill(0));
+    if (cornerTypes.length !== numPoints) setCornerTypes(Array(numPoints).fill('default'));
+  }, [shapePoints]);
 
-    e.evt.preventDefault();
-    const stage = stageRef.current;
-    const scaleBy = 1.05;
-    const oldScale = stageScale;
-    const pointer = stage?.getPointerPosition();
-    const x = pointer?.x ? pointer.x : 0;
-    const y = pointer?.y ? pointer.y : 0;
-
-    const mousePointTo = {
-      x: (x - stagePosition.x) / oldScale,
-      y: (y - stagePosition.y) / oldScale,
-    };
-
-    const direction = e.evt.deltaY > 0 ? -1 : 1;
-    const newScale = direction > 0 ? oldScale * scaleBy : oldScale / scaleBy;
-
-    const newPos = {
-      x: x - mousePointTo.x * newScale,
-      y: y - mousePointTo.y * newScale,
-    };
-
-    setStageScale(newScale);
-    setStagePosition(newPos);
-  };
-
-  const renderHorizontalRuler = () => {
-    /** Renders the horizontal ruler with tick marks and distance labels for the editor view. */
-
-    const ticks = [];
-    const tickSpacing = 100;
-    const viewWidth = stageSize.width;
-    const offset = stagePosition.x;
-    const scale = stageScale;
-    const totalTicks = Math.ceil(viewWidth / (tickSpacing * scale)) * 2;
-
-    for (let i = -totalTicks; i < totalTicks; i++) {
-      const x = i * tickSpacing * scale + offset;
-
-      ticks.push(
-        <div
-          key={`h-tick-${i}`}
-          className={styles.tickLine}
-          style={{
-            left: `${x}px`,
-            top: 0,
-            width: '1px',
-            height: '10px',
-          }}
-        />
-      );
-
-      ticks.push(
-        <div
-          key={`h-label-${i}`}
-          className={styles.tickLabel}
-          style={{
-            left: `${x - 2}px`,
-            top: '10px',
-          }}
-        >
-          {i * tickSpacing}
-        </div>
-      );
-    }
-
-    return <div className={styles.rulerHorizontal}>{ticks}</div>;
-  };
-
-  const renderVerticalRuler = () => {
-    /** Renders the vertical ruler with tick marks and distance labels for the editor view. */
-
-    const ticks = [];
-    const tickSpacing = 100;
-    const viewHeight = stageSize.height;
-    const offset = stagePosition.y;
-    const scale = stageScale;
-    const totalTicks = Math.ceil(viewHeight / (tickSpacing * scale)) * 2;
-
-    for (let i = -totalTicks; i < totalTicks; i++) {
-      const y = i * tickSpacing * scale + offset;
-
-      ticks.push(
-        <div
-          key={`v-tick-${i}`}
-          className={styles.tickLine}
-          style={{
-            top: `${y}px`,
-            left: 0,
-            width: '10px',
-            height: '1px',
-          }}
-        />
-      );
-
-      ticks.push(
-        <div
-          key={`v-label-${i}`}
-          className={styles.tickLabel}
-          style={{
-            top: `${y - 2}px`,
-            left: '10px',
-            writingMode: 'vertical-rl',
-            transform: 'rotate(180deg)',
-          }}
-        >
-          {i * tickSpacing}
-        </div>
-      );
-    }
-
-    return <div className={styles.rulerVertical}>{ticks}</div>;
-  };
-
-  const handleCancel = () => {
-    /** Opens a confirmation dialog before exiting the current editor or panel view. */
-
-    setShowConfirmExit(true);
-  };
-
-  const confirmExit = () => {
-    /** Confirms the exit action and redirects the user to the design view page. */
-
-    router.push(`/design/${designId}`);
-  };
-
-  const closeModal = () => {
-    /** Closes the confirmation modal without exiting the current editor. */
-
-    setShowConfirmExit(false);
-  };
-
-  const handleComplete = () => {
-    if (!designId) {
-      console.warn('designId missing');
+  // Handle selection changes and initialize dimensions
+  useEffect(() => {
+    if (!scene || !selectedChildObject) {
+      selectedChildMeshRef.current = null;
+      if (designId) {
+        if (versionId) {
+          router.push(`/design/${designId}/${versionId}`);
+        } else {
+          router.push(`/design/${designId}`);
+        }
+      }
       return;
     }
 
-    router.push(`/design/${designId}`);
-  };
+    // Find the mesh in the scene
+    let mesh: THREE.Mesh | undefined;
 
-  const tools = [
-    { name: 'Undo', icon: assets.undo },
-    { name: 'Redo', icon: assets.redo },
-    { name: 'Draw the outline of the board', icon: assets.pencil },
-    { name: 'Dig', icon: assets.dig },
-    { name: 'Slotting', icon: assets.slotting },
-    { name: 'Curve', icon: assets.curve },
-  ];
-
-  const buildPathData = (points: { x: number; y: number }[], cornerRadius: number[]) => {
-    /** Builds an SVG-style path string with rounded corners from shape points and corner radiuses. */
-
-    const n = points.length;
-    if (n < 3) return '';
-
-    const getTangents = (i: number) => {
-      const p0 = points[(i - 1 + n) % n];
-      const p1 = points[i];
-      const p2 = points[(i + 1) % n];
-      const r = cornerRadius[i] || 0;
-
-      if (r <= 0) {
-        return {
-          tp_in: { x: p1.x, y: p1.y },
-          tp_out: { x: p1.x, y: p1.y },
-          det: 0,
-        };
-      }
-
-      let dx = p1.x - p0.x;
-      let dy = p1.y - p0.y;
-      let len = Math.hypot(dx, dy);
-      const u_in_x = dx / len;
-      const u_in_y = dy / len;
-
-      dx = p2.x - p1.x;
-      dy = p2.y - p1.y;
-      len = Math.hypot(dx, dy);
-      const u_out_x = dx / len;
-      const u_out_y = dy / len;
-
-      const dot = u_in_x * u_out_x + u_in_y * u_out_y;
-      const alpha = Math.acos(Math.max(-1, Math.min(1, dot)));
-
-      const det = u_in_x * u_out_y - u_in_y * u_out_x;
-      if (det <= 0 || alpha === 0) {
-        return {
-          tp_in: { x: p1.x, y: p1.y },
-          tp_out: { x: p1.x, y: p1.y },
-          det,
-        };
-      }
-
-      const half_alpha = alpha / 2;
-      const tan_half = Math.tan(half_alpha);
-      let l = r * tan_half;
-
-      const len_prev = Math.hypot(p1.x - p0.x, p1.y - p0.y);
-      const len_next = Math.hypot(p2.x - p1.x, p2.y - p1.y);
-      if (l > len_prev / 2 || l > len_next / 2) {
-        l = Math.min(len_prev / 2, len_next / 2);
-      }
-
-      const tp_in_x = p1.x - u_in_x * l;
-      const tp_in_y = p1.y - u_in_y * l;
-      const tp_out_x = p1.x + u_out_x * l;
-      const tp_out_y = p1.y + u_out_y * l;
-
-      return {
-        tp_in: { x: tp_in_x, y: tp_in_y },
-        tp_out: { x: tp_out_x, y: tp_out_y },
-        det,
-      };
-    };
-
-    const tangents0 = getTangents(0);
-    let path = `M ${tangents0.tp_out.x} ${tangents0.tp_out.y}`;
-
-    for (let i = 1; i <= n; i++) {
-      const j = i % n;
-      const tangents = getTangents(j);
-      path += ` L ${tangents.tp_in.x} ${tangents.tp_in.y}`;
-      const r = cornerRadius[j] || 0;
-      if (r > 0) {
-        path += ` A ${r} ${r} 0 0 1 ${tangents.tp_out.x} ${tangents.tp_out.y}`;
+    // 1. Try finding within the selectedObject group (if provided)
+    if (selectedObject) {
+      const selectedMesh = scene.children.find((obj) => obj.userData?.objectId === selectedObject);
+      if (selectedMesh) {
+        mesh = selectedMesh.children.find(
+          (obj) => obj.userData?.objectId === selectedChildObject
+        ) as THREE.Mesh | undefined;
       }
     }
 
-    path += ' Z';
-    return path;
-  };
+    // 2. Fallback: Search the entire scene for the child object ID
+    if (!mesh) {
+      scene.traverse((child) => {
+        if (child instanceof THREE.Mesh && child.userData?.objectId === selectedChildObject) {
+          mesh = child;
+        }
+      });
+    }
 
-  const handleCurveClick = (index: number) => {
-    /** Handles user clicks on corner points to enable radius input editing. */
+    if (!mesh) {
+      // We still don't redirect yet to allow for async loading/syncing
+      selectedChildMeshRef.current = null;
+      return;
+    }
 
-    setSelectedCornerIndex(index);
-    setShowRadiusInput(true);
-  };
+    selectedChildMeshRef.current = mesh;
 
-  const renderRadiusInput = () => {
-    /** Renders an input box overlay for editing the corner radius of a selected vertex. */
+    // Initialize dimensions and original geometry
+    if (mesh.geometry) {
+      if (!originalGeometry || originalGeometry.uuid !== mesh.geometry.uuid) {
+        if (!mesh.geometry.userData.isModified) {
+          setOriginalGeometry(mesh.geometry.clone());
+        }
 
-    if (!showRadiusInput || selectedCornerIndex === null) return null;
+        const objectData = objects?.find((obj: any) => obj.id === selectedChildObject);
+        if (objectData?.panelDesign) {
+          const pd = objectData.panelDesign;
+          const loadedOutline =
+            pd.outline?.length > 0 ? (pd.outline as Point[]) : (defaultPanelPoints as Point[]);
+          if (pd.outline?.length > 0) setShapePoints(pd.outline);
+          if (pd.cornerRadius?.length > 0) setcornerRadius(pd.cornerRadius);
+          if (pd.cornerTypes?.length > 0) setCornerTypes(pd.cornerTypes);
+          if (pd.curveControls) setCurveControls(pd.curveControls);
+          if (pd.holes?.length > 0) {
+            const panelB = getPanelBounds(loadedOutline, defaultPanelPoints);
+            setHoles(pd.holes.map((h: Hole) => holeFromStoredOutput(h, panelB)));
+          }
+        } else {
+          setShapePoints([]);
+          setcornerRadius([]);
+          setCornerTypes([]);
+          setCurveControls({});
+          setHoles([]);
+        }
+      }
 
+      const plankInfo = detectPlankByBoundingBox(mesh);
+      const { size, thicknessAxis: detectedAxis } = plankInfo;
+      setThicknessAxis(detectedAxis);
+
+      let w = 0,
+        h = 0;
+      if (detectedAxis === 'y') {
+        w = size.x;
+        h = size.z;
+      } else if (detectedAxis === 'x') {
+        w = size.z;
+        h = size.y;
+      } else {
+        w = size.x;
+        h = size.y;
+      }
+
+      if (h > w) {
+        setpanelWidth(h);
+        setpanelHeight(w);
+        setIsRotated2D(true);
+      } else {
+        setpanelWidth(w);
+        setpanelHeight(h);
+        setIsRotated2D(false);
+      }
+      setPlankThickness(size[detectedAxis]);
+
+      // Optimization: Clone material once upon selection to avoid cloning in the update loop
+      const mainMat = Array.isArray(mesh.material) ? mesh.material[0] : mesh.material;
+      if (mainMat && !mainMat.userData.isCloned) {
+        if (Array.isArray(mesh.material)) {
+          mesh.material = mesh.material.map((m) => {
+            const cloned = m.clone();
+            cloned.userData.isCloned = true;
+            return cloned;
+          });
+        } else {
+          mesh.material = mesh.material.clone();
+          mesh.material.userData.isCloned = true;
+        }
+      }
+    }
+  }, [
+    stateSubset?.scene?.scene,
+    stateSubset?.data?.selectedObject,
+    stateSubset?.data?.selectedChildObject,
+  ]);
+
+  /**
+   * Generates and applies a new 3D geometry to the selected plank.
+   * This function:
+   * 1. Maps 2D points to 3D space based on orientation.
+   * 2. Builds a THREE.Shape with holes.
+   * 3. Extrudes the shape into THREE.ExtrudeGeometry.
+   * 4. Aligns the new geometry using the alignExtrudedGeometry utility.
+   */
+  const updateMeshGeometry = async () => {
+    const mesh = selectedChildMeshRef.current;
+    if (!mesh) return;
+
+    // Determine target points (user-drawn or default)
     const points = shapePoints.length > 0 ? shapePoints : defaultPanelPoints;
-    const point = points[selectedCornerIndex];
+    const mappedPoints = isRotated2D ? points.map((p) => ({ x: -p.y, y: p.x })) : points;
+    const getMappedPoint = (p: Point) => (isRotated2D ? { x: -p.y, y: p.x } : p);
 
-    const stageContainer = stageRef.current?.container();
-    if (!stageContainer) return null;
-
-    const rect = stageContainer.getBoundingClientRect();
-    const screenX = rect.left + (point.x * stageScale + stagePosition.x);
-    const screenY = rect.top + (point.y * stageScale + stagePosition.y);
-
-    return (
-      <div
-        style={{
-          position: 'absolute',
-          left: `${screenX}px`,
-          top: `${screenY + 10}px`,
-          zIndex: 10,
-          background: 'white',
-          padding: '5px',
-          border: '1px solid black',
-          borderRadius: '4px',
-        }}
-      >
-        <label>Radius:</label>
-        <input
-          type="number"
-          min="0"
-          value={cornerRadius[selectedCornerIndex] || 0}
-          onChange={(e) => {
-            const val = parseFloat(e.target.value) || 0;
-            const newRadii = [...cornerRadius];
-            newRadii[selectedCornerIndex] = val;
-            setcornerRadius(newRadii);
-          }}
-          autoFocus
-        />
-        <button onClick={() => setShowRadiusInput(false)}>OK</button>
-      </div>
+    // Build the 2D shape with holes
+    const mainShape = buildThreeShape(
+      mappedPoints,
+      cornerRadius,
+      curveControls,
+      'shape',
+      cornerTypes
     );
+    holes.forEach((hole, index) => {
+      if (hole.type !== 'slotting') {
+        mainShape.holes.push(
+          createHolePath(hole, index, curveControls, getMappedPoint, isRotated2D)
+        );
+      }
+    });
+
+    // Create 3D geometry
+    const newGeometry = new THREE.ExtrudeGeometry(mainShape, {
+      depth: plankThickness,
+      bevelEnabled: false,
+      curveSegments: 32,
+    });
+
+    const mainTrans = alignExtrudedGeometry(
+      newGeometry,
+      plankThickness,
+      thicknessAxis,
+      originalGeometry
+    );
+
+    let finalGeometry = newGeometry as THREE.BufferGeometry;
+
+    const slottingHoles = holes.filter((h) => h.type === 'slotting');
+    if (slottingHoles.length > 0) {
+      const { Evaluator, Brush, SUBTRACTION } = await import('three-bvh-csg');
+      const evaluator = new Evaluator();
+      let resultBrush = new Brush(finalGeometry);
+      resultBrush.updateMatrixWorld();
+
+      for (const hole of slottingHoles) {
+        const pocketDepth = hole.depth ?? 10;
+        const face = hole.face ?? 'front';
+        const originalIndex = holes.indexOf(hole);
+        const holePath = createHolePath(
+          hole,
+          originalIndex,
+          curveControls,
+          getMappedPoint,
+          isRotated2D
+        );
+        const plugShape = new THREE.Shape(holePath.getPoints());
+
+        const plugGeom = new THREE.ExtrudeGeometry(plugShape, {
+          depth: pocketDepth,
+          bevelEnabled: false,
+          curveSegments: 32,
+        });
+
+        // 1. Center depth targeting the selected face
+        if (face === 'back') {
+          plugGeom.translate(0, 0, -plankThickness / 2);
+        } else {
+          plugGeom.translate(0, 0, plankThickness / 2 - pocketDepth);
+        }
+
+        // 2. Apply same rotation logic as alignExtrudedGeometry
+        if (thicknessAxis === 'x') {
+          plugGeom.rotateY(Math.PI / 2);
+        } else if (thicknessAxis === 'y') {
+          plugGeom.rotateX(Math.PI / 2);
+        }
+
+        // 3. Apply the exact same translation that was applied to the main geometry
+        if (mainTrans) {
+          plugGeom.translate(mainTrans.x, mainTrans.y, mainTrans.z);
+        }
+
+        const holeBrush = new Brush(plugGeom);
+        holeBrush.updateMatrixWorld();
+
+        resultBrush = evaluator.evaluate(resultBrush, holeBrush, SUBTRACTION);
+      }
+
+      finalGeometry = resultBrush.geometry;
+      Object.setPrototypeOf(finalGeometry, THREE.ExtrudeGeometry.prototype);
+      Object.defineProperty(finalGeometry, 'type', { value: 'ExtrudeGeometry' });
+      (finalGeometry as any).parameters = newGeometry.parameters;
+    }
+
+    normalizeUVs(finalGeometry);
+
+    // Update mesh metadata and swap geometry
+    finalGeometry.userData.oldGeometry = originalGeometry;
+    finalGeometry.userData.isModified = true;
+
+    mesh.geometry.dispose();
+    mesh.geometry = finalGeometry;
+
+    // Update wireframe edges
+    updateEdges(mesh, finalGeometry, {
+      panelHoles: holes,
+      curveControls,
+      panelOutline: points,
+      panelCornerRadius: cornerRadius,
+      panelCornerTypes: cornerTypes,
+    });
+
+    // --- Cleanup Old Slotting Plugs (if any) ---
+    const oldPlugs = mesh.children.filter((c) => c.name === 'slottingPlug');
+    oldPlugs.forEach((p) => {
+      mesh.remove(p);
+      if (p instanceof THREE.Mesh) p.geometry.dispose();
+    });
   };
+
+  /**
+   * Effect hook to trigger geometry update when shape definition (points, holes, curves) changes.
+   */
+  useEffect(() => {
+    updateMeshGeometry();
+  }, [shapePoints, holes, cornerRadius, cornerTypes, curveControls, isRotated2D]);
+
+  // Event Handlers
+
+  /**
+   * Effect hook for handling preview and drawing window dragging.
+   */
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (isDraggingPreview)
+        setPreviewPos((prev) => ({ x: prev.x + e.movementX, y: prev.y + e.movementY }));
+      else if (isDraggingDrawing)
+        setDrawingPos((prev) => ({ x: prev.x + e.movementX, y: prev.y + e.movementY }));
+    };
+    const handleMouseUp = () => {
+      setIsDraggingPreview(false);
+      setIsDraggingDrawing(false);
+    };
+    if (isDraggingPreview || isDraggingDrawing) {
+      window.addEventListener('mousemove', handleMouseMove);
+      window.addEventListener('mouseup', handleMouseUp);
+    }
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [isDraggingPreview, isDraggingDrawing]);
+
+  /**
+   * Triggers the confirmation modal before exiting the designer.
+   */
+  const handleCancel = () => setShowConfirmExit(true);
+
+  /**
+   * Reverts changes by restoring the original geometry and navigates back to the design view.
+   */
+  const confirmExit = () => {
+    const scene = stateSubset?.scene?.scene;
+    const selectedChildMesh = scene?.children
+      .find((obj: any) => obj.userData?.objectId === stateSubset?.data?.selectedObject)
+      ?.children.find(
+        (obj: any) => obj.userData?.objectId === stateSubset?.data?.selectedChildObject
+      );
+    if (selectedChildMesh instanceof THREE.Mesh && originalGeometry) {
+      (selectedChildMesh as THREE.Mesh).geometry.dispose();
+      (selectedChildMesh as THREE.Mesh).geometry = originalGeometry;
+    }
+    router.push(`/design/${designId}/${versionId}`);
+  };
+
+  /**
+   * Restores the panel to a generic state, removing custom holes and outlines.
+   */
+  const handleRestoreDefault = () => {
+    setShapePoints([]);
+    setcornerRadius([]);
+    setCornerTypes([]);
+    setCurveControls({});
+    setHoles([]);
+  };
+
+  /**
+   * Finalizes the editing process by applying the geometry changes to the
+   * main design scene and navigating back.
+   */
+  const handleComplete = () => {
+    updateMeshGeometry();
+
+    const selectedChildObject = stateSubset?.data?.selectedChildObject;
+    if (selectedChildObject) {
+      const panelOutline = shapePoints.length > 0 ? shapePoints : defaultPanelPoints;
+      const panelB = getPanelBounds(panelOutline, defaultPanelPoints);
+      const holesForOutput = holes.map((hole) => holeToTopRightOutput(hole, panelB));
+
+      dispatch(
+        updateObject({
+          id: selectedChildObject,
+          geometryType: GEOMETRY.EXTRUDE_GEOMETRY,
+          panelDesign: {
+            outline: panelOutline,
+            cornerRadius,
+            cornerTypes,
+            curveControls,
+            holes: holesForOutput,
+          },
+        })
+      );
+    }
+
+    router.push(`/design/${designId}/${versionId}`);
+  };
+
+  /**
+   * Handles the dragging of a hole's edge, updating its vertices accordingly.
+   *
+   * @param e Konva event
+   * @param index Hole index
+   * @param pIdx Point index
+   */
+  const handleHoleEdgeDrag = (e: any, index: number, pIdx: number) => {
+    const stage = e.target.getStage();
+    if (!stage) return;
+    const pos = stage.getPointerPosition();
+    if (!pos) return;
+    const localPos = stage.getAbsoluteTransform().copy().invert().point(pos);
+
+    const startPos = (e.target as any).getAttr('startPos');
+    const startPoints = (e.target as any).getAttr('startPoints');
+    if (!startPos || !startPoints) return;
+
+    const dx = localPos.x - startPos.x;
+    const dy = localPos.y - startPos.y;
+
+    const p1 = startPoints[pIdx];
+    const p2 = startPoints[(pIdx + 1) % startPoints.length];
+    const len = Math.hypot(p1.x - p2.x, p1.y - p2.y);
+    if (len === 0) return;
+    const nx = -(p2.y - p1.y) / len;
+    const ny = (p2.x - p1.x) / len;
+    const dist = dx * nx + dy * ny;
+    const moveX = nx * dist;
+    const moveY = ny * dist;
+
+    setHoles((prev: any) => {
+      const next = [...prev];
+      const h = { ...next[index] };
+      if (h.points) {
+        const pts = [...startPoints];
+        pts[pIdx] = {
+          x: pts[pIdx].x + moveX,
+          y: pts[pIdx].y + moveY,
+        };
+        pts[(pIdx + 1) % pts.length] = {
+          x: pts[(pIdx + 1) % pts.length].x + moveX,
+          y: pts[(pIdx + 1) % pts.length].y + moveY,
+        };
+        h.points = pts;
+        next[index] = h;
+      }
+      return next;
+    });
+  };
+
+  /**
+   * Aggregates all relevant points (panel vertices, hole vertices)
+   * to be used by the proximity snapping system.
+   */
+  const getAllPoints = () => {
+    const pts = shapePoints.length > 0 ? [...shapePoints] : [...defaultPanelPoints];
+    holes.forEach((h) => h.type === 'polygon' && h.points && pts.push(...h.points));
+    if (currentDrawingPoints.length > 0) pts.push(...currentDrawingPoints);
+    return pts;
+  };
+
+  /**
+   * Handles mouse down events on the Konva stage for drawing and digging operations.
+   */
+  const onStageMouseDown = (e: any) => {
+    const stage = e.target.getStage();
+    const relativePos = stage?.getRelativePointerPosition();
+    if (!relativePos) return;
+    const { x: rawX, y: rawY } = relativePos;
+
+    if (activeTool === PANEL_TOOLS.PENCIL) {
+      const { snappedX, snappedY } = getSnappedPosition(rawX, rawY, getAllPoints(), stageScale);
+      if (currentDrawingPoints.length > 0) {
+        const dist = Math.hypot(
+          currentDrawingPoints[0].x - snappedX,
+          currentDrawingPoints[0].y - snappedY
+        );
+        if (dist < 15 / stageScale) {
+          if (shapePoints.length === 0) setShapePoints(currentDrawingPoints);
+          else {
+            const xs = currentDrawingPoints.map((p) => p.x);
+            const ys = currentDrawingPoints.map((p) => p.y);
+            setHoles((prev) => [
+              ...prev,
+              {
+                x: Math.min(...xs),
+                y: Math.min(...ys),
+                width: Math.max(...xs) - Math.min(...xs),
+                height: Math.max(...ys) - Math.min(...ys),
+                type: 'polygon',
+                points: currentDrawingPoints,
+                id: crypto.randomUUID(),
+              },
+            ]);
+          }
+          setCurrentDrawingPoints([]);
+          setIsDrawingShape(false);
+          setSnappingGuides([]);
+          setMousePos(null);
+          return;
+        }
+      }
+      setCurrentDrawingPoints((prev) => [...prev, { x: snappedX, y: snappedY }]);
+      setIsDrawingShape(true);
+    } else if (activeTool === PANEL_TOOLS.DIG || activeTool === PANEL_TOOLS.SLOTTING) {
+      if (holeShape === 'polygon' && activeTool !== PANEL_TOOLS.SLOTTING) {
+        const { snappedX, snappedY } = getSnappedPosition(rawX, rawY, getAllPoints(), stageScale);
+        if (
+          currentDrawingPoints.length > 0 &&
+          Math.hypot(currentDrawingPoints[0].x - snappedX, currentDrawingPoints[0].y - snappedY) <
+            15 / stageScale
+        ) {
+          const xs = currentDrawingPoints.map((p) => p.x);
+          const ys = currentDrawingPoints.map((p) => p.y);
+          setHoles((prev) => [
+            ...prev,
+            {
+              x: Math.min(...xs),
+              y: Math.min(...ys),
+              width: Math.max(...xs) - Math.min(...xs),
+              height: Math.max(...ys) - Math.min(...ys),
+              type: 'polygon',
+              points: currentDrawingPoints,
+              id: crypto.randomUUID(),
+            },
+          ]);
+          setCurrentDrawingPoints([]);
+          setIsDrawingShape(false);
+          setSnappingGuides([]);
+          return;
+        }
+        setCurrentDrawingPoints((prev) => [...prev, { x: snappedX, y: snappedY }]);
+        setIsDrawingShape(true);
+      } else {
+        setNewHoleStart({ x: rawX, y: rawY });
+        setTempHole(null);
+        setIsDrawingHole(true);
+      }
+    }
+  };
+
+  /**
+   * Handles mouse move events for previewing shapes, updating snapping guides,
+   * or adjusting curve control points during the drawing process.
+   */
+  const onStageMouseMove = (e: any) => {
+    const stage = e.target.getStage();
+    const relativePos = stage?.getRelativePointerPosition();
+    if (!relativePos) return;
+    const { x: rawX, y: rawY } = relativePos;
+
+    if (isDrawingShape && currentDrawingPoints.length > 0) {
+      const { snappedX, snappedY, guides } = getSnappedPosition(
+        rawX,
+        rawY,
+        getAllPoints(),
+        stageScale
+      );
+      setMousePos({ x: snappedX, y: snappedY });
+      setSnappingGuides(guides);
+    } else if (isDrawingHole && newHoleStart) {
+      const dx = rawX - newHoleStart.x,
+        dy = rawY - newHoleStart.y;
+      if (holeShape === 'circle' && activeTool !== PANEL_TOOLS.SLOTTING) {
+        const circleRadius = Math.sqrt(dx * dx + dy * dy);
+        setTempHole({
+          x: newHoleStart.x - circleRadius,
+          y: newHoleStart.y - circleRadius,
+          width: circleRadius * 2,
+          height: circleRadius * 2,
+          type: 'circle',
+          radius: circleRadius,
+        });
+      } else {
+        const minX = Math.min(newHoleStart.x, rawX);
+        const minY = Math.min(newHoleStart.y, rawY);
+        const w = Math.abs(dx);
+        const h = Math.abs(dy);
+
+        setTempHole({
+          x: minX,
+          y: minY,
+          width: w,
+          height: h,
+          type: activeTool === PANEL_TOOLS.SLOTTING ? 'slotting' : holeShape,
+          points:
+            holeShape === 'rect' && activeTool !== PANEL_TOOLS.SLOTTING
+              ? [
+                  { x: minX, y: minY },
+                  { x: minX + w, y: minY },
+                  { x: minX + w, y: minY + h },
+                  { x: minX, y: minY + h },
+                ]
+              : undefined,
+        });
+      }
+    } else if (activeCurveDragKey) {
+      setCurveControls((prev) => ({ ...prev, [activeCurveDragKey]: { x: rawX, y: rawY } }));
+    }
+  };
+
+  const toolsList = [
+    { name: PANEL_TOOLS.UNDO, icon: assets.undo },
+    { name: PANEL_TOOLS.REDO, icon: assets.redo },
+    { name: PANEL_TOOLS.RESTORE, icon: assets.undo },
+    { name: PANEL_TOOLS.PENCIL, icon: assets.pencil },
+    {
+      name: PANEL_TOOLS.DIG,
+      icon: assets.dig,
+      subTools: ['rect', 'polygon', 'circle'],
+    },
+    { name: PANEL_TOOLS.CURVE, icon: assets.curve },
+    { name: PANEL_TOOLS.SLOTTING, icon: assets.slotting },
+  ];
 
   return (
     <div className={styles.designerContainer}>
-      <div className={styles.header}>
-        <div className={styles.headerLeft}>Panel Designer</div>
-        <div className={styles.headerCenter}>
-          {tools.map(({ name, icon }) => (
-            <div
-              key={name}
-              className={styles.toolButton}
-              onClick={() => setActiveTool(name)}
-              title={name}
-            >
-              <img src={icon} alt={name} />
-              <div>{name}</div>
-            </div>
-          ))}
-          {activeTool === 'Dig' && (
-            <select
-              value={holeShape}
-              onChange={(e) => setHoleShape(e.target.value as 'rect' | 'circle')}
-              className={styles.holeTypeDropdown}
-            >
-              <option value="rect">Rectangle Hole</option>
-              <option value="circle">Circle Hole</option>
-            </select>
-          )}
-        </div>
-        <div className={styles.headerRight}>
-          <button
-            className={`${styles.actionButton} ${styles.cancelButton}`}
-            onClick={handleCancel}
-          >
-            Cancel
-          </button>
-          <button
-            className={`${styles.actionButton} ${styles.completeButton}`}
-            onClick={handleComplete}
-          >
-            Complete
-          </button>
-        </div>
-      </div>
-      {renderHorizontalRuler()}
-      <div className={styles.canvasWrapper}>
-        {renderVerticalRuler()}
-        <Stage
-          ref={stageRef}
-          width={stageSize.width - 30}
-          height={stageSize.height - 30}
-          scaleX={stageScale}
-          scaleY={stageScale}
-          x={stagePosition.x}
-          y={stagePosition.y}
-          style={{ backgroundColor: '#fff', display: 'block', zIndex: 1 }}
-          onWheel={handleWheel}
-          draggable={!isDrawingHole}
-          onMouseDown={() => {
-            if (activeTool === 'Dig') {
-              const stage = stageRef.current;
-              const pointer = stage?.getPointerPosition();
-              if (!pointer) return;
+      <PanelHeader
+        tools={toolsList}
+        activeTool={activeTool}
+        setActiveTool={setActiveTool}
+        holeShape={holeShape}
+        setHoleShape={setHoleShape}
+        handleCancel={handleCancel}
+        handleComplete={handleComplete}
+        handleRestoreDefault={handleRestoreDefault}
+      />
 
-              const x = (pointer.x - stagePosition.x) / stageScale;
-              const y = (pointer.y - stagePosition.y) / stageScale;
+      <HorizontalRuler
+        stageSize={stageSize}
+        stagePosition={stagePosition}
+        stageScale={stageScale}
+        activeTool={activeTool}
+      />
 
-              setNewHoleStart({ x, y });
-              setTempHole(null);
-              setIsDrawingHole(true);
-            }
-          }}
-          onMouseMove={() => {
-            if (activeTool === 'Dig' && isDrawingHole && newHoleStart) {
-              const stage = stageRef.current;
-              const pointer = stage?.getPointerPosition();
-              if (!pointer) return;
-
-              const x = (pointer.x - stagePosition.x) / stageScale;
-              const y = (pointer.y - stagePosition.y) / stageScale;
-
-              const dx = x - newHoleStart.x;
-              const dy = y - newHoleStart.y;
-
-              if (holeShape === 'circle') {
-                const radius = Math.min(Math.abs(dx), Math.abs(dy)) / 2;
-                const centerX = newHoleStart.x + dx / 2;
-                const centerY = newHoleStart.y + dy / 2;
-
-                setTempHole({
-                  x: centerX - radius,
-                  y: centerY - radius,
-                  width: radius * 2,
-                  height: radius * 2,
-                  type: 'circle',
-                });
-              } else {
-                setTempHole({
-                  x: Math.min(newHoleStart.x, x),
-                  y: Math.min(newHoleStart.y, y),
-                  width: Math.abs(dx),
-                  height: Math.abs(dy),
-                  type: 'rect',
-                });
+      <div className={styles.canvasAndSidebar}>
+        <div className={styles.canvasWrapper} style={{ marginTop: 0 }}>
+          <VerticalRuler
+            stageSize={stageSize}
+            stagePosition={stagePosition}
+            stageScale={stageScale}
+            activeTool={activeTool}
+          />
+          <Stage
+            ref={stageRef}
+            width={stageSize.width}
+            height={stageSize.height}
+            scaleX={stageScale}
+            scaleY={stageScale}
+            x={stagePosition.x}
+            y={stagePosition.y}
+            onWheel={handleWheel}
+            draggable={!isDrawingHole && !isDrawingShape}
+            onDragEnd={handleStageDrag}
+            onMouseDown={onStageMouseDown}
+            onMouseMove={onStageMouseMove}
+            onMouseUp={() => {
+              if (isDrawingHole && tempHole) {
+                const holeToAdd = { ...tempHole, id: crypto.randomUUID() };
+                if (holeToAdd.type === 'rect') {
+                  holeToAdd.type = 'polygon';
+                  holeToAdd.points = [
+                    { x: holeToAdd.x, y: holeToAdd.y },
+                    { x: holeToAdd.x + holeToAdd.width, y: holeToAdd.y },
+                    { x: holeToAdd.x + holeToAdd.width, y: holeToAdd.y + holeToAdd.height },
+                    { x: holeToAdd.x, y: holeToAdd.y + holeToAdd.height },
+                  ];
+                } else if (holeToAdd.type === 'slotting') {
+                  holeToAdd.depth = SLOTTING_DEPTH; // Default depth, editable in sidebar
+                  holeToAdd.points = [
+                    { x: holeToAdd.x, y: holeToAdd.y },
+                    { x: holeToAdd.x + holeToAdd.width, y: holeToAdd.y },
+                    { x: holeToAdd.x + holeToAdd.width, y: holeToAdd.y + holeToAdd.height },
+                    { x: holeToAdd.x, y: holeToAdd.y + holeToAdd.height },
+                  ];
+                }
+                setHoles((prev) => [...prev, holeToAdd]);
               }
-            }
-          }}
-          onMouseUp={() => {
-            if (activeTool === 'Dig' && isDrawingHole && tempHole) {
-              const finalHole = {
-                ...tempHole,
-                type: holeShape,
-              };
-
-              setHoles((prev) => [...prev, finalHole]);
-              updateMeshGeometry(
-                shapePoints.length > 0 ? shapePoints : defaultPanelPoints,
-                [...holes, finalHole],
-                cornerRadius
-              );
-            }
-            setIsDrawingHole(false);
-            setNewHoleStart(null);
-            setTempHole(null);
-          }}
-        >
-          <Layer>
-            {(shapePoints.length > 0 || (panelWidth > 0 && panelHeight > 0)) && (
-              <>
-                <Path
-                  data={buildPathData(
-                    shapePoints.length > 0 ? shapePoints : defaultPanelPoints,
-                    cornerRadius
-                  )}
-                  fill="#d8fdd3"
-                  stroke="green"
-                  strokeWidth={0.5}
-                />
-                {tempHole &&
-                  (tempHole.type === 'circle' ? (
-                    <Circle
-                      x={tempHole.x + tempHole.width / 2}
-                      y={tempHole.y + tempHole.height / 2}
-                      radius={Math.min(tempHole.width, tempHole.height) / 2}
-                      fill="rgba(0,0,0,0.2)"
-                      stroke="black"
-                      strokeWidth={0.5}
-                      listening={false}
-                    />
-                  ) : (
-                    <Rect
-                      x={tempHole.x}
-                      y={tempHole.y}
-                      width={tempHole.width}
-                      height={tempHole.height}
-                      fill="rgba(0,0,0,0.2)"
-                      stroke="black"
-                      strokeWidth={0.5}
-                      listening={false}
-                    />
-                  ))}
-                {holes.map((hole, index) =>
-                  hole.type === 'circle' ? (
-                    <Circle
-                      key={index}
-                      x={hole.x + hole.width / 2}
-                      y={hole.y + hole.height / 2}
-                      radius={Math.min(hole.width, hole.height) / 2}
-                      fill="rgba(0,0,0,0.2)"
-                      stroke="black"
-                      opacity={0.7}
-                      strokeWidth={0.5}
-                      listening={false}
-                    />
-                  ) : (
-                    <Rect
-                      key={index}
-                      x={hole.x}
-                      y={hole.y}
-                      width={hole.width}
-                      height={hole.height}
-                      fill="rgba(0,0,0,0.2)"
-                      stroke="black"
-                      opacity={0.7}
-                      strokeWidth={0.5}
-                      listening={false}
-                    />
-                  )
+              setIsDrawingHole(false);
+              setTempHole(null);
+              setNewHoleStart(null);
+              setActiveCurveDragKey(null);
+            }}
+            style={{ backgroundColor: '#fff', display: 'block' }}
+          >
+            <Layer>
+              {/* Background reset: clears hovers when mouse is not over any object */}
+              <Rect
+                width={stageSize.width * 5}
+                height={stageSize.height * 5}
+                x={-stageSize.width * 2}
+                y={-stageSize.height * 2}
+                fill="transparent"
+                onMouseEnter={(e) => {
+                  setHoveredHoleIndex(null);
+                  setHoveredPanel(false);
+                  setHoveredLineIndex(null);
+                  setHoveredCornerIndex(null);
+                  setHoveredHolePointIndex(null);
+                  const container = e.target.getStage()?.container();
+                  if (container) container.style.cursor = 'default';
+                }}
+              />
+              <Path
+                data={buildPathData(
+                  shapePoints.length > 0 ? shapePoints : defaultPanelPoints,
+                  cornerRadius,
+                  cornerTypes,
+                  curveControls
                 )}
-                {(shapePoints.length > 0 ? shapePoints : defaultPanelPoints).map((point, index) => (
-                  <Rect
-                    key={index}
-                    x={point.x - 3}
-                    y={point.y - 3}
-                    width={6}
-                    height={6}
-                    fill="grey"
-                    opacity={0.7}
-                    draggable
-                    onClick={activeTool === 'Curve' ? () => handleCurveClick(index) : undefined}
-                    onDragMove={(e) => {
-                      const newPoints = [
-                        ...(shapePoints.length > 0 ? shapePoints : defaultPanelPoints),
-                      ];
-                      newPoints[index] = {
-                        x: e.target.x() + 3,
-                        y: e.target.y() + 3,
-                      };
-                      setShapePoints(newPoints);
-                    }}
+                fill="rgba(84, 83, 51, 0.14)"
+                stroke="#545333"
+                strokeWidth={1}
+                hitStrokeWidth={20}
+                fillRule="evenodd"
+                onMouseEnter={(e) => {
+                  setHoveredPanel(true);
+                  const container = e.target.getStage()?.container();
+                  if (container) container.style.cursor = 'pointer';
+                }}
+                onMouseLeave={() => {
+                  setHoveredLineIndex(null);
+                }}
+              />
+              {/* Dotted lines showing original corner when Round/Chamfer is active */}
+              {(shapePoints.length > 0 ? shapePoints : defaultPanelPoints).map((_, i) => {
+                const pts = shapePoints.length > 0 ? shapePoints : defaultPanelPoints;
+                const r = cornerRadius[i] || 0;
+                const type = cornerTypes[i] || 'default';
+                if (r <= 0 || type === 'default') return null;
+                const tangents = getTangents(pts, i, cornerRadius);
+                const p1 = pts[i];
+                if (
+                  tangents.tp_in.x === p1.x &&
+                  tangents.tp_in.y === p1.y &&
+                  tangents.tp_out.x === p1.x &&
+                  tangents.tp_out.y === p1.y
+                )
+                  return null;
+                return (
+                  <React.Fragment key={`corner-dotted-${i}`}>
+                    <Line
+                      points={[tangents.tp_in.x, tangents.tp_in.y, p1.x, p1.y]}
+                      stroke="#718096"
+                      strokeWidth={1}
+                      dash={[4, 3]}
+                      opacity={0.7}
+                      listening={false}
+                    />
+                    <Line
+                      points={[p1.x, p1.y, tangents.tp_out.x, tangents.tp_out.y]}
+                      stroke="#718096"
+                      strokeWidth={1}
+                      dash={[4, 3]}
+                      opacity={0.7}
+                      listening={false}
+                    />
+                  </React.Fragment>
+                );
+              })}
+              {/* Panel Edges Highlighting - listening={false} to avoid event theft */}
+              {(shapePoints.length > 0 ? shapePoints : defaultPanelPoints).map((p, i, arr) => {
+                const nextP = arr[(i + 1) % arr.length];
+                const isHovered = hoveredLineIndex === i && hoveredPanel;
+                const isSelected = selectedLineIndex === i && selectedHoleIndex === null;
+                return (
+                  <Line
+                    key={`panel-edge-${i}`}
+                    points={[p.x, p.y, nextP.x, nextP.y]}
+                    stroke={isHovered || isSelected ? '#2B2A1A' : 'transparent'}
+                    strokeWidth={3}
+                    hitStrokeWidth={20}
+                    listening={false}
+                  />
+                );
+              })}
+              {/* Invisible trigger lines for panel edges - rendered first so corner points take priority */}
+              {(shapePoints.length > 0 ? shapePoints : defaultPanelPoints).map((p, i, arr) => {
+                const nextP = arr[(i + 1) % arr.length];
+                return (
+                  <Line
+                    key={`panel-edge-trigger-${i}`}
+                    points={[p.x, p.y, nextP.x, nextP.y]}
+                    stroke="transparent"
+                    strokeWidth={20 / stageScale}
+                    hitStrokeWidth={20 / stageScale}
                     onMouseEnter={(e) => {
-                      const container = e.target.getStage()?.container();
-                      if (container) {
-                        container.style.cursor = activeTool === 'Curve' ? 'crosshair' : 'pointer';
+                      if (hoveredCornerIndex === null && selectedCornerIndex === null) {
+                        setHoveredLineIndex(i);
+                        setHoveredPanel(true);
+                        const container = e.target.getStage()?.container();
+                        if (container) container.style.cursor = 'pointer';
                       }
                     }}
-                    onMouseLeave={(e) => {
-                      const container = e.target.getStage()?.container();
-                      if (container) {
-                        container.style.cursor = 'default';
-                      }
+                    onMouseLeave={() => setHoveredLineIndex(null)}
+                    onClick={() => {
+                      setSelectedLineIndex(i);
+                      setSelectedHoleIndex(null);
+                      setSelectedCornerIndex(null);
+                      setSelectedPointIndex(null);
                     }}
                   />
+                );
+              })}
+              {tempHole &&
+                (tempHole.type === 'circle' ? (
+                  <Circle
+                    x={tempHole.x + tempHole.width / 2}
+                    y={tempHole.y + tempHole.height / 2}
+                    radius={tempHole.width / 2}
+                    fill="rgba(0,0,0,0.2)"
+                    stroke="black"
+                  />
+                ) : (
+                  <Rect
+                    x={tempHole.x}
+                    y={tempHole.y}
+                    width={tempHole.width}
+                    height={tempHole.height}
+                    fill={
+                      tempHole.type === 'slotting' ? 'rgba(255, 165, 0, 0.3)' : 'rgba(0,0,0,0.2)'
+                    }
+                    stroke={tempHole.type === 'slotting' ? '#e67e22' : 'black'}
+                  />
                 ))}
-              </>
-            )}
-            <Transformer
-              ref={transformerRef}
-              boundBoxFunc={(newBox) => newBox}
-              anchorSize={8}
-              anchorStroke="#000"
-              anchorFill="#fff"
-              anchorCornerRadius={2}
+              {/* Panel corners rendered BEFORE holes so hole points take priority when overlapping */}
+              {(shapePoints.length > 0 ? shapePoints : defaultPanelPoints).map((p, i) => (
+                <Rect
+                  key={`panel-corner-vis-${i}`}
+                  x={p.x - 5}
+                  y={p.y - 5}
+                  width={10}
+                  height={10}
+                  fill={
+                    selectedCornerIndex === i
+                      ? '#2B2A1A'
+                      : hoveredCornerIndex === i
+                        ? '#2B2A1A'
+                        : 'white'
+                  }
+                  stroke="#2B2A1A"
+                  strokeWidth={1}
+                  opacity={
+                    selectedCornerIndex === i ||
+                    hoveredCornerIndex === i ||
+                    hoveredPanel ||
+                    selectedHoleIndex !== null
+                      ? 0.8
+                      : 0
+                  }
+                  listening={false}
+                />
+              ))}
+              {(shapePoints.length > 0 ? shapePoints : defaultPanelPoints).map((p, i) => (
+                <Rect
+                  key={`panel-corner-trigger-${i}`}
+                  x={p.x - 12 / stageScale}
+                  y={p.y - 12 / stageScale}
+                  width={24 / stageScale}
+                  height={24 / stageScale}
+                  fill="transparent"
+                  onMouseEnter={(e) => {
+                    setHoveredCornerIndex(i);
+                    setHoveredLineIndex(null);
+                    setHoveredHolePointIndex(null);
+                    const container = e.target.getStage()?.container();
+                    if (container) container.style.cursor = 'pointer';
+                  }}
+                  onMouseLeave={() => setHoveredCornerIndex(null)}
+                  draggable
+                  onDragMove={(e) => {
+                    const { snappedX, snappedY, guides } = getSnappedPosition(
+                      e.target.x() + 12 / stageScale,
+                      e.target.y() + 12 / stageScale,
+                      getAllPoints(),
+                      stageScale,
+                      p
+                    );
+                    e.target.x(snappedX - 12 / stageScale);
+                    e.target.y(snappedY - 12 / stageScale);
+                    setSnappingGuides(guides);
+                    setShapePoints((prev) => {
+                      const next = prev.length > 0 ? [...prev] : [...defaultPanelPoints];
+                      next[i] = { x: snappedX, y: snappedY };
+                      return next;
+                    });
+                  }}
+                  onDragEnd={() => setSnappingGuides([])}
+                  onClick={() => {
+                    setSelectedCornerIndex(i);
+                    setSelectedHoleIndex(null);
+                    setSelectedPointIndex(null);
+                    setSelectedLineIndex(null);
+                  }}
+                />
+              ))}
+              {holes.map((hole, index) => {
+                const commonProps = {
+                  key: index,
+                  fill: hole.type === 'slotting' ? 'rgba(255, 165, 0, 0.3)' : 'rgba(0,0,0,0.2)',
+                  stroke:
+                    selectedHoleIndex === index || hoveredHoleIndex === index
+                      ? '#2B2A1A'
+                      : hole.type === 'slotting'
+                        ? '#e67e22'
+                        : 'black',
+                  opacity: 0.7,
+                  strokeWidth: hoveredHoleIndex === index ? 1.5 : 0.5,
+                  onClick: () => {
+                    setSelectedHoleIndex(index);
+                    setSelectedPointIndex(null);
+                    setSelectedLineIndex(null);
+                    setSelectedCornerIndex(null);
+                  },
+                  onMouseEnter: (e: any) => {
+                    setHoveredHoleIndex(index);
+                    setHoveredCornerIndex(null);
+                    const container = e.target.getStage()?.container();
+                    if (container) container.style.cursor = 'pointer';
+                  },
+                  onMouseLeave: () => {
+                    // Do not set null here if we might be entering a trigger
+                    // Instead, we let the stage or other objects handle the clear
+                  },
+                };
+                if (hole.type === 'circle') {
+                  const cx = hole.x + hole.width / 2;
+                  const cy = hole.y + hole.height / 2;
+                  const r = Math.min(hole.width, hole.height) / 2;
+                  const corners = [
+                    { x: hole.x, y: hole.y },
+                    { x: hole.x + hole.width, y: hole.y },
+                    { x: hole.x + hole.width, y: hole.y + hole.height },
+                    { x: hole.x, y: hole.y + hole.height },
+                  ];
+                  return (
+                    <React.Fragment key={`hole-circle-container-${index}`}>
+                      <Circle {...commonProps} x={cx} y={cy} radius={r} />
+                      {((selectedHoleIndex === index && selectedPointIndex !== null) ||
+                        (selectedPointIndex === null &&
+                          ((hoveredHoleIndex === index && hoveredHolePointIndex !== null) ||
+                            ((selectedHoleIndex === index || hoveredHoleIndex === index) &&
+                              hoveredHolePointIndex === null)))) &&
+                        corners.map((p, pIdx, arr) => {
+                          const nextP = arr[(pIdx + 1) % arr.length];
+                          const isEdgeHovered =
+                            hoveredLineIndex === pIdx && hoveredHoleIndex === index;
+                          const isEdgeSelected =
+                            selectedLineIndex === pIdx && selectedHoleIndex === index;
+                          return (
+                            <Line
+                              key={`h-${index}-edge-${pIdx}`}
+                              points={[p.x, p.y, nextP.x, nextP.y]}
+                              stroke={isEdgeHovered || isEdgeSelected ? '#2B2A1A' : 'transparent'}
+                              strokeWidth={3}
+                              hitStrokeWidth={20 / stageScale}
+                              listening={false}
+                            />
+                          );
+                        })}
+                      {((selectedHoleIndex === index && selectedPointIndex !== null) ||
+                        (selectedPointIndex === null &&
+                          ((hoveredHoleIndex === index && hoveredHolePointIndex !== null) ||
+                            ((selectedHoleIndex === index || hoveredHoleIndex === index) &&
+                              hoveredHolePointIndex === null)))) &&
+                        corners.map((p, pIdx, arr) => {
+                          const nextP = arr[(pIdx + 1) % arr.length];
+                          return (
+                            <Line
+                              key={`h-${index}-edge-trigger-${pIdx}`}
+                              points={[p.x, p.y, nextP.x, nextP.y]}
+                              stroke="transparent"
+                              strokeWidth={20 / stageScale}
+                              hitStrokeWidth={20 / stageScale}
+                              onMouseEnter={(e) => {
+                                if (hoveredHolePointIndex === null && selectedPointIndex === null) {
+                                  setHoveredLineIndex(pIdx);
+                                  setHoveredHoleIndex(index);
+                                  setHoveredCornerIndex(null);
+                                  const container = e.target.getStage()?.container();
+                                  if (container) container.style.cursor = 'pointer';
+                                }
+                              }}
+                              onMouseLeave={() => setHoveredLineIndex(null)}
+                              onClick={() => {
+                                setSelectedHoleIndex(index);
+                                setSelectedLineIndex(pIdx);
+                                setSelectedPointIndex(null);
+                                setSelectedCornerIndex(null);
+                              }}
+                            />
+                          );
+                        })}
+                      {(selectedHoleIndex === index || hoveredHoleIndex === index) &&
+                        corners.map((p, pIdx) => (
+                          <Rect
+                            key={`h-${index}-p-${pIdx}`}
+                            x={p.x - 5}
+                            y={p.y - 5}
+                            width={10}
+                            height={10}
+                            fill={hoveredHolePointIndex === pIdx ? '#2B2A1A' : 'white'}
+                            stroke="#2B2A1A"
+                            strokeWidth={1}
+                            opacity={0.8}
+                            listening={false}
+                          />
+                        ))}
+                      {(selectedHoleIndex === index || hoveredHoleIndex === index) &&
+                        corners.map((p, pIdx) => (
+                          <Rect
+                            key={`h-${index}-p-trigger-${pIdx}`}
+                            x={p.x - 8 / stageScale}
+                            y={p.y - 8 / stageScale}
+                            width={16 / stageScale}
+                            height={16 / stageScale}
+                            fill="transparent"
+                            onMouseEnter={(e) => {
+                              setHoveredHoleIndex(index);
+                              setHoveredHolePointIndex(pIdx);
+                              setHoveredLineIndex(null);
+                              setHoveredCornerIndex(null);
+                              const container = e.target.getStage()?.container();
+                              if (container) container.style.cursor = 'pointer';
+                            }}
+                            onMouseLeave={() => setHoveredHolePointIndex(null)}
+                          />
+                        ))}
+                    </React.Fragment>
+                  );
+                } else if ((hole.type === 'polygon' || hole.type === 'slotting') && hole.points) {
+                  return (
+                    <React.Fragment key={`hole-poly-container-${index}`}>
+                      <Path
+                        {...commonProps}
+                        key={`hole-poly-${index}`}
+                        data={buildPathData(
+                          hole.points,
+                          hole.cornerRadius ?? new Array(hole.points.length).fill(0),
+                          hole.cornerTypes ?? Array(hole.points.length).fill('default'),
+                          curveControls,
+                          `hole_${index}`
+                        )}
+                        hitStrokeWidth={20}
+                      />
+                      {hole.points.map((_, pIdx) => {
+                        const pts = hole.points!;
+                        const radii = hole.cornerRadius ?? [];
+                        const types = hole.cornerTypes ?? [];
+                        const r = radii[pIdx] ?? 0;
+                        const type = types[pIdx] ?? 'default';
+                        if (r <= 0 || type === 'default') return null;
+                        const tangents = getTangents(pts, pIdx, hole.cornerRadius ?? []);
+                        const p1 = pts[pIdx];
+                        if (
+                          tangents.tp_in.x === p1.x &&
+                          tangents.tp_in.y === p1.y &&
+                          tangents.tp_out.x === p1.x &&
+                          tangents.tp_out.y === p1.y
+                        )
+                          return null;
+                        return (
+                          <React.Fragment key={`hole-dotted-${index}-${pIdx}`}>
+                            <Line
+                              points={[tangents.tp_in.x, tangents.tp_in.y, p1.x, p1.y]}
+                              stroke="#718096"
+                              strokeWidth={1}
+                              dash={[4, 3]}
+                              opacity={0.7}
+                              listening={false}
+                            />
+                            <Line
+                              points={[p1.x, p1.y, tangents.tp_out.x, tangents.tp_out.y]}
+                              stroke="#718096"
+                              strokeWidth={1}
+                              dash={[4, 3]}
+                              opacity={0.7}
+                              listening={false}
+                            />
+                          </React.Fragment>
+                        );
+                      })}
+                      {((selectedHoleIndex === index && selectedPointIndex !== null) ||
+                        (selectedPointIndex === null &&
+                          ((hoveredHoleIndex === index && hoveredHolePointIndex !== null) ||
+                            ((selectedHoleIndex === index || hoveredHoleIndex === index) &&
+                              hoveredHolePointIndex === null)))) && (
+                        <>
+                          {hole.points.map((p, pIdx, arr) => {
+                            const nextP = arr[(pIdx + 1) % arr.length];
+                            const isEdgeHovered =
+                              hoveredLineIndex === pIdx && hoveredHoleIndex === index;
+                            const isEdgeSelected =
+                              selectedLineIndex === pIdx && selectedHoleIndex === index;
+                            return (
+                              <Line
+                                key={`h-${index}-edge-${pIdx}`}
+                                points={[p.x, p.y, nextP.x, nextP.y]}
+                                stroke={isEdgeHovered || isEdgeSelected ? '#2B2A1A' : 'transparent'}
+                                strokeWidth={3}
+                                hitStrokeWidth={0}
+                                listening={false}
+                              />
+                            );
+                          })}
+                          {hole.points.map((p, pIdx, arr) => {
+                            const nextP = arr[(pIdx + 1) % arr.length];
+                            return (
+                              <Line
+                                key={`h-${index}-edge-trigger-${pIdx}`}
+                                points={[p.x, p.y, nextP.x, nextP.y]}
+                                stroke="transparent"
+                                strokeWidth={20 / stageScale}
+                                hitStrokeWidth={20 / stageScale}
+                                onMouseEnter={(e) => {
+                                  if (
+                                    hoveredHolePointIndex === null &&
+                                    selectedPointIndex === null
+                                  ) {
+                                    setHoveredLineIndex(pIdx);
+                                    setHoveredHoleIndex(index);
+                                    setHoveredCornerIndex(null);
+                                    const container = e.target.getStage()?.container();
+                                    if (container) container.style.cursor = 'pointer';
+                                  }
+                                }}
+                                onMouseLeave={() => setHoveredLineIndex(null)}
+                                onClick={() => {
+                                  setSelectedHoleIndex(index);
+                                  setSelectedLineIndex(pIdx);
+                                  setSelectedPointIndex(null);
+                                  setSelectedCornerIndex(null);
+                                }}
+                                draggable={
+                                  selectedHoleIndex === index && selectedLineIndex === pIdx
+                                }
+                                dragBoundFunc={() => ({ x: 0, y: 0 })}
+                                onDragStart={(e) => {
+                                  const stage = e.target.getStage();
+                                  if (!stage) return;
+                                  const pos = stage.getPointerPosition();
+                                  if (!pos) return;
+                                  const localPos = stage
+                                    .getAbsoluteTransform()
+                                    .copy()
+                                    .invert()
+                                    .point(pos);
+                                  (e.target as any).setAttr('startPos', localPos);
+                                  (e.target as any).setAttr(
+                                    'startPoints',
+                                    JSON.parse(JSON.stringify(hole.points))
+                                  );
+                                }}
+                                onDragMove={(e) => handleHoleEdgeDrag(e, index, pIdx)}
+                              />
+                            );
+                          })}
+                          {hole.points.map((p, pIdx) => (
+                            <Rect
+                              key={`h-${index}-p-${pIdx}`}
+                              x={p.x - 5}
+                              y={p.y - 5}
+                              width={10}
+                              height={10}
+                              fill={
+                                selectedPointIndex === pIdx
+                                  ? '#2B2A1A'
+                                  : hoveredHolePointIndex === pIdx
+                                    ? '#2B2A1A'
+                                    : 'white'
+                              }
+                              stroke="#2B2A1A"
+                              strokeWidth={1}
+                              listening={false}
+                            />
+                          ))}
+                          {hole.points.map((p, pIdx) => (
+                            <Rect
+                              key={`h-${index}-p-trigger-${pIdx}`}
+                              x={p.x - 8 / stageScale}
+                              y={p.y - 8 / stageScale}
+                              width={16 / stageScale}
+                              height={16 / stageScale}
+                              fill="transparent"
+                              onMouseEnter={(e) => {
+                                setHoveredHoleIndex(index);
+                                setHoveredHolePointIndex(pIdx);
+                                setHoveredLineIndex(null);
+                                setHoveredCornerIndex(null);
+                                const container = e.target.getStage()?.container();
+                                if (container) container.style.cursor = 'pointer';
+                              }}
+                              onMouseLeave={() => setHoveredHolePointIndex(null)}
+                              onClick={() => {
+                                setSelectedHoleIndex(index);
+                                setSelectedPointIndex(pIdx);
+                                setSelectedCornerIndex(null);
+                                setSelectedLineIndex(null);
+                                setHoveredHoleIndex(null);
+                                setHoveredHolePointIndex(null);
+                              }}
+                              draggable
+                              onDragMove={(e) => {
+                                const { snappedX, snappedY } = getSnappedPosition(
+                                  e.target.x() + 8 / stageScale,
+                                  e.target.y() + 8 / stageScale,
+                                  getAllPoints(),
+                                  stageScale,
+                                  p
+                                );
+                                e.target.x(snappedX - 8 / stageScale);
+                                e.target.y(snappedY - 8 / stageScale);
+                                setHoles((prev) => {
+                                  const next = [...prev];
+                                  const nextPoints = [...(next[index].points as any)];
+                                  nextPoints[pIdx] = { x: snappedX, y: snappedY };
+                                  next[index] = { ...next[index], points: nextPoints };
+                                  return next;
+                                });
+                              }}
+                            />
+                          ))}
+                        </>
+                      )}
+                    </React.Fragment>
+                  );
+                } else if (hole.type === 'rect' || !hole.type) {
+                  const r = 0;
+                  const corners = [
+                    { x: hole.x, y: hole.y },
+                    { x: hole.x + hole.width, y: hole.y },
+                    { x: hole.x + hole.width, y: hole.y + hole.height },
+                    { x: hole.x, y: hole.y + hole.height },
+                  ];
+                  return (
+                    <React.Fragment key={`hole-rect-container-${index}`}>
+                      <Rect
+                        {...commonProps}
+                        x={hole.x}
+                        y={hole.y}
+                        width={hole.width}
+                        height={hole.height}
+                        cornerRadius={r}
+                        hitStrokeWidth={20}
+                      />
+                      {((selectedHoleIndex === index && selectedPointIndex !== null) ||
+                        (selectedPointIndex === null &&
+                          ((hoveredHoleIndex === index && hoveredHolePointIndex !== null) ||
+                            ((selectedHoleIndex === index || hoveredHoleIndex === index) &&
+                              hoveredHolePointIndex === null)))) && (
+                        <>
+                          {corners.map((p, pIdx, arr) => {
+                            const nextP = arr[(pIdx + 1) % arr.length];
+                            const isEdgeHovered =
+                              hoveredLineIndex === pIdx && hoveredHoleIndex === index;
+                            const isEdgeSelected =
+                              selectedLineIndex === pIdx && selectedHoleIndex === index;
+                            return (
+                              <Line
+                                key={`h-${index}-edge-${pIdx}`}
+                                points={[p.x, p.y, nextP.x, nextP.y]}
+                                stroke={isEdgeHovered || isEdgeSelected ? '#2B2A1A' : 'transparent'}
+                                strokeWidth={3}
+                                hitStrokeWidth={0}
+                                listening={false}
+                              />
+                            );
+                          })}
+                          {corners.map((p, pIdx, arr) => {
+                            const nextP = arr[(pIdx + 1) % arr.length];
+                            return (
+                              <Line
+                                key={`h-${index}-edge-trigger-${pIdx}`}
+                                points={[p.x, p.y, nextP.x, nextP.y]}
+                                stroke="transparent"
+                                strokeWidth={20 / stageScale}
+                                hitStrokeWidth={20 / stageScale}
+                                onMouseEnter={(e) => {
+                                  if (
+                                    hoveredHolePointIndex === null &&
+                                    selectedPointIndex === null
+                                  ) {
+                                    setHoveredLineIndex(pIdx);
+                                    setHoveredHoleIndex(index);
+                                    setHoveredCornerIndex(null);
+                                    const container = e.target.getStage()?.container();
+                                    if (container) container.style.cursor = 'pointer';
+                                  }
+                                }}
+                                onMouseLeave={() => setHoveredLineIndex(null)}
+                                onClick={() => {
+                                  setSelectedHoleIndex(index);
+                                  setSelectedLineIndex(pIdx);
+                                  setSelectedPointIndex(null);
+                                  setSelectedCornerIndex(null);
+                                }}
+                              />
+                            );
+                          })}
+                          {corners.map((p, pIdx) => (
+                            <Rect
+                              key={`h-${index}-p-${pIdx}`}
+                              x={p.x - 5}
+                              y={p.y - 5}
+                              width={10}
+                              height={10}
+                              fill={
+                                selectedPointIndex === pIdx
+                                  ? '#2B2A1A'
+                                  : hoveredHolePointIndex === pIdx
+                                    ? '#2B2A1A'
+                                    : 'white'
+                              }
+                              stroke="#2B2A1A"
+                              strokeWidth={1}
+                              opacity={0.8}
+                              listening={false}
+                            />
+                          ))}
+                          {corners.map((p, pIdx) => (
+                            <Rect
+                              key={`h-${index}-p-trigger-${pIdx}`}
+                              x={p.x - 8 / stageScale}
+                              y={p.y - 8 / stageScale}
+                              width={16 / stageScale}
+                              height={16 / stageScale}
+                              fill="transparent"
+                              onMouseEnter={(e) => {
+                                setHoveredHoleIndex(index);
+                                setHoveredHolePointIndex(pIdx);
+                                setHoveredLineIndex(null);
+                                setHoveredCornerIndex(null);
+                                const container = e.target.getStage()?.container();
+                                if (container) container.style.cursor = 'pointer';
+                              }}
+                              onMouseLeave={() => setHoveredHolePointIndex(null)}
+                              onClick={() => {
+                                setHoles((prev) => {
+                                  const next = [...prev];
+                                  const h = next[index];
+                                  if (h.type === 'rect' || h.type === 'slotting' || !h.type) {
+                                    next[index] = {
+                                      ...h,
+                                      type: 'polygon',
+                                      points: [
+                                        { x: h.x, y: h.y },
+                                        { x: h.x + h.width, y: h.y },
+                                        { x: h.x + h.width, y: h.y + h.height },
+                                        { x: h.x, y: h.y + h.height },
+                                      ],
+                                    };
+                                  }
+                                  return next;
+                                });
+                                setSelectedHoleIndex(index);
+                                setSelectedPointIndex(pIdx);
+                                setSelectedCornerIndex(null);
+                                setSelectedLineIndex(null);
+                                setHoveredHoleIndex(null);
+                                setHoveredHolePointIndex(null);
+                              }}
+                            />
+                          ))}
+                        </>
+                      )}
+                    </React.Fragment>
+                  );
+                }
+              })}
+              {snappingGuides.map((g, i) => (
+                <Line
+                  key={i}
+                  points={
+                    g.type === 'x'
+                      ? [g.value, -10000, g.value, 10000]
+                      : [-10000, g.value, 10000, g.value]
+                  }
+                  stroke="red"
+                  strokeWidth={1 / stageScale}
+                  dash={[4, 4]}
+                />
+              ))}
+              {currentDrawingPoints.length > 0 && (
+                <>
+                  <Line
+                    points={currentDrawingPoints
+                      .flatMap((p) => [p.x, p.y])
+                      .concat(mousePos ? [mousePos.x, mousePos.y] : [])}
+                    stroke="green"
+                    strokeWidth={0.5}
+                  />
+                  {currentDrawingPoints.map((p, i) => (
+                    <Circle key={i} x={p.x} y={p.y} radius={3} fill={i === 0 ? 'orange' : 'blue'} />
+                  ))}
+                </>
+              )}
+              <DimensionHighlighter
+                hoveredHoleIndex={hoveredHoleIndex}
+                selectedHoleIndex={selectedHoleIndex}
+                hoveredPanel={hoveredPanel}
+                holes={holes}
+                shapePoints={shapePoints}
+                defaultPanelPoints={defaultPanelPoints}
+                tempHole={
+                  tempHole ||
+                  (isDrawingShape && currentDrawingPoints.length > 0
+                    ? {
+                        x: 0,
+                        y: 0,
+                        width: 0,
+                        height: 0,
+                        type: 'polygon',
+                        points: [...currentDrawingPoints, ...(mousePos ? [mousePos] : [])],
+                      }
+                    : undefined)
+                }
+                showSelectedHoleOffsets
+              />
+              <Transformer
+                ref={transformerRef}
+                boundBoxFunc={(newBox) => newBox}
+                anchorSize={8}
+                anchorStroke="#000"
+                anchorFill="#fff"
+                anchorCornerRadius={2}
+                listening={false}
+              />
+            </Layer>
+          </Stage>
+
+          {selectedHoleIndex !== null && holes[selectedHoleIndex] && (
+            <HoleOffsetInputs
+              hole={holes[selectedHoleIndex]}
+              shapePoints={shapePoints}
+              defaultPanelPoints={defaultPanelPoints}
+              stageRef={stageRef}
+              stagePosition={stagePosition}
+              stageScale={stageScale}
+              leftValue={holeLeftInput}
+              topValue={holeTopInput}
+              onLeftChange={setHoleLeftInput}
+              onTopChange={setHoleTopInput}
+              onCommit={() => {
+                const l = parseMm(holeLeftInput);
+                const t = parseMm(holeTopInput);
+                if (l !== null && t !== null) commitSelectedHoleOffsets(l, t);
+              }}
             />
-          </Layer>
-        </Stage>
+          )}
+        </div>
+        <PreviewSidebar
+          previewPos={previewPos}
+          setIsDraggingPreview={setIsDraggingPreview}
+          containerRef={containerRef}
+          threeCanvasRef={threeCanvasRef}
+        />
+        <PropertiesSidebar
+          drawingPos={drawingPos}
+          setIsDraggingDrawing={setIsDraggingDrawing}
+          selectedHoleIndex={selectedHoleIndex}
+          selectedLineIndex={selectedLineIndex}
+          selectedPointIndex={selectedPointIndex}
+          selectedCornerIndex={selectedCornerIndex}
+          holes={holes}
+          setHoles={setHoles}
+          shapePoints={shapePoints}
+          defaultPanelPoints={defaultPanelPoints}
+          setShapePoints={setShapePoints}
+          panelWidth={panelWidth}
+          isRotated2D={isRotated2D}
+          setSelectedHoleIndex={setSelectedHoleIndex}
+          cornerRadius={cornerRadius}
+          setCornerRadius={setcornerRadius}
+          cornerTypes={cornerTypes}
+          setCornerTypes={setCornerTypes}
+        />
       </div>
+
       <div className={styles.footer}>
-        Origin at center • depth(D): {dimensions.width.toFixed(1)} • width(W): 18.0 • height(H):{' '}
-        {dimensions.height.toFixed(1)}
+        Origin at center • depth(T): {plankThickness.toFixed(1)} mm • width(W):{' '}
+        {panelWidth.toFixed(1)} mm • height(H): {panelHeight.toFixed(1)} mm
       </div>
-      <div className={styles.miniThreeViewer}>
-        <canvas ref={threeCanvasRef} />
-      </div>
+
       {showConfirmExit && (
         <div className={styles.modalOverlay}>
           <div className={styles.modal}>
@@ -988,7 +1730,7 @@ export default function PanelDesigner({ state }: PanelDesignerProps) {
             <div className={styles.buttonContainer}>
               <button
                 className={`${styles.button} ${styles.popupCancelButton}`}
-                onClick={closeModal}
+                onClick={() => setShowConfirmExit(false)}
               >
                 Cancel
               </button>
@@ -1002,7 +1744,6 @@ export default function PanelDesigner({ state }: PanelDesignerProps) {
           </div>
         </div>
       )}
-      {renderRadiusInput()}
     </div>
   );
 }

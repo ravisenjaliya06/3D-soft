@@ -17,6 +17,7 @@ from pathlib import Path
 
 # External imports
 from celery.schedules import crontab
+from corsheaders.defaults import default_headers
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -51,6 +52,7 @@ THIRD_PARTY_APP = [
     "corsheaders",
     "django_filters",
     "django_celery_beat",
+    "imagekit",
 ]
 
 LOCAL_APP = ["umaboy", "user", "design", "mes_portal", "material"]
@@ -58,6 +60,7 @@ LOCAL_APP = ["umaboy", "user", "design", "mes_portal", "material"]
 INSTALLED_APPS = INSTALLED_APPS + THIRD_PARTY_APP + LOCAL_APP
 
 MIDDLEWARE = [
+    "corsheaders.middleware.CorsMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -65,7 +68,7 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
-    "corsheaders.middleware.CorsMiddleware",
+    "umaboy.middleware.GhostUserMiddleware",
 ]
 
 ROOT_URLCONF = "umaboy.urls"
@@ -124,7 +127,7 @@ AUTH_PASSWORD_VALIDATORS = [
 REST_FRAMEWORK = {
     "DEFAULT_PERMISSION_CLASSES": ("rest_framework.permissions.IsAuthenticated",),
     "DEFAULT_AUTHENTICATION_CLASSES": (
-        "rest_framework_simplejwt.authentication.JWTAuthentication",
+        "umaboy.authentication.OrganizationAwareJWTAuthentication",
     ),
 }
 
@@ -136,6 +139,10 @@ SIMPLE_JWT = {
     "SLIDING_TOKEN_REFRESH_LIFETIME_LATE_USER": timedelta(days=1),
     "SLIDING_TOKEN_LIFETIME_LATE_USER": timedelta(days=30),
 }
+
+# Admin Session Settings
+ADMIN_JWT_COOKIE_NAME = "admin_access_token"
+ADMIN_SESSION_TIMEOUT_MINUTES = 30
 
 # set logging
 LOGGING = {
@@ -199,6 +206,7 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.0/howto/static-files/
 
 STATIC_URL = "static/"
+STATIC_ROOT = os.path.join(BASE_DIR, "static")
 
 MEDIA_URL = "/media/"
 MEDIA_ROOT = os.path.join(BASE_DIR, "media")
@@ -223,12 +231,11 @@ CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
     "http://13.238.162.99",
 ]
-CORS_ALLOW_HEADERS = [
-    "content-type",
-    "authorization",
-    "Access-Control-Allow-Origin",
-    "Access-Control-Allow-Credentials",
+# django-cors-headers compares header names case-insensitively, but preflight requests
+# typically send lowercase header names. Keep a single canonical entry here.
+CORS_ALLOW_HEADERS = list(default_headers) + [
     "ngrok-skip-browser-warning",
+    "x-organization-id",
 ]
 
 
@@ -242,6 +249,9 @@ CELERY_BEAT_SCHEDULE = {
     },
 }
 
+ADMIN_EMAIL = os.environ.get("ADMIN_EMAIL", "")
+
 # SERVER_URL
 SERVER_URL = os.environ.get("SERVER_URL", "")
 DASHBOARD_URL = os.environ.get("DASHBOARD_URL", "")
+CUSTOMER_ALERT_WEBHOOK_URL = os.environ.get("CUSTOMER_ALERT_WEBHOOK_URL", "")

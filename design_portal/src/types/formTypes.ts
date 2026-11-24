@@ -1,4 +1,5 @@
 export type RegisterForm = {
+  organization_name: string;
   username: string;
   name: string;
   email: string;

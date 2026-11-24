@@ -1,8 +1,14 @@
 import * as THREE from 'three';
-import { store } from '../../store';
 import { setobjectSelected, setSelectedChildObject } from '../../store/dataSlice';
 import { createLineObjects } from '../../utils/outlineHelpers';
-import { INVISIBLE_BOXES, PART_TYPES } from '../interface';
+import {
+  DOUBLE_DOOR_PLANK_TYPES,
+  DRAWER_PLANK_TYPES,
+  FLOOR_PLAN_TYPES,
+  INVISIBLE_BOXES,
+  OBJECT_TYPES,
+  PART_TYPES,
+} from '../interface';
 
 export class SelectObjectController {
   private camera: THREE.PerspectiveCamera;
@@ -25,15 +31,19 @@ export class SelectObjectController {
   private cachedTargets: THREE.Mesh[] = [];
   private lastCacheUpdate: number = 0;
   private readonly CACHE_DURATION = 500; // ms
+  private lastRaycastTime: number = 0;
 
   // optional callbacks for React
   public onHover: ((obj: THREE.Mesh | null) => void) | null = null;
   public onSelect: ((obj: THREE.Mesh | null) => void) | null = null;
   public onShowHelperTool: ((obj: THREE.Mesh | null) => void) | null = null;
 
-  constructor(camera: THREE.PerspectiveCamera, scene: THREE.Scene) {
+  private dispatch: any;
+
+  constructor(camera: THREE.PerspectiveCamera, scene: THREE.Scene, dispatch?: any) {
     this.camera = camera;
     this.scene = scene;
+    this.dispatch = dispatch;
 
     this.raycaster = new THREE.Raycaster();
     this.mouse = new THREE.Vector2();
@@ -65,7 +75,13 @@ export class SelectObjectController {
     const cameraRotated = !this.camera.quaternion.equals(this.lastCameraQuaternion);
 
     if (mouseChanged || cameraMoved || cameraRotated) {
-      this._handleHover();
+      // Throttle raycasting to max 30fps (approx 33ms)
+      const now = Date.now();
+      if (now - this.lastRaycastTime > 33) {
+        this._handleHover();
+        this.lastRaycastTime = now;
+      }
+
       // Update last known states
       this.lastMouse.copy(this.mouse);
       this.lastCameraPosition.copy(this.camera.position);
@@ -93,8 +109,10 @@ export class SelectObjectController {
     this.objectSelectOutline = null;
     this.partSelectOutline = null;
 
-    store.dispatch(setobjectSelected(null));
-    store.dispatch(setSelectedChildObject(null));
+    if (this.dispatch) {
+      this.dispatch(setobjectSelected(null));
+      this.dispatch(setSelectedChildObject(null));
+    }
 
     if (this.onSelect) this.onSelect(null);
 
@@ -127,15 +145,27 @@ export class SelectObjectController {
     this.selectedPart = null;
     this.clearCache();
 
-    store.dispatch(setobjectSelected(object.userData.objectId));
-    store.dispatch(setSelectedChildObject(null));
+    if (this.dispatch) {
+      this.dispatch(setobjectSelected(object.userData.objectId));
+      this.dispatch(setSelectedChildObject(null));
+    }
 
     this._applySmallCupboardSelectOutline(object);
 
     // Trigger HelperTool display
     if (this.onShowHelperTool) {
+      if (
+        Object.values(FLOOR_PLAN_TYPES).includes(object.userData.type) ||
+        [PART_TYPES.L_SHAPE_OBJECT, PART_TYPES.U_SHAPE_OBJECT].includes(object.userData.type)
+      ) {
+        this.onShowHelperTool(null);
+        if (this.onSelect) this.onSelect(object);
+        return;
+      }
       this.onShowHelperTool(object);
     }
+
+    if (this.onSelect) this.onSelect(object);
 
     return;
   }
@@ -150,9 +180,23 @@ export class SelectObjectController {
     this.clearCache();
 
     if (this.onSelect) this.onSelect(object);
-    store.dispatch(setSelectedChildObject(object.userData.objectId));
+    if (this.dispatch) {
+      this.dispatch(setSelectedChildObject(object.userData.objectId));
+    }
 
     this._applyPartSelectOutline(object);
+
+    // Trigger HelperTool display for parts
+    if (this.onShowHelperTool) {
+      if (
+        Object.values(FLOOR_PLAN_TYPES).includes(object.userData.type) ||
+        [PART_TYPES.L_SHAPE_OBJECT, PART_TYPES.U_SHAPE_OBJECT].includes(object.userData.type)
+      ) {
+        this.onShowHelperTool(null);
+      } else {
+        this.onShowHelperTool(object);
+      }
+    }
 
     // If the part is also a 'Main' object (like a Drawer group),
     // we might want the big dotted outline on it.
@@ -211,6 +255,11 @@ export class SelectObjectController {
       return;
     }
 
+    // 1.5 Intercept GLB MODELs from entering part-selection mode
+    if (topParent.userData.type === OBJECT_TYPES.MODEL) {
+      return;
+    }
+
     // 2. Level 1 (Cupboard) is selected. Check for Groups (Drawer/Door)
     const groupParent = this._getGroupParent(object);
 
@@ -264,6 +313,11 @@ export class SelectObjectController {
     // Traverse scene to find all candidate meshes
     this.scene.traverse((object) => {
       if (object instanceof THREE.Mesh) {
+        // Skip objects without objectId (like the TransformControls gizmos)
+        if (!object.userData.objectId && !object.userData.object_id) {
+          return;
+        }
+
         // Skip if it's the selected main object itself (we might want to select its parts though)
         if (
           this.selectedMainObject &&
@@ -303,6 +357,30 @@ export class SelectObjectController {
 
     if (hits.length > 0) {
       newHover = hits[0].object as THREE.Mesh;
+
+      // Ascend to the highest parent sharing the exact same objectId
+      // This protects GLB wrappers from being split if clicked on a submesh.
+      const hoverId = newHover.userData.objectId || newHover.userData.object_id;
+      if (hoverId) {
+        let current: THREE.Object3D | null = newHover;
+        while (
+          current &&
+          current.parent &&
+          (current.parent.userData.objectId === hoverId ||
+            current.parent.userData.object_id === hoverId)
+        ) {
+          current = current.parent;
+        }
+
+        // Ensure newHover receives the root level object to force massive Outline selection boxes
+        if (
+          current instanceof THREE.Mesh ||
+          current instanceof THREE.Group ||
+          current instanceof THREE.Object3D
+        ) {
+          newHover = current as THREE.Mesh;
+        }
+      }
     } else {
       newHover = null;
     }
@@ -354,7 +432,7 @@ export class SelectObjectController {
     }
 
     if (!this.hoveredObject) return;
-    const outline = createLineObjects(this.hoveredObject, 0x00eeff);
+    const outline = createLineObjects(this.hoveredObject, 0x00ffff);
     this.scene.add(outline);
     this.hoverOutline = outline;
   }
@@ -390,7 +468,7 @@ export class SelectObjectController {
 
   private _createSelectionBox(obj: THREE.Mesh): THREE.Mesh {
     const material = new THREE.MeshBasicMaterial({
-      color: 0x12086f,
+      color: 0x1f7aff,
       transparent: true,
       opacity: 0.3,
       depthTest: false,
@@ -419,7 +497,20 @@ export class SelectObjectController {
 
     // Here we create the mesh without MeshBuilder because in the future we may need to apply draggable behavior
     const mesh = new THREE.Mesh(geometry, material);
-    mesh.name = 'outline_box';
+    mesh.renderOrder = 1002;
+    mesh.name = obj.userData.objectId ? `outline_box-${obj.userData.objectId}` : 'outline_box';
+
+    // Add a crisp border so selected boxes stay clearly blue at all zoom levels.
+    const edgeGeometry = new THREE.EdgesGeometry(geometry);
+    const edgeMaterial = new THREE.LineBasicMaterial({
+      color: 0x0f5fff,
+      transparent: true,
+      opacity: 1,
+      depthTest: false,
+    });
+    const edges = new THREE.LineSegments(edgeGeometry, edgeMaterial);
+    edges.renderOrder = 1003;
+    mesh.add(edges);
 
     if (obj.geometry) {
       mesh.matrixAutoUpdate = false;
@@ -435,9 +526,18 @@ export class SelectObjectController {
 
   private _createOutLine(obj: THREE.Mesh) {
     let outline: THREE.Object3D;
+    const type = obj.userData.type;
+
     if (
-      obj.userData.type === INVISIBLE_BOXES.INVISIBLE_BOX ||
-      obj.userData.type === PART_TYPES.PLANK
+      type === INVISIBLE_BOXES.INVISIBLE_BOX ||
+      type === PART_TYPES.PLANK ||
+      type === PART_TYPES.VERTICAL_PLANK ||
+      type === PART_TYPES.HORIZONTAL_PLANK ||
+      type === PART_TYPES.BACK_PLANK ||
+      type === PART_TYPES.DOOR ||
+      type === PART_TYPES.DOUBLE_DOOR ||
+      Object.values(DRAWER_PLANK_TYPES).includes(type) ||
+      Object.values(DOUBLE_DOOR_PLANK_TYPES).includes(type)
     ) {
       outline = this._createSelectionBox(obj);
     } else {

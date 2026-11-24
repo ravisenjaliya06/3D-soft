@@ -2,15 +2,18 @@
 import json
 import logging
 import os
+import re
+import shutil
 import traceback
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 # Django imports
-from django.db.models import QuerySet
+from django.db.models import Q, QuerySet
 
 # External imports
 import pandas as pd
 from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework.decorators import action
 from rest_framework.exceptions import NotFound
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
@@ -35,7 +38,7 @@ from design.models import (
     DesignVersion,
     NestingFile,
     NestingSheet,
-    Organization,
+    RenderImage,
 )
 from design.nest import nest
 from design.serializers import (
@@ -44,6 +47,7 @@ from design.serializers import (
     DesignVersionSerializer,
     NestingFileSerializer,
     NestingSheetSerializer,
+    RenderImageSerializer,
     SceneGetSerializer,
     ScenePayloadSerializer,
 )
@@ -139,8 +143,7 @@ class OrganizationDesignSettingViewSet(ModelViewSet):
         return Response(serializer.data, status=HTTP_200_OK)
 
     def create(self: "OrganizationDesignSettingViewSet", request: Request) -> Response:
-        organization_user = request.user
-        organization = Organization.objects.filter(user=organization_user).first()
+        organization = request.user.selected_organization
 
         if not organization:
             return Response(
@@ -164,8 +167,7 @@ class OrganizationDesignSettingViewSet(ModelViewSet):
         self: "OrganizationDesignSettingViewSet", request: Request, *args, **kwargs
     ) -> Response:
 
-        organization_user = request.user
-        organization = Organization.objects.filter(user=organization_user).first()
+        organization = request.user.selected_organization
 
         if not organization:
             return Response(
@@ -264,10 +266,19 @@ class NestAPIViewset(ModelViewSet):
             )
 
         # Get all planks from catalogs
+        child_types = [
+            CatalogTypeChoices.DOOR,
+            CatalogTypeChoices.DRAWER_FACE,
+            CatalogTypeChoices.FRONT_DRAWER_PLANK,
+            CatalogTypeChoices.BACK_DRAWER_PLANK,
+            CatalogTypeChoices.BOTTOM_DRAWER_PLANK,
+            CatalogTypeChoices.RIGHT_DRAWER_PLANK,
+            CatalogTypeChoices.LEFT_DRAWER_PLANK,
+        ]
+
         catalogs_query = DesignCatalog.objects.filter(
             organization=request.user.selected_organization,
-            type=CatalogTypeChoices.PLANK,
-        )
+        ).filter(Q(type=CatalogTypeChoices.PLANK) | Q(type__in=child_types))
         if version:
             catalogs_query = catalogs_query.filter(version=version)
         else:
@@ -307,6 +318,10 @@ class NestAPIViewset(ModelViewSet):
             design_setting.sheet_height if design_setting else NESTING_SHEET_HEIGHT
         )
 
+        # Force horizontal sheet orientation
+        if main_sheet_width < main_sheet_height:
+            main_sheet_width, main_sheet_height = main_sheet_height, main_sheet_width
+
         # Normalize data for nesting
         normalized = {}
         for rid, item in parsed_data.items():
@@ -318,11 +333,22 @@ class NestAPIViewset(ModelViewSet):
                 "depth": float(item["depth"]),
                 "grooves": item.get("grooves", []),
                 "minifix_holes": item.get("minifix_holes", []),
+                "panel_design": item.get("panel_design", {}),
                 "position": item.get("position", {}),
                 "rotation": item.get("rotation", {}),
+                "edge_banding": item.get("edge_banding", {}),
+                "parent_name": item.get("parent_name", ""),
+                "material_name": item.get("material_name", "-"),
+                "banding_material_name": item.get("banding_material_name", "-"),
+                # Pass through texture grain in multiple shapes for downstream normalization
+                "textureGrain": item.get("textureGrain"),
+                "texture_grain": item.get("texture_grain"),
+                "texture": item.get("texture"),
             }
 
         output_folder = os.path.join("umaboy", "media", "output", f"{design_id}")
+        if os.path.exists(output_folder):
+            shutil.rmtree(output_folder, ignore_errors=True)
         os.makedirs(output_folder, exist_ok=True)
         output_file = os.path.join(output_folder, "nesting.svg")
 
@@ -333,6 +359,9 @@ class NestAPIViewset(ModelViewSet):
             main_sheet_height,
             enclosing_rectangle=True,
             design_setting=design_setting,
+            design_name=design.design_name if design else "files",
+            order_number=design.order_number if design else "",
+            company_name=design.customer_company if design else "",
         )
 
         excel_file_path = os.path.join(output_folder, "nesting.xlsx")
@@ -377,11 +406,57 @@ class NestAPIViewset(ModelViewSet):
         elif format_type == "svg":
             file_path = f"{base_path}/nesting_sheet_{sheet_number}.svg"
         elif format_type == "xml_zip":
-            file_path = f"{base_path}/xml_files.zip"
+            design = Design.objects.filter(
+                id=design_id, organization=request.user.selected_organization
+            ).first()
+            if design:
+                safe_design_name = re.sub(r'[\\/*?:"<>|]', "", design.design_name)
+                file_path = f"{base_path}/xml_{safe_design_name}.zip"
+            else:
+                file_path = f"{base_path}/xml_files.zip"
+        elif format_type == "json":
+            # Auto-trigger nesting to generate the latest layout data
+            nesting_response = self.nesting(request, design_id)
+            if hasattr(
+                nesting_response, "status_code"
+            ) and nesting_response.status_code not in (200, 201):
+                return Response(
+                    {
+                        "error": "Could not generate nesting data. Ensure the design has planks."
+                    },
+                    status=HTTP_400_BAD_REQUEST,
+                )
+
+            json_path = f"{base_path}/nesting_data.json"
+            # File should exist now — read and return it
+            if os.path.exists(json_path):
+                with open(json_path, "r", encoding="utf-8") as f:
+                    json_data = json.load(f)
+                    if not request.data.get("minimal"):
+                        return Response(json_data, status=HTTP_200_OK)
+                    minimal_data = []
+                    for part in json_data:
+                        minimal_data.append(
+                            {
+                                "id": part.get("ID"),
+                                "unique_id": part.get("Unique ID", part.get("ID")),
+                                "name": part.get("name", part.get("Name")),
+                                "width": part.get("width"),
+                                "height": part.get("height"),
+                                "depth": part.get("depth", part.get("thickness")),
+                                "type": part.get("type"),
+                            }
+                        )
+                    return Response(minimal_data, status=HTTP_200_OK)
+            else:
+                return Response(
+                    {"error": "Nesting data not found after generation"},
+                    status=HTTP_404_NOT_FOUND,
+                )
         else:
             return Response(
                 {
-                    "Error": "Enter Valid Format (pdf, xlsx, gcode, dwg, xml, svg, xml_zip)"
+                    "Error": "Enter Valid Format (pdf, xlsx, gcode, dwg, xml, svg, xml_zip, json)"
                 },
                 status=HTTP_400_BAD_REQUEST,
             )
@@ -401,11 +476,15 @@ class DesignVersionViewSet(ModelViewSet):
 
 
 class DesignCatalogViewSet(ModelViewSet):
-    permission_classes = [IsAuthenticated]
+    # Use Designer permission so ghost impersonation rules apply consistently
+    # (view-only ghosts cannot write; full ghosts can write while impersonating).
+    permission_classes = [Designer]
     http_method_names = [GET, POST]
 
     def get_queryset(self: "DesignCatalogViewSet") -> QuerySet[Design]:
-        return DesignCatalog.objects.all()
+        return DesignCatalog.objects.filter(
+            organization=self.request.user.selected_organization
+        )
 
     def get_latest_version(
         self: "DesignCatalogViewSet", design: Design
@@ -427,8 +506,9 @@ class DesignCatalogViewSet(ModelViewSet):
                     is_library=True,
                 )
                 .prefetch_related(
-                    "materials__finishes",
-                    "materials__finish_types",
+                    "materials",
+                    "materials__finishes__finish",
+                    "materials__finish_types__finish_type",
                     "materials__textures__texture",
                     "materials__properties",
                 )
@@ -450,12 +530,22 @@ class DesignCatalogViewSet(ModelViewSet):
         if not version:
             return Response(
                 {"detail": "Design not found"},
-                status=404,
+                status=200,
             )
 
-        catalogs = self.get_queryset().filter(
-            version=version,
-            organization=request.user.selected_organization,
+        catalogs = (
+            self.get_queryset()
+            .filter(
+                version=version,
+                organization=request.user.selected_organization,
+            )
+            .prefetch_related(
+                "materials",
+                "materials__finishes__finish",
+                "materials__finish_types__finish_type",
+                "materials__textures__texture",
+                "materials__properties",
+            )
         )
 
         serializer = SceneGetSerializer(catalogs, many=True)
@@ -638,3 +728,48 @@ class NestingFileViewSet(ModelViewSet):
 
         serializer = self.serializer_class(files, many=True)
         return Response(serializer.data, status=HTTP_200_OK)
+
+
+class RenderImageViewSet(ModelViewSet):
+    permission_classes = [IsAuthenticated]
+    serializer_class = RenderImageSerializer
+    http_method_names = ["get", "post", "delete"]
+
+    def get_queryset(self: "RenderImageViewSet") -> QuerySet[RenderImage]:
+        design_id = self.kwargs.get("design_id")
+        return RenderImage.objects.filter(
+            design_id=design_id,
+            design__organization=self.request.user.selected_organization,
+        )
+
+    def create(
+        self: "RenderImageViewSet",
+        request: Request,
+        design_id: Optional[str] = None,
+        *args,
+        **kwargs,
+    ) -> Response:
+        design = Design.objects.filter(
+            id=design_id, organization=request.user.selected_organization
+        ).first()
+        if not design:
+            return Response({"error": "Design not found"}, status=HTTP_404_NOT_FOUND)
+
+        request.data["design"] = design.id
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+        return Response(serializer.data, status=HTTP_201_CREATED)
+
+    @action(detail=False, methods=["post"])
+    def clear(
+        self: "RenderImageViewSet", request: Request, design_id: Optional[str] = None
+    ) -> Response:
+        design = Design.objects.filter(
+            id=design_id, organization=request.user.selected_organization
+        ).first()
+        if not design:
+            return Response({"error": "Design not found"}, status=HTTP_404_NOT_FOUND)
+
+        RenderImage.objects.filter(design=design).delete()
+        return Response({"message": "Clear successful"}, status=HTTP_200_OK)

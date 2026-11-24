@@ -1,7 +1,7 @@
 # Python imports
 import secrets
 import string
-from typing import Any, Dict, List, Optional
+from typing import Dict, List
 
 # Django imports
 from django.contrib.auth.models import Group
@@ -23,9 +23,11 @@ from umaboy.models import Organization, User, UserOrganizationPermission
 from user.constant import MOBILE_NUMBER_LENGTH
 from user.utils import (
     add_user_to_organization,
-    default_material_data,
-    duplicate_default_catalogs_for_organization,
-    duplicate_default_textures,
+    duplicate_data,
+    fetch_and_update_location,
+    get_client_ip,
+    get_ip_location,
+    run_background_task,
     verify_otp,
 )
 
@@ -52,7 +54,7 @@ class GroupValidationSerializer(serializers.Serializer):
         if not value:
             raise serializers.ValidationError("At least one group must be provided.")
 
-        group_names = value
+        group_names = list(set(value))
         groups = Group.objects.filter(name__in=group_names)
         if len(groups) != len(group_names):
             raise serializers.ValidationError("One or more group names are invalid.")
@@ -64,6 +66,7 @@ class SignupSerializer(PhoneValidationSerializer):
     Serializer for User signup
     """
 
+    organization_name = serializers.CharField(required=True)
     email = serializers.EmailField()
     username = serializers.CharField()
     name = serializers.CharField(required=True)
@@ -111,29 +114,47 @@ class SignupSerializer(PhoneValidationSerializer):
         return data
 
     def create(self: "SignupSerializer", validated_data: Dict[str, str]) -> User:
-        """
-        Create and return a new User instance.
-        """
         validated_data.pop("confirm_password", None)
 
         group_names = self.context.get("group_names")
         password = validated_data.pop("password")
+        organization_display_name = validated_data.pop("organization_name")
+
         user = User(**validated_data)
         user.set_password(password)
+
+        request = self.context.get("request")
+
+        ip_address = None
+        location = None
+
+        if request:
+            ip_address = get_client_ip(request)
+            if ip_address:
+                location = get_ip_location(ip_address)
+
+        user.ip_address = ip_address
+        user.location = location
         user.save()
 
+        if ip_address:
+            run_background_task(
+                target=fetch_and_update_location, args=(user.id, ip_address)
+            )
+
         organization, _ = Organization.objects.get_or_create(
-            name=f"{user.username}'s Organization"
+            name=f"{user.username}'s Organization",
+            defaults={"display_name": organization_display_name},
         )
+
         organization.user.add(user)
-        organization.save()
 
         user.selected_organization = organization
         user.save()
-        add_user_to_organization(user, organization, group_names)
-        default_material_data(organization)
-        duplicate_default_catalogs_for_organization(organization)
-        duplicate_default_textures(organization)
+
+        add_user_to_organization(user, organization, group_names, is_invited=False)
+
+        run_background_task(target=duplicate_data, args=(organization,))
 
         DesignSetting.objects.get_or_create(
             organization=organization,
@@ -187,7 +208,7 @@ class LoginSerializer(serializers.Serializer):
                 view._send_otp_email(user, otp)
 
             raise exceptions.ValidationError(
-                _("Account is not verified. Please verify account with the OTP.")
+                _("Account is not verified. Please verify account with Admin.")
             )
         user.otp = None
         user.otp_expiration_time = None
@@ -212,7 +233,7 @@ class OtpSerializer(serializers.Serializer):
         Save the user as verified after OTP validation.
         """
         user = self.validated_data["user"]
-        user.is_verified = True
+        user.is_verified = False
         user.save()
 
         return user
@@ -234,8 +255,14 @@ class RequestEmailSerializer(serializers.Serializer):
 
 class UserProfileSerializer(serializers.ModelSerializer):
     username = serializers.CharField(required=True)
-    selected_organization_name = serializers.SerializerMethodField()
+    selected_organization_name = serializers.CharField(
+        source="selected_organization.name", read_only=True
+    )
+    organization_display_name = serializers.CharField(
+        source="selected_organization.display_name", read_only=True
+    )
     user_groups = serializers.ListField(child=serializers.CharField(), required=False)
+    organizations = serializers.SerializerMethodField()
 
     class Meta:
         model = User
@@ -245,22 +272,37 @@ class UserProfileSerializer(serializers.ModelSerializer):
             "email",
             "phone",
             "selected_organization_name",
+            "organization_display_name",
             "user_groups",
             "profile_picture",
+            "is_ghost",
+            "ghost_access_type",
+            "selected_organization",
+            "organizations",
         ]
 
-    def get_selected_organization_name(
-        self: "UserProfileSerializer", obj: User
-    ) -> Optional[str]:
-        if obj.selected_organization:
-            return obj.selected_organization.name
-        return None
+    def get_organizations(self: "UserProfileSerializer", user: User) -> list[dict]:
+        orgs = user.organizations.all().order_by("name")
+        return [
+            {
+                "id": str(org.id),
+                "name": org.name,
+                "display_name": org.display_name,
+                "logo": org.logo.url if getattr(org, "logo", None) else None,
+            }
+            for org in orgs
+        ]
 
 
 class UserProfileEditSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ["name", "phone", "profile_picture"]
+        fields = [
+            "name",
+            "phone",
+            "profile_picture",
+            "selected_organization",
+        ]
 
     def validate_phone(self: "UserProfileEditSerializer", value: str) -> str:
         """
@@ -420,16 +462,43 @@ class SetPasswordSerializer(serializers.Serializer):
 class OrganizationSerializer(serializers.ModelSerializer):
     class Meta:
         model = Organization
-        fields = ["id", "display_name", "logo"]
+        fields = [
+            "id",
+            "name",
+            "display_name",
+            "logo",
+            "company_name",
+            "company_address",
+            "company_email",
+            "company_phone",
+            "company_website",
+            "company_gstin",
+            "company_pan",
+            "bank_name",
+            "account_name",
+            "account_number",
+            "account_type",
+            "ifsc_code",
+            "branch_name",
+            "upi_id",
+        ]
 
-    def update(
-        self: "OrganizationSerializer",
-        instance: Organization,
-        validated_data: Dict[str, Any],
-    ) -> Organization:
-        instance.display_name = validated_data.get(
-            "display_name", instance.display_name
-        )
-        instance.logo = validated_data.get("logo", instance.logo)
-        instance.save()
-        return instance
+
+class AdminLoginSerializer(serializers.Serializer):
+    email = serializers.CharField()
+    password = serializers.CharField(style={"input_type": "password"}, write_only=True)
+
+    def validate(self: "AdminLoginSerializer", attrs: Dict[str, str]) -> Dict[str, str]:
+        email = attrs.get("email")
+        password = attrs.get("password")
+
+        user = User.objects.filter(email=email).first()
+
+        if not user or not user.check_password(password):
+            raise serializers.ValidationError("Invalid email or password")
+
+        if not user.is_superuser:
+            raise serializers.ValidationError("You do not have admin access")
+
+        attrs["user"] = user
+        return attrs

@@ -5,12 +5,14 @@ export const API_ENDPOINT = {
   GET_USER_DETAILS: 'user/',
   GET_ORGANIZATION_USERS: 'user/organization/users/',
   GET_ORGANIZATION_DETAILS: 'user/organization/details/',
+  ALL_ORGANIZATIONS: 'user/organization/all/',
   GET_DESIGN_SETTING: 'design/setting/',
   GET_CATALOG_ITEMS: 'design/catalogs/',
   GET_NON_CUSTOM_DESIGNS: 'design/?is_custom=false',
   GET_MATERIAL_COMPANIES: 'material/company/',
   GET_TEXTURES: 'material/finishes/?type=Texture',
-  GET_DESIGN_CATALOG_ITEMS: (design_id: string) => 'design/catalogs/?design_id=' + design_id,
+  GET_DESIGN_CATALOG_ITEMS: (design_id: string, version_id?: string) =>
+    `design/catalogs/?design_id=${design_id}${version_id ? `&version_id=${version_id}` : ''}`,
   GET_DESIGN_SETTINGS: (designID: string) => `design/${designID}/settings/`,
   GET_DESIGN_NESTING_SHEET: (designID: string, sheetID: string) =>
     `design/${designID}/catalog/item/${sheetID}/`,
@@ -54,20 +56,31 @@ export const API_ENDPOINT = {
   CREATE_DESIGN_OBJECT: (designID: string) => `design/${designID}/object/`,
   CREATE_MATERIAL_DESIGN_CATALOG: (catalogID: string) => `material/catalog/${catalogID}/design/`,
   CREATE_DESIGN_NESTING: (designID: string) => `design/${designID}/nesting/`,
+  CLEAR_RENDER_IMAGES: (designID: string) => `design/${designID}/render-images/clear/`,
+  UPLOAD_RENDER_IMAGE: (designID: string) => `design/${designID}/render-images/`,
+  CREATE_FINISH: 'material/finishes/',
 
   //PUT
   UPDATE_USER_DETAILS: 'user/',
   UPDATE_ORGANIZATION_DETAILS: 'user/organization/update/',
+  UPDATE_GHOST_PERMISSION: 'user/ghost-permission/',
   UPDATE_DESIGN_SETTING: 'design/setting/',
   EDIT_ORGANIZATION_USER: (userID: string) => `user/organization/edit_user/${userID}/`,
+  GET_DESIGN_DETAILS: (designID: string) => `design/${designID}/`,
   UPDATE_DESIGN_DETAILS: (designID: string) => `design/${designID}/`,
   UPDATE_OBJECT_DATA: (designID: string) => `design/${designID}/object/`,
   UPDATE_DESIGN_SETTINGS: (designID: string) => `design/${designID}/settings/`,
   UPDATE_PART_MATERIAL: (partID: string) => `material/catalog/part/${partID}/`,
+  UPDATE_MATERIAL: (materialID: string) => `material/${materialID}/`,
+  UPDATE_COMPANY_MATERIAL_DETAIL: (companyID: string, materialID: string) =>
+    `material/company/${companyID}/material/${materialID}/`,
   DOWNLOAD_NESTING_PDF: (designID: string) => `design/${designID}/nesting/download/`,
 
   //DELETE
   REMOVE_USER_FROM_ORGANIZATION: (userID: string) => `user/organization/remove_user/${userID}/`,
   DELETE_ALL_OBJECTS: (designID: string) => `material/catalog/design/${designID}/`,
   DELETE_OBJECT: (designID: string) => `design/${designID}/object/`,
+  DELETE_MATERIAL: (materialID: string) => `material/${materialID}/`,
+  DELETE_COMPANY_MATERIAL_DETAIL: (companyID: string, materialID: string) =>
+    `material/company/${companyID}/material/${materialID}/`,
 };

@@ -25,15 +25,15 @@ for /f "tokens=4" %%a in ('npm run lint 2^>^&1 ^| findstr /C:"errors"') do (
     set "error_count=%%a"
 )
 
-if !error_count! GTR 38 (
-    echo ✗ ESLint failed - Found !error_count! errors (allowed up to 38)
+if !error_count! GTR 0 (
+    echo ✗ ESLint failed - Found !error_count! errors (allowed up to 0)
     echo.
     echo Error List:
     call npm run lint
     set "any_failed=1"
     set "lint_status=Failed"
 ) else (
-    echo ✓ ESLint passed - Found !error_count! errors (allowed up to 38)
+    echo ✓ ESLint passed - Found !error_count! errors (allowed up to 0)
     set "lint_status=Passed"
 )
 
@@ -50,14 +50,28 @@ if %ERRORLEVEL% NEQ 0 (
     set "format_status=Passed"
 )
 
+:: 2. Build Check
+echo.
+echo === Running Format Check ===
+call npm run build
+if %ERRORLEVEL% NEQ 0 (
+    echo ✗ Build Check failed
+    set "any_failed=1"
+    set "build_status=Failed"
+) else (
+    echo ✓ Build Check passed
+    set "build_status=Passed"
+)
+
 :: Print detailed summary with timestamp
 echo.
 echo === Check Summary ===
 echo Date: %YYYY%-%MM%-%DD%
 echo Time: %HH%:%Min%:%Sec%
 echo.
-echo ESLint: %lint_status% - Found !error_count! errors (allowed up to 38)
+echo ESLint: %lint_status% - Found !error_count! errors (allowed up to 0)
 echo Format: %format_status%
+echo Build: %build_status%
 
 if %any_failed% EQU 1 (
     echo.

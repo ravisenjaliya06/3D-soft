@@ -49,13 +49,17 @@ class APIViewTestCase(APIBaseTestCase):
                 "password": "new_password@123",
                 "confirm_password": "new_password@123",
                 "phone": "1234567890",
+                "organization_name": "New Workspace",
             },
             format="json",
         )
 
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(User.objects.count(), user_count_before + 1)
-        self.assertEqual(response.data["message"], "User registered")
+        self.assertEqual(
+            response.data["message"],
+            "User Registration Is Successful. Wait For Admin Approval.",
+        )
 
     def test_user_registration_with_short_password(self: "APIViewTestCase") -> None:
         data = {
@@ -65,6 +69,7 @@ class APIViewTestCase(APIBaseTestCase):
             "password": "123",
             "confirm_password": "123",
             "phone": self.user.phone,
+            "organization_name": "New Workspace",
         }
 
         response = self.client.post(reverse("register"), data, format="json")
@@ -83,6 +88,7 @@ class APIViewTestCase(APIBaseTestCase):
             "password": self.user.password,
             "confirm_password": self.user.password,
             "phone": 123456789789,
+            "organization_name": "New Workspace",
         }
 
         response = self.client.post(reverse("register"), data, format="json")
@@ -102,6 +108,7 @@ class APIViewTestCase(APIBaseTestCase):
             "password": self.user.password,
             "confirm_password": self.user.password,
             "phone": self.user.phone,
+            "organization_name": "New Workspace",
         }
 
         response = self.client.post(reverse("register"), data, format="json")
@@ -116,6 +123,7 @@ class APIViewTestCase(APIBaseTestCase):
             "password": "tesitng@123",
             "confirm_password": "tesitng123@123",
             "phone": "1234567890",
+            "organization_name": "New Workspace",
         }
 
         response = self.client.post(reverse("register"), data, format="json")
@@ -134,6 +142,7 @@ class APIViewTestCase(APIBaseTestCase):
             "password": "12345678",
             "confirm_password": "12345678",
             "phone": self.user.phone,
+            "organization_name": "New Workspace",
         }
 
         response = self.client.post(reverse("register"), data, format="json")
@@ -149,6 +158,7 @@ class APIViewTestCase(APIBaseTestCase):
             "name": "Test User",
             "confirm_password": "password123",
             "phone": "1234567890",
+            "organization_name": "New Workspace",
         }
         response = self.client.post(reverse("register"), data, format="json")
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
@@ -163,6 +173,7 @@ class APIViewTestCase(APIBaseTestCase):
             "password": self.user.password,
             "confirm_password": self.user.password,
             "phone": self.user.phone,
+            "organization_name": "New Workspace",
         }
 
         response = self.client.post(reverse("register"), data, format="json")
@@ -176,6 +187,7 @@ class APIViewTestCase(APIBaseTestCase):
             "password": self.user.password,
             "confirm_password": self.user.password,
             "phone": self.user.phone,
+            "organization_name": "New Workspace",
         }
 
         response = self.client.post(reverse("register"), data, format="json")
@@ -199,13 +211,17 @@ class APIViewTestCase(APIBaseTestCase):
                 "password": "new_password@123",
                 "confirm_password": "new_password@123",
                 "phone": "1234567890",
+                "organization_name": "New Workspace",
             },
             format="json",
         )
 
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(User.objects.count(), user_count_before + 1)
-        self.assertEqual(response.data["message"], "User registered")
+        self.assertEqual(
+            response.data["message"],
+            "User Registration Is Successful. Wait For Admin Approval.",
+        )
 
     def test_send_otp(self: "APIViewTestCase") -> None:
         response = self.client.post(
@@ -323,7 +339,7 @@ class APIViewTestCase(APIBaseTestCase):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(
             response.data["non_field_errors"][0],
-            "Account is not verified. Please verify account with the OTP.",
+            "Account is not verified. Please verify account with Admin.",
         )
 
     def test_send_forgot_password_mail(self: "APIViewTestCase") -> None:
@@ -907,6 +923,7 @@ class APIViewTestCase(APIBaseTestCase):
             "password": "12345678",
             "confirm_password": "12345678",
             "phone": self.user.phone,
+            "organization_name": "New Workspace",
         }
         response = self.client.post(reverse("register"), data, format="json")
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
