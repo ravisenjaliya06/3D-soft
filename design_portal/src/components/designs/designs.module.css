@@ -948,15 +948,6 @@
   margin: 0;
 }
 
-.scrollLoaderSpinner {
-  width: 18px;
-  height: 18px;
-  border: 2px solid var(--bv-border);
-  border-top-color: var(--bv-accent);
-  border-radius: 50%;
-  animation: spin 0.8s linear infinite;
-}
-
 /* ── Create / edit modal ───────────────────────────────────── */
 
 .createpopupOverlay,
@@ -1341,12 +1332,6 @@
   }
   to {
     opacity: 1;
-  }
-}
-
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
   }
 }
 

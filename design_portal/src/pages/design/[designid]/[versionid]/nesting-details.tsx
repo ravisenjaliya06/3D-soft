@@ -1,3 +1,4 @@
+import PhinxLoader from '@/components/common/PhinxLoader';
 import NestingDetails from '@/components/mes/nestingDetails';
 import Head from 'next/head';
 import { useRouter } from 'next/router';
@@ -17,7 +18,7 @@ const NestingDetailsPage = () => {
   }, [router.isReady, router.query]);
 
   if (!designId || !versionId) {
-    return <div>Loading...</div>;
+    return <PhinxLoader overlay scene="sheet" label="Opening sheet layout…" />;
   }
 
   return (

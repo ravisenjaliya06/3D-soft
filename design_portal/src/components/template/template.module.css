@@ -35,13 +35,6 @@
   overflow-y: auto;
 }
 
-.loadingText {
-  margin-top: 1rem;
-  font-family: var(--bv-font);
-  font-weight: 600;
-  color: var(--bv-on-ink);
-}
-
 /* ── Hero ──────────────────────────────────────────────────── */
 
 .createdesigns {

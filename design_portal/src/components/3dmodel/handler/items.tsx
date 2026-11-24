@@ -1,3 +1,6 @@
+import { LOADER_MIN_VISIBLE_MS } from '@/components/common/useMinimumVisible';
+import PhinxLoader from '@/components/common/PhinxLoader';
+import { createRoot, type Root } from 'react-dom/client';
 import * as THREE from 'three';
 import { generateMinifixSystem, visualizeMinifixConnections } from '../minifix';
 import { PlankData } from '../minifix/types';
@@ -12,43 +15,25 @@ import { store } from '../store';
 import { updateObject } from '../store/dataSlice';
 import { selectMinifixStandards } from '../store/selectors';
 
+let fullScreenLoaderRoot: Root | null = null;
+let fullScreenLoaderShownAt = 0;
+let fullScreenLoaderHideTimer: number | undefined;
+
 export async function showFullScreenLoader(message = 'Loading...') {
   /**
-   * Shows a full screen loader with a message
+   * Shows the full-screen Phinx loader with a message
    */
+  // A hide was pending (minimum display time): keep the loader that is already on screen.
+  window.clearTimeout(fullScreenLoaderHideTimer);
   if (document.getElementById('global-loader')) return;
 
+  fullScreenLoaderShownAt = Date.now();
   const loader = document.createElement('div');
   loader.id = 'global-loader';
-  loader.style.position = 'fixed';
-  loader.style.top = '0';
-  loader.style.left = '0';
-  loader.style.width = '100vw';
-  loader.style.height = '100vh';
-  loader.style.background = 'rgba(0,0,0,0.7)';
-  loader.style.display = 'flex';
-  loader.style.flexDirection = 'column';
-  loader.style.justifyContent = 'center';
-  loader.style.alignItems = 'center';
-  loader.style.zIndex = '9999';
-  loader.innerHTML = `
-    <div style="color:white;font-size:20px;margin-bottom:20px;">${message}</div>
-    <div style="
-      width:60px;
-      height:60px;
-      border:6px solid #fff;
-      border-top-color:transparent;
-      border-radius:50%;
-      animation: spin 1s linear infinite;
-    "></div>
-    <style>
-      @keyframes spin { 
-        from { transform: rotate(0deg); } 
-        to { transform: rotate(360deg); } 
-      }
-    </style>
-  `;
   document.body.appendChild(loader);
+  fullScreenLoaderRoot = createRoot(loader);
+  // Plain render (no flushSync): this is often called from React effects; the wait below lets it paint.
+  fullScreenLoaderRoot.render(<PhinxLoader overlay label={message} />);
 
   await new Promise((resolve) => setTimeout(resolve, 100));
 }
@@ -57,8 +42,19 @@ export function hideFullScreenLoader() {
   /*
    Hides a full screen loader from the full page
   */
-  const loader = document.getElementById('global-loader');
-  if (loader) loader.remove();
+  window.clearTimeout(fullScreenLoaderHideTimer);
+  const remove = () => {
+    const loader = document.getElementById('global-loader');
+    if (fullScreenLoaderRoot) {
+      fullScreenLoaderRoot.unmount();
+      fullScreenLoaderRoot = null;
+    }
+    if (loader) loader.remove();
+  };
+  // Keep it up for the minimum time so the animation is readable, never longer.
+  const left = LOADER_MIN_VISIBLE_MS - (Date.now() - fullScreenLoaderShownAt);
+  if (left > 0) fullScreenLoaderHideTimer = window.setTimeout(remove, left);
+  else remove();
 }
 
 /**

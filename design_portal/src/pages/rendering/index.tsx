@@ -1,3 +1,4 @@
+import PhinxLoader from '@/components/common/PhinxLoader';
 import { FLOOR_PLAN_TYPES, MeshObjectData } from '@/components/3dmodel/sceneCreator/interface';
 import { store } from '@/components/3dmodel/store';
 import { ArchitecturalSceneData, DEFAULT_ROOM } from '@/components/rendering/interface';
@@ -12,7 +13,6 @@ import {
   LuCamera,
   LuImage,
   LuImageOff,
-  LuSofa,
   LuSparkles,
   LuTriangleAlert,
   LuVideo,
@@ -340,13 +340,12 @@ export default function RenderingPage() {
             </div>
           ) : !finalImage && !finalVideo ? (
             <div className={styles.loaderArea}>
-              <div className={styles.spinner}>
-                <LuSofa aria-hidden="true" />
-              </div>
-              <p>{loadingText}</p>
-              <small>
-                This can take a few minutes. Keep this tab open while we light the room.
-              </small>
+              <PhinxLoader
+                scene="lamp"
+                size="lg"
+                label={loadingText}
+                hint="This can take a few minutes. Keep this tab open while we light the room."
+              />
             </div>
           ) : (
             <div className={styles.resultArea}>

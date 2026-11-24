@@ -1,3 +1,5 @@
+import { useMinimumVisible } from '@/components/common/useMinimumVisible';
+import PhinxLoader from '@/components/common/PhinxLoader';
 import { hideFullScreenLoader, showFullScreenLoader } from '@/components/3dmodel/handler/items';
 import { RootState } from '@/components/3dmodel/store';
 import Header from '@/components/header/header';
@@ -54,6 +56,7 @@ const Nesting = () => {
   const [localData, setLocalData] = useState<any[]>([]);
   const [tableData, setTableData] = useState<any[]>([]);
   const [isLoadingTable, setIsLoadingTable] = useState(false);
+  const showTableLoading = useMinimumVisible(isLoadingTable);
   const [isGeneratingBOM, setIsGeneratingBOM] = useState(false);
   const [isGeneratingQuote, setIsGeneratingQuote] = useState(false);
   const [isDownloadingXML, setIsDownloadingXML] = useState(false);
@@ -1949,7 +1952,7 @@ const Nesting = () => {
                   <div className={styles.headerChips}>
                     <span className={styles.headerChip}>
                       <LuLayers aria-hidden="true" />
-                      {isLoadingTable ? '–' : displayData.length}{' '}
+                      {showTableLoading ? '–' : displayData.length}{' '}
                       {displayData.length === 1 ? 'part' : 'parts'}
                     </span>
                   </div>
@@ -2115,7 +2118,7 @@ const Nesting = () => {
               <div className={styles.tableCard}>
                 <div className={styles.tableCardHead}>
                   <h3>Panels</h3>
-                  {!isLoadingTable && displayData.length > 0 && (
+                  {!showTableLoading && displayData.length > 0 && (
                     <span className={styles.countPill}>
                       Showing {Math.min(visibleDesigns, displayData.length)} of {displayData.length}
                     </span>
@@ -2134,11 +2137,10 @@ const Nesting = () => {
                     </thead>
 
                     <tbody>
-                      {isLoadingTable ? (
+                      {showTableLoading ? (
                         <tr>
                           <td colSpan={5} className={styles.stateCell}>
-                            <span className={styles.spinner} aria-hidden="true" />
-                            Loading cabinet parts…
+                            <PhinxLoader scene="cabinet" size="sm" label="Loading cabinet parts…" />
                           </td>
                         </tr>
                       ) : displayData.length === 0 ? (
@@ -2185,7 +2187,7 @@ const Nesting = () => {
                   </table>
 
                   {/* ✅ Load More */}
-                  {!isLoadingTable && visibleDesigns < displayData.length && (
+                  {!showTableLoading && visibleDesigns < displayData.length && (
                     <div className={styles.designsLoadMore}>
                       <div className={styles.loadmore} onClick={handleLoadMore}>
                         <LuChevronsDown aria-hidden="true" />

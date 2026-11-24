@@ -1,8 +1,9 @@
+import { useMinimumVisible } from '@/components/common/useMinimumVisible';
 import AuthShowcase from '@/components/auth/AuthShowcase';
 import styles from '@/components/auth/auth.module.css';
 import { handleForgotAPI } from '@/components/forgot/utils';
 import InputField from '@/components/inputfields/InputField';
-import Loading_style from '@/components/loading.module.css';
+import PhinxLoader from '@/components/common/PhinxLoader';
 import { REDIRECT } from '@/services/CommonStatus';
 import { assets } from '@/svgPaths';
 import { ForgotForm } from '@/types/formTypes';
@@ -17,6 +18,7 @@ const Forgot = () => {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccessMessage] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const showLoading = useMinimumVisible(isLoading);
 
   const handleForgot = async (e: FormEvent<HTMLButtonElement>) => {
     e.preventDefault();
@@ -48,12 +50,7 @@ const Forgot = () => {
 
   return (
     <div className={styles.container}>
-      {isLoading && (
-        <div className={Loading_style.loadingOverlay}>
-          <div className={Loading_style.loadingSpinner}></div>
-          <p>Loading...</p>
-        </div>
-      )}
+      {showLoading && <PhinxLoader overlay label="Sending your reset code…" />}
 
       {/* ── Showcase panel (decorative) ─────────────────────── */}
       <AuthShowcase

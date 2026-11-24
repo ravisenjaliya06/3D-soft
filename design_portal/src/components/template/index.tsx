@@ -1,5 +1,5 @@
 import Header from '@/components/header/header';
-import Loading_style from '@/components/loading.module.css';
+import PhinxLoader from '@/components/common/PhinxLoader';
 import Sidebar from '@/components/sidebar/sidebar';
 import styles from '@/components/template/template.module.css';
 import { useRouter } from 'next/router';
@@ -58,12 +58,7 @@ const Template = () => {
 
   return (
     <div className={styles.container}>
-      {loading && (
-        <div className={Loading_style.loadingOverlay}>
-          <div className={Loading_style.loadingSpinner} />
-          <p className={styles.loadingText}>Preparing your design studio…</p>
-        </div>
-      )}
+      {loading && <PhinxLoader overlay label="Preparing your design studio…" />}
 
       <Sidebar />
       <div className={styles.rightside}>

@@ -1,3 +1,4 @@
+import { PhinxMiniLoader } from '@/components/common/PhinxLoader';
 import InputField from '@/components/inputfields/InputField';
 import {
   CENTER_STUDY_TABLE,
@@ -163,7 +164,7 @@ const ModelViewerComponent = ({
         <Suspense
           fallback={
             <div className="flex h-full w-full items-center justify-center text-slate-400">
-              <span className="animate-pulse">Loading model...</span>
+              <PhinxMiniLoader label="Loading model…" />
             </div>
           }
         >

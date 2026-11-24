@@ -1,7 +1,8 @@
+import { useMinimumVisible } from '@/components/common/useMinimumVisible';
 import AuthShowcase from '@/components/auth/AuthShowcase';
 import styles from '@/components/auth/auth.module.css';
 import InputField from '@/components/inputfields/InputField';
-import Loading_style from '@/components/loading.module.css';
+import PhinxLoader from '@/components/common/PhinxLoader';
 import { API_ENDPOINT } from '@/services/ApiEndPoints';
 import CommonService from '@/services/CommonService';
 import { REDIRECT } from '@/services/CommonStatus';
@@ -20,6 +21,7 @@ const Login = () => {
   const [error, setError] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState(false);
+  const showLoading = useMinimumVisible(isLoading);
   const [emailError, setEmailError] = useState<string | null>(null);
   const [passwordError, setPasswordError] = useState<string | null>(null);
 
@@ -106,12 +108,7 @@ const Login = () => {
 
   return (
     <div className={styles.container}>
-      {isLoading && (
-        <div className={Loading_style.loadingOverlay}>
-          <div className={Loading_style.loadingSpinner}></div>
-          <p>Loading...</p>
-        </div>
-      )}
+      {showLoading && <PhinxLoader overlay label="Signing you in…" />}
 
       {/* ── Showcase panel (decorative) ─────────────────────── */}
       <AuthShowcase

@@ -1,4 +1,4 @@
-import Loading_style from '@/components/loading.module.css';
+import PhinxLoader from '@/components/common/PhinxLoader';
 import { API_ENDPOINT } from '@/services/ApiEndPoints';
 import commonService from '@/services/CommonService';
 import { REDIRECT } from '@/services/CommonStatus';
@@ -721,12 +721,7 @@ const Header: React.FC<HeaderProps> = ({ router, design3D }) => {
 
   return (
     <>
-      {isLoading && (
-        <div className={Loading_style.loadingOverlay}>
-          <div className={Loading_style.loadingSpinner}></div>
-          <p>Loading...</p>
-        </div>
-      )}
+      {isLoading && <PhinxLoader overlay label="Crafting your space…" />}
       <div className={styles.header}>
         {/* Left: back to designs, design name, version */}
         <div className={styles.headerStart}>
@@ -932,12 +927,7 @@ const Header: React.FC<HeaderProps> = ({ router, design3D }) => {
             )}
           </div>
 
-          {isLoading && (
-            <div className={Loading_style.loadingOverlay}>
-              <div className={Loading_style.loadingSpinner}></div>
-              <p>Loading...</p>
-            </div>
-          )}
+          {isLoading && <PhinxLoader overlay label="Crafting your space…" />}
         </div>
       </div>
 

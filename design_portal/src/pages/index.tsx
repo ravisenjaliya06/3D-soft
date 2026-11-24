@@ -1,3 +1,4 @@
+import PhinxLoader from '@/components/common/PhinxLoader';
 import { getTokenDetail } from '@/components/helper/helper';
 import { REDIRECT } from '@/services/CommonStatus';
 import { useRouter } from 'next/router';
@@ -16,7 +17,7 @@ function Index() {
     }
   }, [router]);
 
-  return null;
+  return <PhinxLoader overlay label="Preparing your experience…" />;
 }
 
 export default Index;

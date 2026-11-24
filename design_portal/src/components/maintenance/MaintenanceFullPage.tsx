@@ -1,34 +1,21 @@
 'use client';
 
+import PhinxLoader from '@/components/common/PhinxLoader';
+
 const MaintenanceFullPage = () => {
   return (
     <div className="maintenance-wrapper">
       <div className="glow"></div>
       <div className="container">
         <div className="logo">PHINX</div>
-        <div className="status-icon">
-          <svg
-            width="32"
-            height="32"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            style={{ color: 'var(--primary)' }}
-          >
-            <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"></path>
-          </svg>
+        <div className="loader-tile">
+          <PhinxLoader scene="cabinet" size="md" label="" />
         </div>
         <h1>Workshop upgrade in progress</h1>
         <p>
           We&apos;re fitting new features into Phinx. Your designs and cut lists are safe, and
           we&apos;ll be back in a few minutes.
         </p>
-        <div className="progress-bar">
-          <div></div>
-        </div>
       </div>
 
       <style jsx>{`
@@ -73,27 +60,13 @@ const MaintenanceFullPage = () => {
           letter-spacing: 0.08em;
         }
 
-        .status-icon {
-          width: 80px;
-          height: 80px;
+        .loader-tile {
+          display: inline-flex;
           margin: 0 auto 2rem;
-          border: 3px solid var(--bv-glass-border);
-          border-radius: 50%;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          position: relative;
-        }
-
-        .status-icon::after {
-          content: '';
-          position: absolute;
-          width: 100%;
-          height: 100%;
-          border: 3px solid var(--primary);
-          border-radius: 50%;
-          border-top-color: transparent;
-          animation: spin 2s linear infinite;
+          padding: 20px 28px 18px;
+          border-radius: 18px;
+          background: var(--bv-surface);
+          box-shadow: 0 18px 40px rgba(0, 0, 0, 0.28);
         }
 
         h1 {
@@ -108,43 +81,6 @@ const MaintenanceFullPage = () => {
           max-width: 450px;
           margin: 0 auto 2rem;
           line-height: 1.6;
-        }
-
-        .progress-bar {
-          width: 200px;
-          height: 4px;
-          background: var(--bv-glass-border);
-          margin: 0 auto;
-          border-radius: 2px;
-          overflow: hidden;
-        }
-
-        .progress-bar div {
-          height: 100%;
-          background: linear-gradient(90deg, var(--primary), var(--secondary));
-          width: 30%;
-          border-radius: 2px;
-          animation: move 2s ease-in-out infinite;
-        }
-
-        @keyframes spin {
-          to {
-            transform: rotate(360deg);
-          }
-        }
-
-        @keyframes move {
-          0% {
-            transform: translateX(-100%);
-            width: 30%;
-          }
-          50% {
-            width: 60%;
-          }
-          100% {
-            transform: translateX(200%);
-            width: 30%;
-          }
         }
 
         .glow {

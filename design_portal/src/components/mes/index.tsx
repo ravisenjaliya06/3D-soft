@@ -1,3 +1,5 @@
+import { useMinimumVisible } from '@/components/common/useMinimumVisible';
+import PhinxLoader from '@/components/common/PhinxLoader';
 import { hideFullScreenLoader, showFullScreenLoader } from '@/components/3dmodel/handler/items';
 import Header from '@/components/header/header';
 import styles from '@/components/mes/mes.module.css';
@@ -56,6 +58,7 @@ const Mes = () => {
   const [selectedSheet, setSelectedSheet] = useState<NestingSheet | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>('designs');
   const [loading, setLoading] = useState(false);
+  const showLoading = useMinimumVisible(loading);
   const [error, setError] = useState<string | null>(null);
 
   // Fetch designs on component mount
@@ -220,7 +223,7 @@ const Mes = () => {
                       <span className={styles.statLabel}>{stat.label}</span>
                       <span className={styles.statHint}>{stat.hint}</span>
                     </div>
-                    <strong>{loading ? '–' : stat.value}</strong>
+                    <strong>{showLoading ? '–' : stat.value}</strong>
                   </li>
                 );
               })}
@@ -282,7 +285,7 @@ const Mes = () => {
                     {viewMode === 'files' && `Files - Sheet ${selectedSheet?.sheet_number || ''}`}
                   </h2>
                 </div>
-                {!loading && (
+                {!showLoading && (
                   <span className={styles.countPill}>
                     {designs.length} {designs.length === 1 ? 'design' : 'designs'}
                   </span>
@@ -296,10 +299,9 @@ const Mes = () => {
                 </div>
               )}
 
-              {loading ? (
+              {showLoading ? (
                 <div className={styles.loadingMessage}>
-                  <span className={styles.spinner} aria-hidden="true" />
-                  Loading designs…
+                  <PhinxLoader scene="cabinet" label="Loading designs…" />
                 </div>
               ) : (
                 <>

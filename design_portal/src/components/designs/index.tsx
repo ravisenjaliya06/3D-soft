@@ -1,3 +1,5 @@
+import { useMinimumVisible } from '@/components/common/useMinimumVisible';
+import PhinxLoader, { PhinxMiniLoader } from '@/components/common/PhinxLoader';
 import styles from '@/components/designs/designs.module.css';
 import Header from '@/components/header/header';
 import InputField from '@/components/inputfields/InputField';
@@ -42,6 +44,7 @@ const Designs = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [designs, setDesigns] = useState<Design[]>([]);
   const [loading, setLoading] = useState(false);
+  const showLoading = useMinimumVisible(loading);
   const [activeView, setActiveView] = useState('list');
   const [visibleDesigns, setVisibleDesigns] = useState(DESIGNS_BATCH_SIZE);
   const [isAppendingDesigns, setIsAppendingDesigns] = useState(false);
@@ -821,13 +824,12 @@ const Designs = () => {
               ref={designsScrollRef}
               onScroll={handleDesignsScroll}
             >
-              {loading && (
+              {showLoading && (
                 <div className={styles.stateBox}>
-                  <div className={styles.scrollLoaderSpinner} />
-                  <p>Loading your designs…</p>
+                  <PhinxLoader scene="sofa" label="Loading your designs…" />
                 </div>
               )}
-              {!loading && filteredDesigns.length === 0 && (
+              {!showLoading && filteredDesigns.length === 0 && (
                 <div className={styles.stateBox}>
                   <span className={styles.stateIcon}>
                     <LuFolderOpen aria-hidden="true" />
@@ -917,8 +919,7 @@ const Designs = () => {
 
             {isAppendingDesigns && (
               <div className={styles.scrollLoaderRow}>
-                <div className={styles.scrollLoaderSpinner} />
-                <p>Loading more designs…</p>
+                <PhinxMiniLoader label="Loading more designs…" />
               </div>
             )}
           </div>
